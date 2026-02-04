@@ -13,6 +13,7 @@ import {
 import { Project, ProjectStatus, DashboardStats } from '../types/project';
 import { projectStorage, clientStorage } from '../services/projectStorage';
 import { aiProcessingService } from '../services/aiProcessingService';
+import { invoiceService } from '../services/invoiceService';
 import { Language } from '../types';
 import FiberLoader from './FiberLoader';
 
@@ -58,7 +59,13 @@ const translations = {
     complianceScore: 'Compliance',
     flags: 'flags',
     reprocess: 'Reprocess',
-    reprocessing: 'Reprocessing...'
+    reprocessing: 'Reprocessing...',
+    generating: 'Generating...',
+    downloadPDF: 'Download PDF',
+    downloadEN: 'English PDF',
+    downloadPT: 'Portuguese PDF',
+    markPaid: 'Mark Paid',
+    invoiceNumber: 'Invoice'
   },
   PT: {
     title: 'Central de Comando',
@@ -94,7 +101,13 @@ const translations = {
     complianceScore: 'Conformidade',
     flags: 'alertas',
     reprocess: 'Reprocessar',
-    reprocessing: 'Reprocessando...'
+    reprocessing: 'Reprocessando...',
+    generating: 'Gerando...',
+    downloadPDF: 'Baixar PDF',
+    downloadEN: 'PDF em Inglês',
+    downloadPT: 'PDF em Português',
+    markPaid: 'Marcar Pago',
+    invoiceNumber: 'Fatura'
   },
   ES: {
     title: 'Centro de Comando',
@@ -130,7 +143,13 @@ const translations = {
     complianceScore: 'Cumplimiento',
     flags: 'alertas',
     reprocess: 'Reprocesar',
-    reprocessing: 'Reprocesando...'
+    reprocessing: 'Reprocesando...',
+    generating: 'Generando...',
+    downloadPDF: 'Descargar PDF',
+    downloadEN: 'PDF en Inglés',
+    downloadPT: 'PDF en Portugués',
+    markPaid: 'Marcar Pagado',
+    invoiceNumber: 'Factura'
   }
 };
 
@@ -209,6 +228,52 @@ const OwnerInbox: React.FC<OwnerInboxProps> = ({
     loadData();
     onApproveProject?.(project);
   }, [loadData, onApproveProject]);
+
+  // Handle invoice generation
+  const [invoicingProjectId, setInvoicingProjectId] = useState<string | null>(null);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+
+  const handleGenerateInvoice = useCallback(async (project: Project) => {
+    setInvoicingProjectId(project.id);
+    try {
+      const result = await invoiceService.generateFromProject(project.id);
+      if (result) {
+        // Download the PDF in current language
+        const updatedProject = projectStorage.getById(project.id);
+        if (updatedProject) {
+          invoiceService.downloadPDF(result, updatedProject, lang);
+        }
+        loadData();
+        onGenerateInvoice?.(updatedProject || project);
+      }
+    } catch (error) {
+      console.error('Invoice generation failed:', error);
+    } finally {
+      setInvoicingProjectId(null);
+    }
+  }, [lang, loadData, onGenerateInvoice]);
+
+  // Open invoice preview modal
+  const handleViewInvoiceDetails = useCallback((project: Project) => {
+    setSelectedProject(project);
+    setShowInvoiceModal(true);
+  }, []);
+
+  // Download invoice in specific language
+  const handleDownloadInvoice = useCallback((project: Project, downloadLang: Language) => {
+    if (project.invoice) {
+      invoiceService.downloadPDF(project.invoice, project, downloadLang);
+    }
+  }, []);
+
+  // Mark invoice as paid
+  const handleMarkPaid = useCallback((project: Project) => {
+    if (project.invoice) {
+      invoiceService.markPaid(project.invoice.id);
+      loadData();
+    }
+  }, [loadData]);
 
   // Filter projects by tab
   const filteredProjects = useMemo(() => {
@@ -506,6 +571,16 @@ const OwnerInbox: React.FC<OwnerInboxProps> = ({
                       </div>
                     )}
 
+                    {/* Invoice Number for invoiced projects */}
+                    {project.invoice && (
+                      <div className="text-center">
+                        <p className="text-sm font-bold" style={{ color: 'var(--neural-core)' }}>
+                          {project.invoice.invoiceNumber}
+                        </p>
+                        <p className="text-[8px] font-bold uppercase" style={{ color: 'var(--text-ghost)' }}>{t.invoiceNumber}</p>
+                      </div>
+                    )}
+
                     {/* Amount */}
                     {project.total > 0 && (
                       <div className="text-right">
@@ -574,17 +649,61 @@ const OwnerInbox: React.FC<OwnerInboxProps> = ({
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            onGenerateInvoice?.(project);
+                            handleGenerateInvoice(project);
                           }}
-                          className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2"
+                          disabled={invoicingProjectId === project.id}
+                          className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 disabled:opacity-50"
                           style={{
                             background: 'var(--gradient-neural)',
                             color: 'var(--void)'
                           }}
                         >
-                          <Send className="w-4 h-4" />
-                          {t.invoice}
+                          {invoicingProjectId === project.id ? (
+                            <>
+                              <div className="w-4 h-4 border-2 rounded-full animate-spin" style={{ borderColor: 'rgba(0,0,0,0.3)', borderTopColor: 'var(--void)' }} />
+                              {t.generating}
+                            </>
+                          ) : (
+                            <>
+                              <Send className="w-4 h-4" />
+                              {t.invoice}
+                            </>
+                          )}
                         </button>
+                      )}
+                      {project.status === ProjectStatus.INVOICED && project.invoice && (
+                        <>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDownloadInvoice(project, lang);
+                            }}
+                            className="px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2"
+                            style={{
+                              background: 'var(--neural-dim)',
+                              border: '1px solid var(--border-neural)',
+                              color: 'var(--neural-core)'
+                            }}
+                          >
+                            <FileText className="w-4 h-4" />
+                            PDF
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleMarkPaid(project);
+                            }}
+                            className="px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2"
+                            style={{
+                              background: 'var(--online-glow)',
+                              border: '1px solid var(--border-online)',
+                              color: 'var(--online-core)'
+                            }}
+                          >
+                            <DollarSign className="w-4 h-4" />
+                            {t.markPaid}
+                          </button>
+                        </>
                       )}
                       <ChevronRight className="w-5 h-5" style={{ color: 'var(--text-ghost)' }} />
                     </div>

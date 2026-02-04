@@ -3,9 +3,11 @@ import Layout from './components/Layout';
 import Dashboard from './components/Dashboard';
 import AuthPage from './components/AuthPage';
 import FiberLoader from './components/FiberLoader';
+import OfflineIndicator from './components/OfflineIndicator';
 import { storage } from './services/storageService';
 import { analyzeMapBoQ } from './services/claudeService';
 import { aiProcessingService } from './services/aiProcessingService';
+import { offlineSync } from './services/offlineSync';
 import { ViewState, Notification, User, Invoice, Transaction, UnitRates, AuditResult, Language, AuditFile, MapAuditReport } from './types';
 import { Job } from './types/project';
 
@@ -81,6 +83,12 @@ const App: React.FC = () => {
             return () => aiProcessingService.stopProcessingQueue();
         }
     }, [user, currentLang]);
+
+    // [offline-sync] - Initialize offline sync service
+    useEffect(() => {
+        const cleanup = offlineSync.init();
+        return cleanup;
+    }, []);
 
     // [rerender-functional-setstate] - Stable callback using functional setState
     const handleLogin = useCallback((newUser: User) => {
@@ -254,21 +262,26 @@ const App: React.FC = () => {
     }
 
     return (
-        <Layout
-            currentView={currentView}
-            onChangeView={setCurrentView}
-            notifications={notifications}
-            onMarkAllRead={() => setNotifications(prev => prev.map(n => ({ ...n, read: true })))}
-            user={user}
-            onLogout={handleLogout}
-            currentLang={currentLang}
-            onChangeLang={setCurrentLang}
-        >
-            {/* [bundle-dynamic-imports] - Suspense boundary for lazy components */}
-            <Suspense fallback={LoadingFallback}>
-                {renderContent()}
-            </Suspense>
-        </Layout>
+        <>
+            {/* Offline status indicator */}
+            <OfflineIndicator lang={currentLang} />
+
+            <Layout
+                currentView={currentView}
+                onChangeView={setCurrentView}
+                notifications={notifications}
+                onMarkAllRead={() => setNotifications(prev => prev.map(n => ({ ...n, read: true })))}
+                user={user}
+                onLogout={handleLogout}
+                currentLang={currentLang}
+                onChangeLang={setCurrentLang}
+            >
+                {/* [bundle-dynamic-imports] - Suspense boundary for lazy components */}
+                <Suspense fallback={LoadingFallback}>
+                    {renderContent()}
+                </Suspense>
+            </Layout>
+        </>
     );
 };
 

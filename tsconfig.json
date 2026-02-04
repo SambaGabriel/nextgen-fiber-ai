@@ -20,5 +20,6 @@
     "forceConsistentCasingInFileNames": true
   },
   "include": ["*.tsx", "*.ts", "components/**/*", "services/**/*", "types/**/*"],
+  "exclude": ["vite.config.ts"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

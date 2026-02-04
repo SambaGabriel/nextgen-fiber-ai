@@ -3,16 +3,18 @@
  * Shows job info, map PDF, supervisor notes, and Submit button
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   ArrowLeft, MapPin, Calendar, Clock, User, FileText,
   Download, Eye, Send, Play, CheckCircle2, AlertTriangle,
-  Ruler, Building2, MessageSquare, ExternalLink
+  Ruler, Building2, MessageSquare, ExternalLink, Camera, Image
 } from 'lucide-react';
 import { Job, JobStatus, WorkType } from '../types/project';
 import { jobStorage } from '../services/jobStorage';
 import { Language, User as UserType } from '../types';
 import ChatSection from './ChatSection';
+import SafetyChecklist, { isChecklistValid } from './SafetyChecklist';
+import QuickCamera, { getJobPhotos, getJobPhotoCount, JobPhoto } from './QuickCamera';
 
 interface JobDetailsProps {
   job: Job;
@@ -155,6 +157,17 @@ const JobDetails: React.FC<JobDetailsProps> = ({ job, user, lang, onBack, onStar
   const t = translations[lang];
   const [currentJob, setCurrentJob] = useState(job);
   const [isViewingMap, setIsViewingMap] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
+  const [showChecklist, setShowChecklist] = useState(false);
+  const [photoCount, setPhotoCount] = useState(0);
+  const [photos, setPhotos] = useState<JobPhoto[]>([]);
+
+  // Load photos on mount
+  useEffect(() => {
+    const jobPhotos = getJobPhotos(currentJob.id);
+    setPhotos(jobPhotos);
+    setPhotoCount(jobPhotos.length);
+  }, [currentJob.id]);
 
   // Get status configuration
   const getStatusConfig = (status: JobStatus) => {
@@ -195,14 +208,37 @@ const JobDetails: React.FC<JobDetailsProps> = ({ job, user, lang, onBack, onStar
 
   const statusConfig = getStatusConfig(currentJob.status);
 
-  // Handle start work
+  // Handle photo taken
+  const handlePhotoTaken = useCallback((photo: JobPhoto) => {
+    setPhotos(prev => [...prev, photo]);
+    setPhotoCount(prev => prev + 1);
+  }, []);
+
+  // Handle start work - requires safety checklist
   const handleStartWork = useCallback(() => {
+    // Check if safety checklist is valid
+    if (!isChecklistValid(currentJob.id)) {
+      setShowChecklist(true);
+      return;
+    }
+
     // Update job status to in_progress
     const updated = jobStorage.update(currentJob.id, { status: JobStatus.IN_PROGRESS });
     if (updated) {
       setCurrentJob(updated);
     }
     // Navigate to production form
+    onStartProduction(updated || currentJob);
+  }, [currentJob, onStartProduction]);
+
+  // Handle checklist complete
+  const handleChecklistComplete = useCallback(() => {
+    setShowChecklist(false);
+    // Now proceed with starting work
+    const updated = jobStorage.update(currentJob.id, { status: JobStatus.IN_PROGRESS });
+    if (updated) {
+      setCurrentJob(updated);
+    }
     onStartProduction(updated || currentJob);
   }, [currentJob, onStartProduction]);
 
@@ -284,17 +320,37 @@ const JobDetails: React.FC<JobDetailsProps> = ({ job, user, lang, onBack, onStar
             </p>
           </div>
 
-          {/* Action Button */}
-          {actionButton && (
+          {/* Action Buttons */}
+          <div className="flex items-center gap-3">
+            {/* Quick Camera Button */}
             <button
-              onClick={actionButton.action}
-              className="px-6 py-3 rounded-xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-2 transition-all hover:scale-105"
-              style={actionButton.style as React.CSSProperties}
+              onClick={() => setShowCamera(true)}
+              className="relative w-12 h-12 rounded-xl flex items-center justify-center transition-all hover:scale-105"
+              style={{ background: 'var(--surface)', border: '1px solid var(--border-default)' }}
             >
-              {actionButton.icon}
-              {actionButton.label}
+              <Camera className="w-6 h-6" style={{ color: 'var(--text-primary)' }} />
+              {photoCount > 0 && (
+                <span
+                  className="absolute -top-1 -right-1 w-5 h-5 rounded-full text-[10px] font-black flex items-center justify-center text-white"
+                  style={{ background: 'var(--gradient-neural)' }}
+                >
+                  {photoCount}
+                </span>
+              )}
             </button>
-          )}
+
+            {/* Main Action Button */}
+            {actionButton && (
+              <button
+                onClick={actionButton.action}
+                className="px-6 py-3 rounded-xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-2 transition-all hover:scale-105"
+                style={actionButton.style as React.CSSProperties}
+              >
+                {actionButton.icon}
+                {actionButton.label}
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -394,6 +450,42 @@ const JobDetails: React.FC<JobDetailsProps> = ({ job, user, lang, onBack, onStar
           )}
         </div>
 
+        {/* Photos Section */}
+        {photos.length > 0 && (
+          <div
+            className="rounded-xl sm:rounded-2xl p-4 sm:p-6"
+            style={{ background: 'var(--surface)', border: '1px solid var(--border-subtle)' }}
+          >
+            <h3 className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.2em] mb-4 flex items-center gap-2" style={{ color: 'var(--text-ghost)' }}>
+              <Image className="w-4 h-4" /> {lang === 'PT' ? 'Fotos do Job' : lang === 'ES' ? 'Fotos del Job' : 'Job Photos'} ({photoCount})
+            </h3>
+            <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
+              {photos.slice(0, 12).map((photo) => (
+                <div
+                  key={photo.id}
+                  className="aspect-square rounded-lg overflow-hidden bg-slate-800"
+                >
+                  <img
+                    src={photo.thumbnail}
+                    alt="Job photo"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              ))}
+              {photos.length > 12 && (
+                <div
+                  className="aspect-square rounded-lg flex items-center justify-center"
+                  style={{ background: 'var(--elevated)' }}
+                >
+                  <span className="text-sm font-bold" style={{ color: 'var(--text-tertiary)' }}>
+                    +{photos.length - 12}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Chat Section - AI Supervisor */}
         <ChatSection
           jobId={currentJob.id}
@@ -448,6 +540,26 @@ const JobDetails: React.FC<JobDetailsProps> = ({ job, user, lang, onBack, onStar
         )}
 
       </div>
+
+      {/* Safety Checklist Modal */}
+      {showChecklist && (
+        <SafetyChecklist
+          jobId={currentJob.id}
+          onComplete={handleChecklistComplete}
+          onCancel={() => setShowChecklist(false)}
+          lang={lang}
+        />
+      )}
+
+      {/* Quick Camera Modal */}
+      {showCamera && (
+        <QuickCamera
+          jobId={currentJob.id}
+          onPhotoTaken={handlePhotoTaken}
+          onClose={() => setShowCamera(false)}
+          lang={lang}
+        />
+      )}
     </div>
   );
 };

@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { Language, User, MapAnalysisResult, AuditFile, MapAuditReport, UnitRates } from '../types';
 import { translations } from '../services/translations';
-import { analyzeMapBoQ } from '../services/geminiService';
+import { analyzeMapWithClaude } from '../services/claudeService';
 import FiberLoader from './FiberLoader';
 
 declare const L: any;
@@ -207,7 +207,7 @@ const MapAudit: React.FC<MapAuditProps> = ({ lang, user, onSaveToReports }) => {
             const reader = new FileReader();
             reader.onload = async (ev) => {
                 const base64 = (ev.target?.result as string).split(',')[1];
-                const result = await analyzeMapBoQ(base64, 'application/pdf', lang);
+                const result = await analyzeMapWithClaude(base64, 'application/pdf', lang);
                 setAnalysisResult(result);
                 renderEngineeringLayer(result);
                 setSidebarOpen(true);

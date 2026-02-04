@@ -93,26 +93,27 @@ interface AnalyzeResponse {
   error?: string;
 }
 
-const API_BASE = 'http://localhost:8000/api/v1';
+const ANTHROPIC_API_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY;
 
-/**
- * Convert snake_case keys to camelCase recursively
- */
-function snakeToCamel(obj: any): any {
-  if (obj === null || obj === undefined) return obj;
-  if (Array.isArray(obj)) return obj.map(snakeToCamel);
-  if (typeof obj !== 'object') return obj;
+const SYSTEM_PROMPT = `You are a fiber optic map analyzer. Extract ALL data from the construction map/drawing.
 
-  const result: any = {};
-  for (const key in obj) {
-    const camelKey = key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
-    result[camelKey] = snakeToCamel(obj[key]);
-  }
-  return result;
+Return ONLY valid JSON with this exact structure:
+{
+  "header": { "projectId": "", "location": "", "fsa": "", "pageNumber": 1, "totalPages": 1, "permits": [], "contractor": "", "confidence": 0.9 },
+  "cables": [{ "id": "", "cableType": "", "fiberCount": 0, "category": "", "confidence": 0.9 }],
+  "spans": [{ "lengthFt": 0, "startPole": "", "endPole": "", "gridRef": "", "isLongSpan": false, "confidence": 0.9 }],
+  "equipment": [{ "id": "", "type": "", "subType": "", "size": "", "slackLength": null, "dimensions": "", "gpsLat": null, "gpsLng": null, "confidence": 0.9 }],
+  "gpsPoints": [{ "lat": 0, "lng": 0, "label": "", "confidence": 0.9 }],
+  "poles": [{ "poleId": "", "attachmentHeight": "", "hasAnchor": false, "gridRef": "", "confidence": 0.9 }],
+  "totals": { "totalAerialFt": 0, "totalUndergroundFt": 0, "totalCableFt": 0, "spanCount": 0, "anchorCount": 0, "spliceCount": 0, "hubCount": 0, "slackloopCount": 0, "pedestalCount": 0, "poleCount": 0 },
+  "validation": { "isValid": true, "overallConfidence": 0.9, "checks": [], "warnings": [], "errors": [] },
+  "metadata": { "analyzedAt": "", "engineVersion": "1.0", "modelUsed": "claude-sonnet-4", "processingTimeMs": 0, "pageCount": 1 }
 }
 
+Extract footage from legends, tables, and labels. Look for pole IDs (like MRE#xxx), span lengths, cable types (144F, 288F, etc).`;
+
 /**
- * Analyze a fiber map using Claude AI via the backend API
+ * Analyze a fiber map using Claude AI directly
  */
 export async function analyzeMapWithClaude(
   imageBase64: string,
@@ -120,39 +121,67 @@ export async function analyzeMapWithClaude(
   apiKey?: string,
   maxPages: number = 10
 ): Promise<FiberMapAnalysisResult> {
-  // Clean base64 if it has data URL prefix
   const cleanBase64 = imageBase64.includes('base64,')
     ? imageBase64.split('base64,')[1]
     : imageBase64;
 
-  console.log(`[ClaudeAnalyzer] Sending request: mediaType=${mediaType}, maxPages=${maxPages}, size=${cleanBase64.length} chars`);
+  const key = apiKey || ANTHROPIC_API_KEY;
+  const isPDF = mediaType.includes('pdf');
 
-  const response = await fetch(`${API_BASE}/map-analyzer/analyze`, {
+  console.log(`[ClaudeAnalyzer] Sending to Claude API: type=${isPDF ? 'PDF' : 'image'}, size=${(cleanBase64.length * 0.75 / 1024 / 1024).toFixed(2)}MB`);
+
+  const contentBlock = isPDF
+    ? { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: cleanBase64 } }
+    : { type: 'image', source: { type: 'base64', media_type: mediaType, data: cleanBase64 } };
+
+  const startTime = Date.now();
+
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
     },
     body: JSON.stringify({
-      image_base64: cleanBase64,
-      media_type: mediaType,
-      api_key: apiKey,
-      max_pages: maxPages,
-    }),
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 8192,
+      system: SYSTEM_PROMPT,
+      messages: [{
+        role: 'user',
+        content: [
+          contentBlock,
+          { type: 'text', text: 'Analyze this fiber optic construction map. Extract all data and return JSON only.' }
+        ]
+      }]
+    })
   });
 
   if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`API request failed: ${response.status} - ${errorText}`);
+    const err = await response.json().catch(() => ({}));
+    console.error('[ClaudeAnalyzer] API Error:', response.status, err);
+    throw new Error(err?.error?.message || `API Error: ${response.status}`);
   }
 
-  const data: AnalyzeResponse = await response.json();
+  const data = await response.json();
+  const processingTime = Date.now() - startTime;
+  console.log(`[ClaudeAnalyzer] Response received in ${processingTime}ms`);
 
-  if (!data.success || !data.result) {
-    throw new Error(data.error || 'Analysis failed');
-  }
+  const textBlock = data.content?.find((b: any) => b.type === 'text');
+  if (!textBlock?.text) throw new Error('No response from Claude');
 
-  // Convert snake_case to camelCase for TypeScript conventions
-  return snakeToCamel(data.result) as FiberMapAnalysisResult;
+  let jsonStr = textBlock.text;
+  if (jsonStr.includes('```json')) jsonStr = jsonStr.split('```json')[1].split('```')[0];
+  else if (jsonStr.includes('```')) jsonStr = jsonStr.split('```')[1].split('```')[0];
+
+  const result = JSON.parse(jsonStr.trim());
+  result.metadata = result.metadata || {};
+  result.metadata.analyzedAt = new Date().toISOString();
+  result.metadata.processingTimeMs = processingTime;
+  result.metadata.modelUsed = 'claude-sonnet-4-20250514';
+
+  return result as FiberMapAnalysisResult;
 }
 
 /**

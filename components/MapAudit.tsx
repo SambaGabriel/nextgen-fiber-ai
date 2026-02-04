@@ -183,11 +183,11 @@ const MapAudit: React.FC<MapAuditProps> = ({ lang, user, onSaveToReports, auditQ
     const finalizeAudit = () => {
         if (!analysisResult) return;
         setIsSaving(true);
-        
+
         const safeId = `REP-${Date.now().toString(36).toUpperCase()}`;
         const finalReport: MapAuditReport = {
             id: safeId,
-            fileName: "Technical_Audit_Report.pdf",
+            fileName: currentFile?.name || "Technical_Audit_Report.pdf",
             date: new Date().toISOString(),
             certifiedBy: user.name,
             result: analysisResult
@@ -207,14 +207,17 @@ const MapAudit: React.FC<MapAuditProps> = ({ lang, user, onSaveToReports, auditQ
 
         const reader = new FileReader();
         reader.onload = (ev) => {
-            const base64 = (ev.target?.result as string).split(',')[1];
+            const dataUrl = ev.target?.result as string;
+            const base64 = dataUrl.split(',')[1];
             const newFileId = `map-${Date.now()}`;
 
             // Add to global queue - analysis will happen in App.tsx background
             setAuditQueue(prev => [...prev, {
                 id: newFileId,
-                fileName: file.name,
+                name: file.name,
+                blobUrl: dataUrl,
                 base64,
+                result: null,
                 status: 'idle' as const
             }]);
 

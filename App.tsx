@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, lazy, Suspense, useMemo } from 'react';
+import React, { useState, useCallback, useEffect, lazy, Suspense, useMemo, useRef } from 'react';
 import Layout from './components/Layout';
 import Dashboard from './components/Dashboard';
 import AuthPage from './components/AuthPage';
@@ -52,6 +52,15 @@ const App: React.FC = () => {
     const [auditQueue, setAuditQueue] = useState<AuditFile[]>([]);
     const [isGlobalAnalyzing, setIsGlobalAnalyzing] = useState(false);
 
+    // Refs to track latest values without causing re-renders
+    const auditQueueRef = useRef<AuditFile[]>([]);
+    const isAnalyzingRef = useRef(false);
+
+    // Keep refs in sync with state
+    useEffect(() => {
+        auditQueueRef.current = auditQueue;
+    }, [auditQueue]);
+
     // [rerender-derived-state] - Derive hasIdleFiles during render instead of effect
     const hasIdleFiles = useMemo(() => auditQueue.some(f => f.status === 'idle'), [auditQueue]);
 
@@ -85,26 +94,29 @@ const App: React.FC = () => {
     }, []);
 
     const runGlobalAnalysis = useCallback(async () => {
-        // [js-early-exit] - Return early for invalid states
-        if (isGlobalAnalyzing) return;
+        // Use refs to avoid stale closures
+        if (isAnalyzingRef.current) return;
 
-        const idleFile = auditQueue.find(f => f.status === 'idle');
+        const idleFile = auditQueueRef.current.find(f => f.status === 'idle');
         if (!idleFile) return;
 
+        isAnalyzingRef.current = true;
         setIsGlobalAnalyzing(true);
-        // [rerender-functional-setstate] - Use functional update
-        setAuditQueue(prev => prev.map(f => f.id === idleFile.id ? { ...f, status: 'analyzing' } : f));
+        setAuditQueue(prev => prev.map(f => f.id === idleFile.id ? { ...f, status: 'analyzing' as const } : f));
 
         try {
+            console.log('[MapAnalysis] Starting analysis for:', idleFile.name);
             const result = await analyzeMapBoQ(idleFile.base64, 'application/pdf', currentLang);
-            setAuditQueue(prev => prev.map(f => f.id === idleFile.id ? { ...f, result, status: 'completed' } : f));
+            console.log('[MapAnalysis] Completed:', idleFile.name);
+            setAuditQueue(prev => prev.map(f => f.id === idleFile.id ? { ...f, result, status: 'completed' as const } : f));
         } catch (error) {
-            console.error("Analysis Error:", error);
-            setAuditQueue(prev => prev.map(f => f.id === idleFile.id ? { ...f, status: 'error' } : f));
+            console.error("[MapAnalysis] Error:", error);
+            setAuditQueue(prev => prev.map(f => f.id === idleFile.id ? { ...f, status: 'error' as const } : f));
         } finally {
+            isAnalyzingRef.current = false;
             setIsGlobalAnalyzing(false);
         }
-    }, [auditQueue, isGlobalAnalyzing, currentLang]);
+    }, [currentLang]); // Only depend on language, use refs for queue state
 
     useEffect(() => {
         if (hasIdleFiles && !isGlobalAnalyzing) {

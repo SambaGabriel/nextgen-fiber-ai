@@ -23,17 +23,40 @@ interface MapAuditProps {
 }
 
 const MapAudit: React.FC<MapAuditProps> = ({ lang, user, onSaveToReports, auditQueue, setAuditQueue, isAnalyzing }) => {
+    console.log('[MapAudit] Component render - auditQueue length:', auditQueue.length, 'isAnalyzing:', isAnalyzing);
+
     const t = translations[lang];
     const [mapType, setMapType] = useState<'roadmap' | 'hybrid'>('roadmap');
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [cleanMode, setCleanMode] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
-    const [currentFileId, setCurrentFileId] = useState<string | null>(null);
+    const [isReadingFile, setIsReadingFile] = useState(false);
+
+    // Restore currentFileId from queue on mount (handles returning after tab change)
+    const [currentFileId, setCurrentFileId] = useState<string | null>(() => {
+        const analyzing = auditQueue.find(f => f.status === 'analyzing');
+        if (analyzing) return analyzing.id;
+        const idle = auditQueue.find(f => f.status === 'idle');
+        if (idle) return idle.id;
+        if (auditQueue.length > 0) return auditQueue[auditQueue.length - 1].id;
+        return null;
+    });
 
     // Derive analysis result from the queue (persists across tab changes)
     const currentFile = auditQueue.find(f => f.id === currentFileId);
     const analysisResult = currentFile?.result || null;
-    const isInternalAnalyzing = currentFile?.status === 'analyzing' || (currentFile?.status === 'idle' && isAnalyzing);
+    // Show loader when reading file, file is idle (waiting), or analyzing
+    const isInternalAnalyzing = isReadingFile || currentFile?.status === 'analyzing' || currentFile?.status === 'idle';
+    const hasError = currentFile?.status === 'error';
+
+    console.log('[MapAudit] Derived state - currentFileId:', currentFileId, 'currentFile status:', currentFile?.status, 'isReadingFile:', isReadingFile, 'isInternalAnalyzing:', isInternalAnalyzing, 'hasError:', hasError);
+
+    // Auto-open sidebar if returning with completed result
+    useEffect(() => {
+        if (currentFile?.status === 'completed' && currentFile.result && !sidebarOpen) {
+            setSidebarOpen(true);
+        }
+    }, []);
 
     const [currentStepIndex, setCurrentStepIndex] = useState(0);
     const analysisSteps = [
@@ -201,28 +224,81 @@ const MapAudit: React.FC<MapAuditProps> = ({ lang, user, onSaveToReports, auditQ
         }, 1000);
     };
 
-    const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handlePdfUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        console.log('[MapAudit] handlePdfUpload called');
+
         const file = e.target.files?.[0];
-        if (!file) return;
+        if (!file) {
+            console.log('[MapAudit] No file selected');
+            return;
+        }
+
+        // Reset input value to allow re-uploading same file
+        e.target.value = '';
+
+        console.log('[MapAudit] File selected:', file.name, 'type:', file.type, 'size:', file.size);
+
+        // Check file size (max 32MB for Claude API)
+        const maxSize = 32 * 1024 * 1024;
+        if (file.size > maxSize) {
+            console.error('[MapAudit] File too large:', file.size, 'max:', maxSize);
+            alert('Arquivo muito grande. Máximo: 32MB');
+            return;
+        }
+
+        // Show reading state immediately
+        setIsReadingFile(true);
+        console.log('[MapAudit] Set isReadingFile to true');
 
         const reader = new FileReader();
-        reader.onload = (ev) => {
-            const dataUrl = ev.target?.result as string;
-            const base64 = dataUrl.split(',')[1];
-            const newFileId = `map-${Date.now()}`;
 
-            // Add to global queue - analysis will happen in App.tsx background
-            setAuditQueue(prev => [...prev, {
-                id: newFileId,
-                name: file.name,
-                blobUrl: dataUrl,
-                base64,
-                result: null,
-                status: 'idle' as const
-            }]);
-
-            setCurrentFileId(newFileId);
+        reader.onerror = (error) => {
+            console.error('[MapAudit] FileReader error:', error);
+            setIsReadingFile(false);
+            alert('Erro ao ler arquivo');
         };
+
+        reader.onload = (ev) => {
+            try {
+                const dataUrl = ev.target?.result as string;
+                if (!dataUrl) {
+                    console.error('[MapAudit] No dataUrl from FileReader');
+                    setIsReadingFile(false);
+                    return;
+                }
+
+                const base64 = dataUrl.split(',')[1];
+                const newFileId = `map-${Date.now()}`;
+
+                console.log('[MapAudit] File read complete, base64 length:', base64?.length);
+                console.log('[MapAudit] Adding to queue with id:', newFileId);
+
+                // Add to global queue - analysis will happen in App.tsx background
+                setAuditQueue(prev => {
+                    console.log('[MapAudit] Previous queue length:', prev.length);
+                    const newQueue = [...prev, {
+                        id: newFileId,
+                        name: file.name,
+                        blobUrl: dataUrl,
+                        base64,
+                        result: null,
+                        status: 'idle' as const
+                    }];
+                    console.log('[MapAudit] New queue length:', newQueue.length);
+                    return newQueue;
+                });
+
+                setCurrentFileId(newFileId);
+                setIsReadingFile(false);
+                console.log('[MapAudit] currentFileId set to:', newFileId);
+            } catch (err) {
+                console.error('[MapAudit] Error processing file:', err);
+                setIsReadingFile(false);
+                alert('Erro ao processar arquivo');
+            }
+        };
+
+        console.log('[MapAudit] Starting FileReader.readAsDataURL');
         reader.readAsDataURL(file);
     };
 
@@ -249,12 +325,12 @@ const MapAudit: React.FC<MapAuditProps> = ({ lang, user, onSaveToReports, auditQ
                             <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{t.project_hub}</p>
                         </div>
                     </div>
-                    <button 
+                    <button
                         onClick={() => pdfInputRef.current?.click()}
-                        disabled={isInternalAnalyzing}
-                        className="flex-1 bg-fs-brand px-6 py-3 rounded-2xl text-[10px] font-black text-white uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-95 shadow-glow flex items-center justify-center gap-3"
+                        disabled={isInternalAnalyzing || isReadingFile}
+                        className="flex-1 bg-fs-brand px-6 py-3 rounded-2xl text-[10px] font-black text-white uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-95 shadow-glow flex items-center justify-center gap-3 disabled:opacity-50"
                     >
-                        {isInternalAnalyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <><FileText className="w-4 h-4" /> {t.import_drawing}</>}
+                        {(isInternalAnalyzing || isReadingFile) ? <Loader2 className="w-4 h-4 animate-spin" /> : <><FileText className="w-4 h-4" /> {t.import_drawing}</>}
                     </button>
                     <div className="flex gap-2 mr-2">
                         <button onClick={() => setMapType(mapType === 'roadmap' ? 'hybrid' : 'roadmap')} className="p-3 bg-slate-100 rounded-2xl text-slate-600 hover:bg-slate-200 transition-colors">
@@ -326,14 +402,36 @@ const MapAudit: React.FC<MapAuditProps> = ({ lang, user, onSaveToReports, auditQ
                 </div>
             )}
 
+            {/* ERROR STATE */}
+            {hasError && (
+                <div className="fixed inset-0 z-[2000] bg-white/95 backdrop-blur-3xl flex flex-col items-center justify-center p-12 text-center">
+                    <div className="p-6 bg-red-50 rounded-3xl border border-red-200 max-w-md">
+                        <X className="w-16 h-16 text-red-500 mx-auto mb-4" />
+                        <h3 className="text-xl font-black text-red-700 mb-2">Erro na Análise</h3>
+                        <p className="text-sm text-red-600 mb-4">Verifique o console do navegador para mais detalhes.</p>
+                        <button
+                            onClick={() => {
+                                setAuditQueue(prev => prev.filter(f => f.id !== currentFileId));
+                                setCurrentFileId(null);
+                            }}
+                            className="px-6 py-3 bg-red-500 text-white rounded-xl font-bold text-sm hover:bg-red-600 transition-colors"
+                        >
+                            Tentar Novamente
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {/* LOADER */}
             {isInternalAnalyzing && (
                 <div className="fixed inset-0 z-[2000] bg-white/95 backdrop-blur-3xl flex flex-col items-center justify-center p-12 text-center">
-                    <FiberLoader size={160} text={analysisSteps[currentStepIndex]} />
+                    <FiberLoader size={160} text={isReadingFile ? "Lendo arquivo..." : analysisSteps[currentStepIndex]} />
                     <div className="mt-12 w-full max-w-lg bg-slate-100 h-1.5 rounded-full overflow-hidden border border-black/5 relative">
-                        <div className="h-full bg-fs-brand transition-all duration-1000 ease-in-out shadow-glow" style={{ width: `${((currentStepIndex + 1) / analysisSteps.length) * 100}%` }} />
+                        <div className="h-full bg-fs-brand transition-all duration-1000 ease-in-out shadow-glow" style={{ width: isReadingFile ? '5%' : `${((currentStepIndex + 1) / analysisSteps.length) * 100}%` }} />
                     </div>
-                    <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.7em] mt-10 animate-pulse">Mapping Technical Layers</p>
+                    <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.7em] mt-10 animate-pulse">
+                        {isReadingFile ? 'Carregando Documento' : 'Mapping Technical Layers'}
+                    </p>
                 </div>
             )}
 

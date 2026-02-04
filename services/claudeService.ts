@@ -6,10 +6,14 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { MapAnalysisResult, Language, AuditStatus, AuditResult } from '../types';
 
-const getClient = () => new Anthropic({
-  apiKey: import.meta.env.VITE_ANTHROPIC_API_KEY,
-  dangerouslyAllowBrowser: true
-});
+const getClient = () => {
+  const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
+  console.log('[ClaudeService] API Key present:', !!apiKey, 'length:', apiKey?.length);
+  return new Anthropic({
+    apiKey,
+    dangerouslyAllowBrowser: true
+  });
+};
 
 const generateId = () => Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
 
@@ -66,55 +70,99 @@ export const analyzeMapWithClaude = async (
   mimeType: string,
   lang: Language = Language.PT
 ): Promise<MapAnalysisResult> => {
+  console.log('[ClaudeService] Starting map analysis, mimeType:', mimeType);
+
   try {
     const client = getClient();
+    console.log('[ClaudeService] Client created successfully');
 
     // Clean base64 if it has data URL prefix
     const cleanBase64 = base64Data.includes('base64,')
       ? base64Data.split('base64,')[1]
       : base64Data;
 
-    // Determine media type for Claude
-    let mediaType: 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp' = 'image/png';
-    if (mimeType.includes('jpeg') || mimeType.includes('jpg')) {
-      mediaType = 'image/jpeg';
-    } else if (mimeType.includes('png')) {
-      mediaType = 'image/png';
-    } else if (mimeType.includes('gif')) {
-      mediaType = 'image/gif';
-    } else if (mimeType.includes('webp')) {
-      mediaType = 'image/webp';
+    console.log('[ClaudeService] Base64 length:', cleanBase64.length);
+
+    // Determine content type based on file type
+    const isPDF = mimeType.includes('pdf');
+
+    let contentBlock: any;
+    if (isPDF) {
+      // PDFs use document type in Claude API
+      contentBlock = {
+        type: 'document',
+        source: {
+          type: 'base64',
+          media_type: 'application/pdf',
+          data: cleanBase64
+        }
+      };
+    } else {
+      // Images use image type
+      let mediaType: 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp' = 'image/png';
+      if (mimeType.includes('jpeg') || mimeType.includes('jpg')) {
+        mediaType = 'image/jpeg';
+      } else if (mimeType.includes('gif')) {
+        mediaType = 'image/gif';
+      } else if (mimeType.includes('webp')) {
+        mediaType = 'image/webp';
+      }
+      contentBlock = {
+        type: 'image',
+        source: {
+          type: 'base64',
+          media_type: mediaType,
+          data: cleanBase64
+        }
+      };
     }
 
-    const response = await client.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 4096,
-      system: BOQ_SYSTEM_PROMPT,
-      messages: [
-        {
-          role: 'user',
-          content: [
+    console.log('[ClaudeService] Content block type:', contentBlock.type);
+    console.log('[ClaudeService] Sending request to Claude API...');
+
+    // Try primary model, fallback to Claude 3.5 Sonnet if needed
+    const models = ['claude-sonnet-4-20250514', 'claude-3-5-sonnet-20241022'];
+    let response: any = null;
+    let lastError: any = null;
+
+    for (const model of models) {
+      try {
+        console.log('[ClaudeService] Trying model:', model);
+        response = await client.messages.create({
+          model,
+          max_tokens: 4096,
+          system: BOQ_SYSTEM_PROMPT,
+          messages: [
             {
-              type: 'image',
-              source: {
-                type: 'base64',
-                media_type: mediaType,
-                data: cleanBase64
-              }
-            },
-            {
-              type: 'text',
-              text: `Analyze this fiber optic construction map and extract the BOQ data.
+              role: 'user',
+              content: [
+                contentBlock,
+                {
+                  type: 'text',
+                  text: `Analyze this fiber optic construction map and extract the BOQ data.
 
 Return ONLY valid JSON in this exact format:
 ${getResponseSchema(lang)}
 
 If you cannot determine a value, use 0 for numbers or empty string for text.`
+                }
+              ]
             }
           ]
-        }
-      ]
-    });
+        });
+        console.log('[ClaudeService] Success with model:', model);
+        break;
+      } catch (modelError: any) {
+        console.warn('[ClaudeService] Model failed:', model, modelError?.message);
+        lastError = modelError;
+      }
+    }
+
+    if (!response) {
+      throw lastError || new Error('All models failed');
+    }
+
+    console.log('[ClaudeService] Response received, stop_reason:', response.stop_reason);
 
     // Extract text response
     const textBlock = response.content.find(block => block.type === 'text');
@@ -149,11 +197,60 @@ If you cannot determine a value, use 0 for numbers or empty string for text.`
       detectedAnomalies: result.detectedAnomalies || []
     };
 
-  } catch (error) {
-    console.error('Claude Analysis Error:', error);
+  } catch (error: any) {
+    console.error('[ClaudeService] Analysis Error:', error);
+    console.error('[ClaudeService] Error details:', JSON.stringify({
+      message: error?.message,
+      status: error?.status,
+      statusCode: error?.statusCode,
+      type: error?.type,
+      error: error?.error,
+      body: error?.body,
+      headers: error?.headers
+    }, null, 2));
     throw error;
   }
 };
+
+// Test function to verify API connection
+export const testClaudeConnection = async (): Promise<boolean> => {
+  try {
+    const client = getClient();
+    console.log('[ClaudeService] Testing API connection...');
+    const response = await client.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 10,
+      messages: [{ role: 'user', content: 'Say "OK"' }]
+    });
+    console.log('[ClaudeService] API test successful:', response.stop_reason);
+    return true;
+  } catch (error: any) {
+    console.error('[ClaudeService] API test failed:', error?.message);
+    // Try fallback model
+    try {
+      const client = getClient();
+      const response = await client.messages.create({
+        model: 'claude-3-5-sonnet-20241022',
+        max_tokens: 10,
+        messages: [{ role: 'user', content: 'Say "OK"' }]
+      });
+      console.log('[ClaudeService] Fallback API test successful:', response.stop_reason);
+      return true;
+    } catch (fallbackError: any) {
+      console.error('[ClaudeService] Fallback API test also failed:', fallbackError?.message);
+      return false;
+    }
+  }
+};
+
+// Expose for debugging in browser console
+if (typeof window !== 'undefined') {
+  (window as any).testClaudeAPI = testClaudeConnection;
+  (window as any).claudeService = {
+    test: testClaudeConnection,
+    analyzeMap: analyzeMapWithClaude
+  };
+}
 
 export const analyzePhotoWithClaude = async (
   base64Data: string,

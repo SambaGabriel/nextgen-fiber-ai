@@ -95,31 +95,41 @@ const App: React.FC = () => {
 
     const runGlobalAnalysis = useCallback(async () => {
         // Use refs to avoid stale closures
-        if (isAnalyzingRef.current) return;
+        if (isAnalyzingRef.current) {
+            console.log('[MapAnalysis] Already analyzing, skipping');
+            return;
+        }
 
         const idleFile = auditQueueRef.current.find(f => f.status === 'idle');
-        if (!idleFile) return;
+        if (!idleFile) {
+            console.log('[MapAnalysis] No idle files in queue');
+            return;
+        }
 
+        console.log('[MapAnalysis] Starting analysis for:', idleFile.name, 'base64 length:', idleFile.base64?.length);
         isAnalyzingRef.current = true;
         setIsGlobalAnalyzing(true);
         setAuditQueue(prev => prev.map(f => f.id === idleFile.id ? { ...f, status: 'analyzing' as const } : f));
 
         try {
-            console.log('[MapAnalysis] Starting analysis for:', idleFile.name);
             const result = await analyzeMapBoQ(idleFile.base64, 'application/pdf', currentLang);
-            console.log('[MapAnalysis] Completed:', idleFile.name);
+            console.log('[MapAnalysis] Completed successfully:', idleFile.name);
+            console.log('[MapAnalysis] Result totalCableLength:', result?.totalCableLength);
             setAuditQueue(prev => prev.map(f => f.id === idleFile.id ? { ...f, result, status: 'completed' as const } : f));
-        } catch (error) {
-            console.error("[MapAnalysis] Error:", error);
+        } catch (error: any) {
+            console.error("[MapAnalysis] Error:", error?.message || error);
             setAuditQueue(prev => prev.map(f => f.id === idleFile.id ? { ...f, status: 'error' as const } : f));
         } finally {
             isAnalyzingRef.current = false;
             setIsGlobalAnalyzing(false);
+            console.log('[MapAnalysis] Analysis finished, checking for more files...');
         }
     }, [currentLang]); // Only depend on language, use refs for queue state
 
     useEffect(() => {
+        console.log('[MapAnalysis] Queue check - hasIdleFiles:', hasIdleFiles, 'isGlobalAnalyzing:', isGlobalAnalyzing);
         if (hasIdleFiles && !isGlobalAnalyzing) {
+            console.log('[MapAnalysis] Triggering analysis...');
             runGlobalAnalysis();
         }
     }, [hasIdleFiles, isGlobalAnalyzing, runGlobalAnalysis]);

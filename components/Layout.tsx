@@ -23,6 +23,7 @@ const Layout: React.FC<LayoutProps> = ({ currentView, onChangeView, children, no
     const t = translations[currentLang];
     const [isLangOpen, setIsLangOpen] = useState(false);
     const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
+    const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
 
     // Check if user is admin
     const isAdmin = user?.role === 'ADMIN';
@@ -200,11 +201,98 @@ const Layout: React.FC<LayoutProps> = ({ currentView, onChangeView, children, no
                     </div>
 
                     {/* Right - User & Notifications */}
-                    <div className="flex items-center gap-3 lg:gap-6">
-                        {/* User Info - Compact on mobile */}
-                        <div className="hidden sm:block text-right">
-                            <p className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-ghost)' }}>{t.user_label}</p>
-                            <p className="text-sm font-bold" style={{ color: 'var(--neural-core)' }}>{user?.role || t.guest}</p>
+                    <div className="flex items-center gap-2 lg:gap-6">
+                        {/* Profile Button with Dropdown - Always visible */}
+                        <div className="relative">
+                            <button
+                                onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+                                className="flex items-center gap-2 px-2 py-1.5 sm:px-3 sm:py-2 rounded-xl transition-all"
+                                style={{ background: 'var(--elevated)', border: '1px solid var(--border-subtle)' }}
+                            >
+                                <div
+                                    className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black"
+                                    style={{ background: 'var(--neural-dim)', color: 'var(--neural-core)' }}
+                                >
+                                    {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+                                </div>
+                                <div className="hidden sm:block text-left">
+                                    <p className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-ghost)' }}>{t.user_label}</p>
+                                    <p className="text-xs font-bold" style={{ color: 'var(--neural-core)' }}>{user?.name || user?.role || t.guest}</p>
+                                </div>
+                                <ChevronRight
+                                    className="w-4 h-4 transition-transform"
+                                    style={{
+                                        color: 'var(--text-tertiary)',
+                                        transform: isProfileMenuOpen ? 'rotate(90deg)' : 'rotate(0deg)'
+                                    }}
+                                />
+                            </button>
+
+                            {/* Profile Dropdown Menu */}
+                            {isProfileMenuOpen && (
+                                <>
+                                    {/* Backdrop to close menu */}
+                                    <div
+                                        className="fixed inset-0 z-40"
+                                        onClick={() => setIsProfileMenuOpen(false)}
+                                    />
+                                    <div
+                                        className="absolute top-full right-0 mt-2 rounded-2xl p-3 z-50 min-w-[200px]"
+                                        style={{ background: 'var(--surface)', border: '1px solid var(--border-default)', boxShadow: 'var(--shadow-float)' }}
+                                    >
+                                        {/* User Info Header */}
+                                        <div className="px-3 py-3 rounded-xl mb-2" style={{ background: 'var(--elevated)' }}>
+                                            <p className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{user?.name || 'User'}</p>
+                                            <p className="text-[10px] font-medium" style={{ color: 'var(--text-tertiary)' }}>{user?.email}</p>
+                                            <p className="text-[9px] font-bold uppercase tracking-wider mt-1" style={{ color: 'var(--neural-core)' }}>{user?.role}</p>
+                                        </div>
+
+                                        {/* Language Selector */}
+                                        <div className="px-3 py-2">
+                                            <p className="text-[9px] font-bold uppercase tracking-wider mb-2" style={{ color: 'var(--text-ghost)' }}>Language</p>
+                                            <div className="flex gap-2">
+                                                {Object.values(Language).map(l => (
+                                                    <button
+                                                        key={l}
+                                                        onClick={() => onChangeLang(l)}
+                                                        className="flex-1 py-2 text-xs font-bold rounded-lg transition-colors"
+                                                        style={{
+                                                            color: currentLang === l ? 'var(--neural-core)' : 'var(--text-tertiary)',
+                                                            background: currentLang === l ? 'var(--neural-dim)' : 'var(--elevated)'
+                                                        }}
+                                                    >
+                                                        {l}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        <div className="my-2 border-t" style={{ borderColor: 'var(--border-subtle)' }}></div>
+
+                                        {/* Settings - Only for Admin */}
+                                        {isAdmin && (
+                                            <button
+                                                onClick={() => { onChangeView(ViewState.ADMIN); setIsProfileMenuOpen(false); }}
+                                                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors"
+                                                style={{ background: 'transparent' }}
+                                            >
+                                                <Settings className="w-5 h-5" style={{ color: 'var(--text-tertiary)' }} />
+                                                <span className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>Settings</span>
+                                            </button>
+                                        )}
+
+                                        {/* Logout */}
+                                        <button
+                                            onClick={() => { onLogout(); setIsProfileMenuOpen(false); }}
+                                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl mt-1"
+                                            style={{ background: 'rgba(220, 38, 38, 0.1)' }}
+                                        >
+                                            <LogOut className="w-5 h-5" style={{ color: 'var(--critical-core)' }} />
+                                            <span className="text-sm font-semibold" style={{ color: 'var(--critical-core)' }}>Logout</span>
+                                        </button>
+                                    </div>
+                                </>
+                            )}
                         </div>
                         {/* Notification Bell */}
                         <button

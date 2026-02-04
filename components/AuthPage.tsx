@@ -52,7 +52,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin, lang }) => {
             {/* Scan Line Effect */}
             <div className="absolute inset-0 scan-line pointer-events-none"></div>
 
-            <div className="w-full max-w-[1200px] min-h-[700px] grid grid-cols-1 lg:grid-cols-2 glass-strong rounded-[3rem] shadow-2xl overflow-hidden relative z-10 animate-scale-in" style={{ boxShadow: 'var(--shadow-glow)' }}>
+            <div className="w-full max-w-[1200px] min-h-[500px] lg:min-h-[700px] grid grid-cols-1 lg:grid-cols-2 glass-strong rounded-[1.5rem] lg:rounded-[3rem] shadow-2xl overflow-hidden relative z-10 animate-scale-in" style={{ boxShadow: 'var(--shadow-glow)' }}>
 
                 {/* Brand Side */}
                 <div className="hidden lg:flex flex-col justify-between p-12 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, rgba(0, 212, 255, 0.03) 0%, rgba(168, 85, 247, 0.03) 100%)', borderRight: '1px solid var(--border-subtle)' }}>
@@ -117,7 +117,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin, lang }) => {
                 </div>
 
                 {/* Form Side */}
-                <div className="flex flex-col justify-center p-8 lg:p-16 relative" style={{ background: 'var(--void)' }}>
+                <div className="flex flex-col justify-center p-4 sm:p-8 lg:p-16 relative" style={{ background: 'var(--void)' }}>
                     {/* Subtle gradient overlay */}
                     <div className="absolute inset-0 opacity-50" style={{ background: 'radial-gradient(circle at center, var(--neural-dim) 0%, transparent 70%)' }}></div>
 
@@ -128,22 +128,22 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin, lang }) => {
                             <Logo className="w-14 h-14" showText={true} />
                         </div>
 
-                        <div className="text-center space-y-3">
-                            <h3 className="text-3xl font-black uppercase tracking-tight" style={{ color: 'var(--text-primary)' }}>
+                        <div className="text-center space-y-2 sm:space-y-3">
+                            <h3 className="text-2xl sm:text-3xl font-black uppercase tracking-tight" style={{ color: 'var(--text-primary)' }}>
                                 Access Portal
                             </h3>
-                            <p className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
+                            <p className="text-xs sm:text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
                                 Select your access type to continue
                             </p>
                         </div>
 
                         {/* Role Selection Cards */}
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-2 gap-2 sm:gap-4">
                             {/* Lineman Card */}
                             <button
                                 type="button"
                                 onClick={() => handleRoleSelect('LINEMAN')}
-                                className={`relative p-6 rounded-3xl border-2 transition-all duration-300 group ${
+                                className={`relative p-3 sm:p-6 rounded-2xl sm:rounded-3xl border-2 transition-all duration-300 group ${
                                     selectedRole === 'LINEMAN'
                                         ? 'animate-glow-pulse'
                                         : 'hover:scale-[1.02]'
@@ -154,21 +154,21 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin, lang }) => {
                                     boxShadow: selectedRole === 'LINEMAN' ? 'var(--shadow-neural)' : 'none'
                                 }}
                             >
-                                <div className="flex flex-col items-center gap-4">
-                                    <div className="p-4 rounded-2xl transition-all" style={{
+                                <div className="flex flex-col items-center gap-2 sm:gap-4">
+                                    <div className="p-2 sm:p-4 rounded-xl sm:rounded-2xl transition-all" style={{
                                         background: selectedRole === 'LINEMAN' ? 'var(--neural-glow)' : 'var(--elevated)'
                                     }}>
-                                        <HardHat className="w-10 h-10 transition-colors" style={{
+                                        <HardHat className="w-6 h-6 sm:w-10 sm:h-10 transition-colors" style={{
                                             color: selectedRole === 'LINEMAN' ? 'var(--neural-core)' : 'var(--energy-core)'
                                         }} />
                                     </div>
                                     <div className="text-center">
-                                        <p className="text-lg font-black uppercase tracking-tight transition-colors" style={{
+                                        <p className="text-sm sm:text-lg font-black uppercase tracking-tight transition-colors" style={{
                                             color: selectedRole === 'LINEMAN' ? 'var(--neural-core)' : 'var(--text-primary)'
                                         }}>
                                             Lineman
                                         </p>
-                                        <p className="text-[10px] font-bold uppercase tracking-wider mt-1" style={{ color: 'var(--text-ghost)' }}>
+                                        <p className="text-[8px] sm:text-[10px] font-bold uppercase tracking-wider mt-1" style={{ color: 'var(--text-ghost)' }}>
                                             Field Technician
                                         </p>
                                     </div>
@@ -184,7 +184,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin, lang }) => {
                             <button
                                 type="button"
                                 onClick={() => handleRoleSelect('ADMIN')}
-                                className={`relative p-6 rounded-3xl border-2 transition-all duration-300 group ${
+                                className={`relative p-3 sm:p-6 rounded-2xl sm:rounded-3xl border-2 transition-all duration-300 group ${
                                     selectedRole === 'ADMIN'
                                         ? ''
                                         : 'hover:scale-[1.02]'
@@ -195,21 +195,21 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin, lang }) => {
                                     boxShadow: selectedRole === 'ADMIN' ? 'var(--shadow-energy)' : 'none'
                                 }}
                             >
-                                <div className="flex flex-col items-center gap-4">
-                                    <div className="p-4 rounded-2xl transition-all" style={{
+                                <div className="flex flex-col items-center gap-2 sm:gap-4">
+                                    <div className="p-2 sm:p-4 rounded-xl sm:rounded-2xl transition-all" style={{
                                         background: selectedRole === 'ADMIN' ? 'var(--energy-glow)' : 'var(--elevated)'
                                     }}>
-                                        <Shield className="w-10 h-10 transition-colors" style={{
+                                        <Shield className="w-6 h-6 sm:w-10 sm:h-10 transition-colors" style={{
                                             color: selectedRole === 'ADMIN' ? 'var(--energy-core)' : 'var(--energy-core)'
                                         }} />
                                     </div>
                                     <div className="text-center">
-                                        <p className="text-lg font-black uppercase tracking-tight transition-colors" style={{
+                                        <p className="text-sm sm:text-lg font-black uppercase tracking-tight transition-colors" style={{
                                             color: selectedRole === 'ADMIN' ? 'var(--energy-core)' : 'var(--text-primary)'
                                         }}>
-                                            Administrator
+                                            Admin
                                         </p>
-                                        <p className="text-[10px] font-bold uppercase tracking-wider mt-1" style={{ color: 'var(--text-ghost)' }}>
+                                        <p className="text-[8px] sm:text-[10px] font-bold uppercase tracking-wider mt-1" style={{ color: 'var(--text-ghost)' }}>
                                             Full Access
                                         </p>
                                     </div>
@@ -267,7 +267,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin, lang }) => {
                                 <button
                                     type="submit"
                                     disabled={isLoading}
-                                    className="w-full py-5 rounded-2xl text-black font-black uppercase text-xs tracking-widest hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 group mt-6 btn-neural"
+                                    className="w-full py-3 sm:py-5 rounded-xl sm:rounded-2xl text-black font-black uppercase text-[10px] sm:text-xs tracking-widest hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 group mt-4 sm:mt-6 btn-neural"
                                     style={{
                                         background: selectedRole === 'LINEMAN' ? 'var(--gradient-neural)' : 'linear-gradient(135deg, #a855f7 0%, #00d4ff 100%)',
                                         boxShadow: selectedRole === 'LINEMAN' ? 'var(--shadow-neural)' : 'var(--shadow-energy)'

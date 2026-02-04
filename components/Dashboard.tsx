@@ -129,82 +129,82 @@ const Dashboard = memo<DashboardProps>(({ invoices, user, lang }) => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
 
                 {/* 1. Neural Highlight Card */}
-                <div className="p-8 rounded-[2rem] relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300 neural-border" style={{ background: 'var(--gradient-neural)', boxShadow: 'var(--shadow-neural)' }}>
-                     <div className="flex justify-between items-start mb-10">
+                <div className="p-4 sm:p-8 rounded-[1.5rem] sm:rounded-[2rem] relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300 neural-border" style={{ background: 'var(--gradient-neural)', boxShadow: 'var(--shadow-neural)' }}>
+                     <div className="flex justify-between items-start mb-6 sm:mb-10">
                         <div className="p-3 rounded-2xl backdrop-blur-sm" style={{ background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.1)' }}>
                             <DollarSign className="w-6 h-6" style={{ color: 'var(--void)' }} />
                         </div>
                         <span className="px-2.5 py-1 rounded-lg backdrop-blur-md text-[10px] font-black" style={{ background: 'rgba(0,0,0,0.3)', color: 'white' }}>0%</span>
                      </div>
                      <div>
-                        <h3 className="text-4xl font-black tracking-tighter mb-2" style={{ color: 'var(--void)' }}>$0.00</h3>
-                        <p className="text-[10px] font-black uppercase tracking-widest mb-1" style={{ color: 'rgba(0,0,0,0.7)' }}>{t.billing_month}</p>
-                        <p className="text-[10px] font-medium" style={{ color: 'rgba(0,0,0,0.5)' }}>{t.no_billing}</p>
+                        <h3 className="text-2xl sm:text-4xl font-black tracking-tighter mb-2" style={{ color: 'var(--void)' }}>$0.00</h3>
+                        <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest mb-1" style={{ color: 'rgba(0,0,0,0.7)' }}>{t.billing_month}</p>
+                        <p className="text-[9px] sm:text-[10px] font-medium" style={{ color: 'rgba(0,0,0,0.5)' }}>{t.no_billing}</p>
                      </div>
-                     <DollarSign className="absolute -bottom-8 -right-8 w-40 h-40 opacity-20 transform rotate-12" style={{ color: 'var(--void)' }} />
+                     <DollarSign className="absolute -bottom-8 -right-8 w-24 sm:w-40 h-24 sm:h-40 opacity-20 transform rotate-12" style={{ color: 'var(--void)' }} />
                 </div>
 
                 {/* 2. Surface Card */}
-                <div className="p-8 rounded-[2rem] relative overflow-hidden group hover:scale-[1.02] transition-all card-neural" style={{ background: 'var(--surface)' }}>
-                     <div className="flex justify-between items-start mb-10">
+                <div className="p-4 sm:p-8 rounded-[1.5rem] sm:rounded-[2rem] relative overflow-hidden group hover:scale-[1.02] transition-all card-neural" style={{ background: 'var(--surface)' }}>
+                     <div className="flex justify-between items-start mb-6 sm:mb-10">
                         <div className="p-3 rounded-2xl" style={{ background: 'var(--energy-pulse)', border: '1px solid rgba(168, 85, 247, 0.2)' }}>
                             <Activity className="w-6 h-6" style={{ color: 'var(--energy-core)' }} />
                         </div>
                         <span className="px-2.5 py-1 rounded-lg text-[10px] font-black" style={{ background: 'var(--elevated)', color: 'var(--text-secondary)' }}>0%</span>
                      </div>
                      <div>
-                        <h3 className="text-4xl font-black tracking-tighter mb-2" style={{ color: 'var(--text-primary)' }}>0 <span className="text-xl font-bold" style={{ color: 'var(--text-ghost)' }}>ft</span></h3>
-                        <p className="text-[10px] font-black uppercase tracking-widest mb-1" style={{ color: 'var(--text-tertiary)' }}>{t.total_footage}</p>
-                        <p className="text-[10px] font-medium" style={{ color: 'var(--text-ghost)' }}>{t.linear_construction}</p>
+                        <h3 className="text-2xl sm:text-4xl font-black tracking-tighter mb-2" style={{ color: 'var(--text-primary)' }}>0 <span className="text-lg sm:text-xl font-bold" style={{ color: 'var(--text-ghost)' }}>ft</span></h3>
+                        <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest mb-1" style={{ color: 'var(--text-tertiary)' }}>{t.total_footage}</p>
+                        <p className="text-[9px] sm:text-[10px] font-medium" style={{ color: 'var(--text-ghost)' }}>{t.linear_construction}</p>
                      </div>
                 </div>
 
                 {/* 3. Surface Card */}
-                <div className="p-8 rounded-[2rem] relative overflow-hidden group hover:scale-[1.02] transition-all card-neural" style={{ background: 'var(--surface)' }}>
-                     <div className="flex justify-between items-start mb-10">
+                <div className="p-4 sm:p-8 rounded-[1.5rem] sm:rounded-[2rem] relative overflow-hidden group hover:scale-[1.02] transition-all card-neural" style={{ background: 'var(--surface)' }}>
+                     <div className="flex justify-between items-start mb-6 sm:mb-10">
                         <div className="p-3 rounded-2xl" style={{ background: 'var(--online-glow)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
                             <CheckCircle2 className="w-6 h-6" style={{ color: 'var(--online-core)' }} />
                         </div>
                         <span className="px-2.5 py-1 rounded-lg text-[10px] font-black" style={{ background: 'var(--elevated)', color: 'var(--text-secondary)' }}>0%</span>
                      </div>
                      <div>
-                        <h3 className="text-4xl font-black tracking-tighter mb-2" style={{ color: 'var(--text-primary)' }}>100%</h3>
-                        <p className="text-[10px] font-black uppercase tracking-widest mb-1" style={{ color: 'var(--text-tertiary)' }}>{t.qc_compliance}</p>
-                        <p className="text-[10px] font-medium" style={{ color: 'var(--text-ghost)' }}>{t.avg_quality}</p>
+                        <h3 className="text-2xl sm:text-4xl font-black tracking-tighter mb-2" style={{ color: 'var(--text-primary)' }}>100%</h3>
+                        <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest mb-1" style={{ color: 'var(--text-tertiary)' }}>{t.qc_compliance}</p>
+                        <p className="text-[9px] sm:text-[10px] font-medium" style={{ color: 'var(--text-ghost)' }}>{t.avg_quality}</p>
                      </div>
                 </div>
 
                 {/* 4. Surface Card */}
-                <div className="p-8 rounded-[2rem] relative overflow-hidden group hover:scale-[1.02] transition-all card-neural" style={{ background: 'var(--surface)' }}>
-                     <div className="flex justify-between items-start mb-10">
+                <div className="p-4 sm:p-8 rounded-[1.5rem] sm:rounded-[2rem] relative overflow-hidden group hover:scale-[1.02] transition-all card-neural" style={{ background: 'var(--surface)' }}>
+                     <div className="flex justify-between items-start mb-6 sm:mb-10">
                         <div className="p-3 rounded-2xl" style={{ background: 'var(--elevated)', border: '1px solid var(--border-default)' }}>
                             <AlertTriangle className="w-6 h-6" style={{ color: 'var(--text-tertiary)' }} />
                         </div>
                         <span className="px-2.5 py-1 rounded-lg text-[10px] font-black" style={{ background: 'var(--elevated)', color: 'var(--text-secondary)' }}>0%</span>
                      </div>
                      <div>
-                        <h3 className="text-4xl font-black tracking-tighter mb-2" style={{ color: 'var(--text-primary)' }}>0</h3>
-                        <p className="text-[10px] font-black uppercase tracking-widest mb-1" style={{ color: 'var(--text-tertiary)' }}>{t.divergences}</p>
-                        <p className="text-[10px] font-medium" style={{ color: 'var(--text-ghost)' }}>{t.no_issues}</p>
+                        <h3 className="text-2xl sm:text-4xl font-black tracking-tighter mb-2" style={{ color: 'var(--text-primary)' }}>0</h3>
+                        <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest mb-1" style={{ color: 'var(--text-tertiary)' }}>{t.divergences}</p>
+                        <p className="text-[9px] sm:text-[10px] font-medium" style={{ color: 'var(--text-ghost)' }}>{t.no_issues}</p>
                      </div>
                 </div>
             </div>
 
             {/* Charts Section */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
 
                 {/* Large Chart Area */}
-                <div className="lg:col-span-2 p-8 lg:p-10 rounded-[2.5rem] flex flex-col h-[450px] relative overflow-hidden neural-border" style={{ background: 'var(--surface)' }}>
+                <div className="lg:col-span-2 p-4 sm:p-8 lg:p-10 rounded-[1.5rem] sm:rounded-[2.5rem] flex flex-col h-[350px] sm:h-[450px] relative overflow-hidden neural-border" style={{ background: 'var(--surface)' }}>
                     {/* Subtle glow effect */}
                     <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-px" style={{ background: 'var(--gradient-neural)', opacity: 0.5 }}></div>
 
-                    <div className="mb-8 flex items-start gap-4">
-                        <div className="p-3 rounded-xl" style={{ background: 'var(--neural-dim)', border: '1px solid var(--border-neural)' }}>
-                            <Activity className="w-5 h-5" style={{ color: 'var(--neural-core)' }} />
+                    <div className="mb-4 sm:mb-8 flex items-start gap-3 sm:gap-4">
+                        <div className="p-2 sm:p-3 rounded-xl" style={{ background: 'var(--neural-dim)', border: '1px solid var(--border-neural)' }}>
+                            <Activity className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: 'var(--neural-core)' }} />
                         </div>
                         <div>
-                             <h3 className="text-lg font-bold leading-none mb-2" style={{ color: 'var(--text-primary)' }}>{t.production_team}</h3>
-                             <p className="text-[10px] uppercase tracking-widest" style={{ color: 'var(--text-tertiary)' }}>{t.comp_performance}</p>
+                             <h3 className="text-base sm:text-lg font-bold leading-none mb-1 sm:mb-2" style={{ color: 'var(--text-primary)' }}>{t.production_team}</h3>
+                             <p className="text-[9px] sm:text-[10px] uppercase tracking-widest" style={{ color: 'var(--text-tertiary)' }}>{t.comp_performance}</p>
                         </div>
                     </div>
 
@@ -236,20 +236,20 @@ const Dashboard = memo<DashboardProps>(({ invoices, user, lang }) => {
                 </div>
 
                 {/* Quality Gauge */}
-                <div className="p-8 lg:p-10 rounded-[2.5rem] flex flex-col h-[450px] neural-border" style={{ background: 'var(--surface)' }}>
-                    <div className="mb-8 flex items-start gap-4">
-                         <div className="p-3 rounded-xl" style={{ background: 'var(--online-glow)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
-                            <CheckCircle2 className="w-5 h-5" style={{ color: 'var(--online-core)' }} />
+                <div className="p-4 sm:p-8 lg:p-10 rounded-[1.5rem] sm:rounded-[2.5rem] flex flex-col h-[300px] sm:h-[450px] neural-border" style={{ background: 'var(--surface)' }}>
+                    <div className="mb-4 sm:mb-8 flex items-start gap-3 sm:gap-4">
+                         <div className="p-2 sm:p-3 rounded-xl" style={{ background: 'var(--online-glow)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                            <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: 'var(--online-core)' }} />
                          </div>
                          <div>
-                             <h3 className="text-lg font-bold leading-none mb-2" style={{ color: 'var(--text-primary)' }}>{t.quality_title}</h3>
-                             <p className="text-[10px] uppercase tracking-widest" style={{ color: 'var(--text-tertiary)' }}>{t.auto_audit}</p>
+                             <h3 className="text-base sm:text-lg font-bold leading-none mb-1 sm:mb-2" style={{ color: 'var(--text-primary)' }}>{t.quality_title}</h3>
+                             <p className="text-[9px] sm:text-[10px] uppercase tracking-widest" style={{ color: 'var(--text-tertiary)' }}>{t.auto_audit}</p>
                          </div>
                     </div>
 
                     <div className="flex-1 flex items-center justify-center relative">
                         {/* Custom SVG Gauge with Neural styling */}
-                        <div className="relative w-56 h-56">
+                        <div className="relative w-40 h-40 sm:w-56 sm:h-56">
                             <svg className="w-full h-full transform -rotate-90" viewBox="0 0 224 224">
                                 <defs>
                                     <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -270,8 +270,8 @@ const Dashboard = memo<DashboardProps>(({ invoices, user, lang }) => {
                                 />
                             </svg>
                             <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                <span className="text-4xl font-black tracking-tighter text-gradient-neural">100%</span>
-                                <span className="text-[9px] font-bold uppercase tracking-[0.15em] mt-1" style={{ color: 'var(--text-tertiary)' }}>{t.precision}</span>
+                                <span className="text-2xl sm:text-4xl font-black tracking-tighter text-gradient-neural">100%</span>
+                                <span className="text-[8px] sm:text-[9px] font-bold uppercase tracking-[0.15em] mt-1" style={{ color: 'var(--text-tertiary)' }}>{t.precision}</span>
                             </div>
                         </div>
                     </div>

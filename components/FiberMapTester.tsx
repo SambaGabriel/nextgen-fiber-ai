@@ -189,28 +189,28 @@ const FiberMapTester: React.FC = () => {
     return (
       <div className="min-h-full flex flex-col" style={{ background: 'var(--void)' }}>
         {/* Hero Header */}
-        <div className="text-center pt-16 pb-12 px-8">
-          <h1 className="text-5xl md:text-6xl font-black tracking-tighter mb-4" style={{ color: 'var(--text-primary)' }}>
+        <div className="text-center pt-8 sm:pt-16 pb-6 sm:pb-12 px-4 sm:px-8">
+          <h1 className="text-3xl sm:text-5xl md:text-6xl font-black tracking-tighter mb-2 sm:mb-4" style={{ color: 'var(--text-primary)' }}>
             Map <span className="text-gradient-neural">Analyzer</span>
           </h1>
 
-          <p className="text-lg max-w-xl mx-auto" style={{ color: 'var(--text-secondary)' }}>
+          <p className="text-sm sm:text-lg max-w-xl mx-auto" style={{ color: 'var(--text-secondary)' }}>
             Extract spans, cables, equipment and GPS data from OSP construction maps with precision AI analysis.
           </p>
         </div>
 
         {/* Upload Card - Centered */}
-        <div className="flex-1 flex items-start justify-center px-8 pb-16">
+        <div className="flex-1 flex items-start justify-center px-4 sm:px-8 pb-8 sm:pb-16">
           <div className="w-full max-w-2xl">
             {/* Main Upload Area */}
             <div
-              className="rounded-3xl overflow-hidden"
+              className="rounded-2xl sm:rounded-3xl overflow-hidden"
               style={{ background: 'var(--surface)', border: '1px solid var(--border-subtle)' }}
             >
               <label className="block cursor-pointer">
                 <div
                   className={`
-                    p-12 text-center transition-all duration-500
+                    p-6 sm:p-12 text-center transition-all duration-500
                     ${file ? '' : 'hover:bg-white/[0.02]'}
                   `}
                   style={{
@@ -218,46 +218,46 @@ const FiberMapTester: React.FC = () => {
                   }}
                 >
                   {file ? (
-                    <div className="space-y-4">
+                    <div className="space-y-3 sm:space-y-4">
                       <div
-                        className="w-20 h-20 rounded-2xl mx-auto flex items-center justify-center"
+                        className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl mx-auto flex items-center justify-center"
                         style={{ background: 'var(--online-glow)', border: '1px solid rgba(16, 185, 129, 0.2)' }}
                       >
-                        <FileText className="w-10 h-10" style={{ color: 'var(--online-core)' }} />
+                        <FileText className="w-8 h-8 sm:w-10 sm:h-10" style={{ color: 'var(--online-core)' }} />
                       </div>
                       <div>
-                        <p className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>{file.name}</p>
-                        <p className="text-sm mt-1" style={{ color: 'var(--text-ghost)' }}>
+                        <p className="text-base sm:text-lg font-bold truncate px-2" style={{ color: 'var(--text-primary)' }}>{file.name}</p>
+                        <p className="text-xs sm:text-sm mt-1" style={{ color: 'var(--text-ghost)' }}>
                           {(file.size / 1024 / 1024).toFixed(2)} MB
                         </p>
                       </div>
                       {preview && (
-                        <div className="mt-4 rounded-xl overflow-hidden" style={{ background: 'var(--deep)' }}>
+                        <div className="mt-3 sm:mt-4 rounded-xl overflow-hidden" style={{ background: 'var(--deep)' }}>
                           <img
                             src={preview}
                             alt="Preview"
-                            className="w-full h-48 object-contain"
+                            className="w-full h-32 sm:h-48 object-contain"
                           />
                         </div>
                       )}
                     </div>
                   ) : (
-                    <div className="space-y-4">
+                    <div className="space-y-3 sm:space-y-4">
                       <div
-                        className="w-20 h-20 rounded-2xl mx-auto flex items-center justify-center transition-transform hover:scale-105"
+                        className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl mx-auto flex items-center justify-center transition-transform hover:scale-105"
                         style={{ background: 'var(--deep)', border: '1px solid var(--border-default)' }}
                       >
-                        <Upload className="w-10 h-10" style={{ color: 'var(--text-ghost)' }} />
+                        <Upload className="w-8 h-8 sm:w-10 sm:h-10" style={{ color: 'var(--text-ghost)' }} />
                       </div>
                       <div>
-                        <p className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>
+                        <p className="text-base sm:text-lg font-bold" style={{ color: 'var(--text-primary)' }}>
                           Drop your map here
                         </p>
-                        <p className="text-sm mt-1" style={{ color: 'var(--text-ghost)' }}>
+                        <p className="text-xs sm:text-sm mt-1" style={{ color: 'var(--text-ghost)' }}>
                           or click to browse files
                         </p>
                       </div>
-                      <div className="flex items-center justify-center gap-4 pt-4">
+                      <div className="flex items-center justify-center gap-2 sm:gap-4 pt-2 sm:pt-4">
                         {['PDF', 'PNG', 'JPG'].map((format) => (
                           <span
                             key={format}
@@ -280,11 +280,11 @@ const FiberMapTester: React.FC = () => {
               </label>
 
               {/* Action Area */}
-              <div className="p-6">
+              <div className="p-4 sm:p-6">
                 <button
                   onClick={handleAnalyze}
                   disabled={!file || isAnalyzing}
-                  className="w-full py-4 rounded-2xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3 transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="w-full py-3 sm:py-4 rounded-xl sm:rounded-2xl font-black text-xs sm:text-sm uppercase tracking-widest flex items-center justify-center gap-2 sm:gap-3 transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
                   style={{
                     background: file && !isAnalyzing ? 'var(--gradient-neural)' : 'var(--elevated)',
                     color: file && !isAnalyzing ? 'var(--void)' : 'var(--text-ghost)',
@@ -321,7 +321,7 @@ const FiberMapTester: React.FC = () => {
             )}
 
             {/* Features */}
-            <div className="grid grid-cols-3 gap-4 mt-8">
+            <div className="grid grid-cols-3 gap-2 sm:gap-4 mt-6 sm:mt-8">
               {[
                 { icon: Grid3X3, label: 'Span Detection', desc: 'Auto-extract cable spans' },
                 { icon: MapPin, label: 'GPS Extraction', desc: 'Precise coordinates' },
@@ -329,12 +329,12 @@ const FiberMapTester: React.FC = () => {
               ].map((feature, i) => (
                 <div
                   key={i}
-                  className="p-5 rounded-2xl text-center"
+                  className="p-3 sm:p-5 rounded-xl sm:rounded-2xl text-center"
                   style={{ background: 'var(--surface)', border: '1px solid var(--border-subtle)' }}
                 >
-                  <feature.icon className="w-6 h-6 mx-auto mb-3" style={{ color: 'var(--neural-core)' }} />
-                  <p className="text-xs font-bold" style={{ color: 'var(--text-primary)' }}>{feature.label}</p>
-                  <p className="text-[10px] mt-1" style={{ color: 'var(--text-ghost)' }}>{feature.desc}</p>
+                  <feature.icon className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-2 sm:mb-3" style={{ color: 'var(--neural-core)' }} />
+                  <p className="text-[10px] sm:text-xs font-bold" style={{ color: 'var(--text-primary)' }}>{feature.label}</p>
+                  <p className="text-[8px] sm:text-[10px] mt-0.5 sm:mt-1 hidden sm:block" style={{ color: 'var(--text-ghost)' }}>{feature.desc}</p>
                 </div>
               ))}
             </div>
@@ -360,9 +360,46 @@ const FiberMapTester: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-full flex" style={{ background: 'var(--void)' }}>
-      {/* Floating Side Navigation */}
-      <div className="w-20 flex-shrink-0 p-4">
+    <div className="min-h-full flex flex-col lg:flex-row" style={{ background: 'var(--void)' }}>
+      {/* Mobile Top Navigation */}
+      <div className="lg:hidden flex-shrink-0 p-3 overflow-x-auto">
+        <div
+          className="flex gap-2 p-2 rounded-xl min-w-max"
+          style={{ background: 'var(--surface)', border: '1px solid var(--border-subtle)' }}
+        >
+          {tabs.map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-300"
+                style={{
+                  background: isActive ? 'var(--gradient-neural)' : 'transparent',
+                  color: isActive ? 'var(--void)' : 'var(--text-ghost)'
+                }}
+              >
+                <tab.icon className="w-4 h-4" />
+                <span className="text-[10px] font-bold whitespace-nowrap">{tab.label}</span>
+                {tab.count !== undefined && (
+                  <span className="text-[8px] font-black">{tab.count}</span>
+                )}
+              </button>
+            );
+          })}
+          <button
+            onClick={handleNewAnalysis}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-300"
+            style={{ color: 'var(--text-ghost)' }}
+          >
+            <Upload className="w-4 h-4" />
+            <span className="text-[10px] font-bold">New</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Desktop Side Navigation */}
+      <div className="hidden lg:block w-20 flex-shrink-0 p-4">
         <div
           className="sticky top-4 rounded-2xl p-3 space-y-2"
           style={{ background: 'var(--surface)', border: '1px solid var(--border-subtle)' }}
@@ -413,16 +450,16 @@ const FiberMapTester: React.FC = () => {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 min-w-0 p-8 overflow-y-auto">
+      <div className="flex-1 min-w-0 p-4 sm:p-8 overflow-y-auto">
         {/* Header */}
-        <div className="flex items-start justify-between mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6 sm:mb-8">
           <div>
-            <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-3xl font-black tracking-tighter" style={{ color: 'var(--text-primary)' }}>
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2">
+              <h1 className="text-xl sm:text-3xl font-black tracking-tighter" style={{ color: 'var(--text-primary)' }}>
                 {result.header.projectId || 'Analysis Results'}
               </h1>
               <div
-                className="px-3 py-1.5 rounded-full text-[10px] font-black uppercase"
+                className="px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-[8px] sm:text-[10px] font-black uppercase"
                 style={{
                   background: getConfidenceBg(result.validation.overallConfidence).bg,
                   border: `1px solid ${getConfidenceBg(result.validation.overallConfidence).border}`,
@@ -432,35 +469,35 @@ const FiberMapTester: React.FC = () => {
                 {result.validation.overallConfidence}% Confidence
               </div>
             </div>
-            <p className="text-sm" style={{ color: 'var(--text-ghost)' }}>
+            <p className="text-xs sm:text-sm" style={{ color: 'var(--text-ghost)' }}>
               {result.header.location || 'Location not specified'} • {result.header.contractor || 'Unknown contractor'}
-              {savedFileName && <span> • 📄 {savedFileName}</span>}
+              {savedFileName && <span className="hidden sm:inline"> • 📄 {savedFileName}</span>}
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
             <button
               onClick={handleClearResults}
-              className="px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all hover:scale-105"
+              className="px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 sm:gap-2 transition-all hover:scale-105"
               style={{ background: '#FF5500', color: 'white' }}
             >
-              <Upload className="w-4 h-4" />
-              Nova Análise
+              <Upload className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              Nova
             </button>
             <button
               onClick={handleExportCSV}
-              className="px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all hover:scale-105"
+              className="px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 sm:gap-2 transition-all hover:scale-105"
               style={{ background: 'var(--surface)', border: '1px solid var(--border-default)', color: 'var(--text-secondary)' }}
             >
-              <Download className="w-4 h-4" />
+              <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               CSV
             </button>
             <button
               onClick={handleExportJSON}
-              className="px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all hover:scale-105"
+              className="px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 sm:gap-2 transition-all hover:scale-105"
               style={{ background: 'var(--surface)', border: '1px solid var(--border-default)', color: 'var(--text-secondary)' }}
             >
-              <FileCode className="w-4 h-4" />
+              <FileCode className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               JSON
             </button>
           </div>

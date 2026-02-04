@@ -365,15 +365,15 @@ const OwnerInbox: React.FC<OwnerInboxProps> = ({
     <div className="h-full flex flex-col" style={{ background: 'var(--void)' }}>
       {/* Header */}
       <div
-        className="flex-shrink-0 px-6 lg:px-8 py-6"
+        className="flex-shrink-0 px-4 sm:px-6 lg:px-8 py-4 sm:py-6"
         style={{ borderBottom: '1px solid var(--border-subtle)' }}
       >
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-4 sm:mb-6">
           <div>
-            <h1 className="text-3xl font-black tracking-tighter uppercase text-gradient-neural">
+            <h1 className="text-xl sm:text-3xl font-black tracking-tighter uppercase text-gradient-neural">
               {t.title}
             </h1>
-            <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
+            <p className="text-xs sm:text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
               {t.subtitle}
             </p>
           </div>
@@ -381,34 +381,34 @@ const OwnerInbox: React.FC<OwnerInboxProps> = ({
           <button
             onClick={loadData}
             disabled={isLoading}
-            className="p-3 rounded-xl transition-all hover:scale-105 disabled:opacity-50"
+            className="p-2 sm:p-3 rounded-xl transition-all hover:scale-105 disabled:opacity-50"
             style={{ background: 'var(--surface)', border: '1px solid var(--border-default)' }}
           >
-            <RefreshCw className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} style={{ color: 'var(--text-tertiary)' }} />
+            <RefreshCw className={`w-4 h-4 sm:w-5 sm:h-5 ${isLoading ? 'animate-spin' : ''}`} style={{ color: 'var(--text-tertiary)' }} />
           </button>
         </div>
 
         {/* Quick Stats */}
-        <div className="grid grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 mb-4 sm:mb-6">
           {[
-            { label: t.stats.pending, value: stats?.pendingAI || 0, color: 'energy', icon: <Clock className="w-5 h-5" /> },
-            { label: t.stats.ready, value: stats?.readyToInvoice || 0, color: 'online', icon: <CheckCircle2 className="w-5 h-5" /> },
-            { label: t.stats.attention, value: stats?.needsAttention || 0, color: 'critical', icon: <AlertTriangle className="w-5 h-5" /> },
-            { label: t.stats.revenue, value: `$${(stats?.totalRevenue || 0).toLocaleString()}`, color: 'neural', icon: <TrendingUp className="w-5 h-5" /> }
+            { label: t.stats.pending, value: stats?.pendingAI || 0, color: 'energy', icon: <Clock className="w-4 h-4 sm:w-5 sm:h-5" /> },
+            { label: t.stats.ready, value: stats?.readyToInvoice || 0, color: 'online', icon: <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5" /> },
+            { label: t.stats.attention, value: stats?.needsAttention || 0, color: 'critical', icon: <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5" /> },
+            { label: t.stats.revenue, value: `$${(stats?.totalRevenue || 0).toLocaleString()}`, color: 'neural', icon: <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" /> }
           ].map((stat, i) => (
             <div
               key={i}
-              className="p-4 rounded-xl"
+              className="p-3 sm:p-4 rounded-xl"
               style={{
                 background: `var(--${stat.color === 'critical' ? 'elevated' : stat.color + '-dim'})`,
                 border: `1px solid var(--border-${stat.color === 'critical' ? 'default' : stat.color})`
               }}
             >
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 sm:gap-3">
                 <div style={{ color: `var(--${stat.color}-core)` }}>{stat.icon}</div>
                 <div>
-                  <p className="text-xl font-black" style={{ color: 'var(--text-primary)' }}>{stat.value}</p>
-                  <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: 'var(--text-ghost)' }}>{stat.label}</p>
+                  <p className="text-lg sm:text-xl font-black" style={{ color: 'var(--text-primary)' }}>{stat.value}</p>
+                  <p className="text-[8px] sm:text-[9px] font-bold uppercase tracking-widest" style={{ color: 'var(--text-ghost)' }}>{stat.label}</p>
                 </div>
               </div>
             </div>
@@ -416,24 +416,24 @@ const OwnerInbox: React.FC<OwnerInboxProps> = ({
         </div>
 
         {/* Search & Tabs */}
-        <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
           <div
-            className="flex-1 flex items-center gap-3 px-4 py-2.5 rounded-xl"
+            className="flex items-center gap-3 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl"
             style={{ background: 'var(--surface)', border: '1px solid var(--border-default)' }}
           >
-            <Search className="w-4 h-4" style={{ color: 'var(--text-ghost)' }} />
+            <Search className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--text-ghost)' }} />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={t.search}
-              className="flex-1 bg-transparent text-sm focus:outline-none"
+              className="flex-1 bg-transparent text-sm focus:outline-none min-w-0"
               style={{ color: 'var(--text-primary)' }}
             />
           </div>
 
           <div
-            className="flex gap-1 p-1 rounded-xl"
+            className="flex gap-1 p-1 rounded-xl overflow-x-auto scrollbar-hide"
             style={{ background: 'var(--surface)', border: '1px solid var(--border-default)' }}
           >
             {tabs.map(tab => (
@@ -441,8 +441,8 @@ const OwnerInbox: React.FC<OwnerInboxProps> = ({
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`
-                  flex items-center gap-2 px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest
-                  transition-all
+                  flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-2 rounded-lg text-[9px] sm:text-[10px] font-bold uppercase tracking-widest
+                  transition-all flex-shrink-0
                 `}
                 style={{
                   background: activeTab === tab.id ? 'var(--gradient-neural)' : 'transparent',
@@ -450,10 +450,10 @@ const OwnerInbox: React.FC<OwnerInboxProps> = ({
                 }}
               >
                 {tab.icon}
-                <span className="hidden lg:inline">{tab.label}</span>
+                <span className="hidden sm:inline">{tab.label}</span>
                 {tab.count > 0 && (
                   <span
-                    className="px-1.5 py-0.5 rounded text-[8px]"
+                    className="px-1 sm:px-1.5 py-0.5 rounded text-[7px] sm:text-[8px]"
                     style={{
                       background: activeTab === tab.id ? 'rgba(0,0,0,0.2)' : 'var(--elevated)',
                       color: activeTab === tab.id ? 'white' : 'var(--text-tertiary)'
@@ -469,7 +469,7 @@ const OwnerInbox: React.FC<OwnerInboxProps> = ({
       </div>
 
       {/* Projects List */}
-      <div className="flex-1 overflow-auto p-6 lg:p-8">
+      <div className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
         {isLoading ? (
           <div className="flex items-center justify-center h-64">
             <FiberLoader size={60} text="Loading..." />
@@ -479,8 +479,8 @@ const OwnerInbox: React.FC<OwnerInboxProps> = ({
             className="flex flex-col items-center justify-center h-64 rounded-2xl"
             style={{ background: 'var(--surface)', border: '1px solid var(--border-default)' }}
           >
-            <Inbox className="w-12 h-12 mb-4" style={{ color: 'var(--text-ghost)' }} />
-            <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
+            <Inbox className="w-10 h-10 sm:w-12 sm:h-12 mb-4" style={{ color: 'var(--text-ghost)' }} />
+            <p className="text-xs sm:text-sm text-center px-4" style={{ color: 'var(--text-tertiary)' }}>
               {projects.length === 0 ? t.emptyAll : t.empty}
             </p>
           </div>
@@ -489,18 +489,18 @@ const OwnerInbox: React.FC<OwnerInboxProps> = ({
             {filteredProjects.map(project => (
               <div
                 key={project.id}
-                className="p-5 rounded-2xl transition-all hover:scale-[1.005] cursor-pointer group"
+                className="p-4 sm:p-5 rounded-xl sm:rounded-2xl transition-all hover:scale-[1.005] cursor-pointer group"
                 style={{
                   background: 'var(--surface)',
                   border: '1px solid var(--border-default)'
                 }}
                 onClick={() => onViewProject?.(project)}
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+                  <div className="flex items-center gap-3 sm:gap-4">
                     {/* Status indicator */}
                     <div
-                      className="w-12 h-12 rounded-xl flex items-center justify-center"
+                      className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0"
                       style={{
                         background: project.status === ProjectStatus.AI_PROCESSING
                           ? 'var(--energy-pulse)'
@@ -510,30 +510,30 @@ const OwnerInbox: React.FC<OwnerInboxProps> = ({
                       }}
                     >
                       {project.status === ProjectStatus.AI_PROCESSING ? (
-                        <Zap className="w-6 h-6 animate-pulse" style={{ color: 'var(--energy-core)' }} />
+                        <Zap className="w-5 h-5 sm:w-6 sm:h-6 animate-pulse" style={{ color: 'var(--energy-core)' }} />
                       ) : project.status === ProjectStatus.NEEDS_ATTENTION ? (
-                        <AlertTriangle className="w-6 h-6" style={{ color: '#fb923c' }} />
+                        <AlertTriangle className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: '#fb923c' }} />
                       ) : project.status === ProjectStatus.READY_TO_INVOICE ? (
-                        <CheckCircle2 className="w-6 h-6" style={{ color: 'var(--online-core)' }} />
+                        <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: 'var(--online-core)' }} />
                       ) : (
-                        <FileText className="w-6 h-6" style={{ color: 'var(--text-tertiary)' }} />
+                        <FileText className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: 'var(--text-tertiary)' }} />
                       )}
                     </div>
 
                     {/* Project info */}
-                    <div>
-                      <div className="flex items-center gap-3 mb-1">
-                        <span className="font-black text-lg tracking-tight" style={{ color: 'var(--text-primary)' }}>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-1">
+                        <span className="font-black text-base sm:text-lg tracking-tight" style={{ color: 'var(--text-primary)' }}>
                           {project.mapCode}
                         </span>
                         <StatusBadge status={project.status} />
                       </div>
-                      <div className="flex items-center gap-4 text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-[10px] sm:text-xs" style={{ color: 'var(--text-tertiary)' }}>
                         <span className="flex items-center gap-1">
                           <User className="w-3 h-3" />
                           {project.linemanName}
                         </span>
-                        <span className="flex items-center gap-1">
+                        <span className="flex items-center gap-1 hidden sm:flex">
                           <MapPin className="w-3 h-3" />
                           {getClientName(project.clientId)}
                         </span>
@@ -546,7 +546,7 @@ const OwnerInbox: React.FC<OwnerInboxProps> = ({
                   </div>
 
                   {/* Right side */}
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-3 sm:gap-4 ml-auto">
                     {/* AI Processing indicator */}
                     {project.status === ProjectStatus.AI_PROCESSING && (
                       <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg" style={{ background: 'var(--energy-pulse)' }}>

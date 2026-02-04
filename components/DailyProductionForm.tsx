@@ -342,52 +342,54 @@ const DailyProductionForm: React.FC<DailyProductionFormProps> = ({ user, lang })
     }, [header, entries, totals]);
 
     return (
-        <div className="max-w-7xl mx-auto space-y-8 pb-10">
+        <div className="max-w-7xl mx-auto space-y-4 sm:space-y-8 pb-10">
             {/* Header - Tesla Style */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 pb-8" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                <div className="space-y-4">
-                    <h1 className="text-4xl md:text-5xl font-black tracking-tighter uppercase text-gradient-neural">
-                        Production Sheet
-                    </h1>
-                    <p className="text-sm font-medium" style={{ color: 'var(--text-tertiary)' }}>
-                        Fill in your daily production data directly in the app
-                    </p>
-                </div>
+            <div className="flex flex-col gap-4 sm:gap-6 pb-4 sm:pb-8" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
+                    <div className="space-y-2 sm:space-y-4">
+                        <h1 className="text-2xl sm:text-4xl md:text-5xl font-black tracking-tighter uppercase text-gradient-neural">
+                            Production Sheet
+                        </h1>
+                        <p className="text-xs sm:text-sm font-medium" style={{ color: 'var(--text-tertiary)' }}>
+                            Fill in your daily production data directly in the app
+                        </p>
+                    </div>
 
-                {/* Tab Switcher - Nothing Style */}
-                <div className="flex items-center gap-1 p-1 rounded-xl" style={{ background: 'var(--surface)', border: '1px solid var(--border-default)' }}>
-                    <button
-                        onClick={() => setActiveTab('form')}
-                        className="px-5 py-2.5 rounded-lg text-sm font-bold transition-all"
-                        style={{
-                            background: activeTab === 'form' ? 'var(--gradient-neural)' : 'transparent',
-                            color: activeTab === 'form' ? 'var(--void)' : 'var(--text-secondary)'
-                        }}
-                    >
-                        New Entry
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('history')}
-                        className="px-5 py-2.5 rounded-lg text-sm font-bold transition-all flex items-center gap-2"
-                        style={{
-                            background: activeTab === 'history' ? 'var(--gradient-neural)' : 'transparent',
-                            color: activeTab === 'history' ? 'var(--void)' : 'var(--text-secondary)'
-                        }}
-                    >
-                        History
-                        {savedReports.length > 0 && (
-                            <span className="px-1.5 py-0.5 rounded text-[10px]" style={{ background: 'var(--neural-glow)' }}>
-                                {savedReports.length}
-                            </span>
-                        )}
-                    </button>
+                    {/* Tab Switcher - Nothing Style */}
+                    <div className="flex items-center gap-1 p-1 rounded-xl w-full sm:w-auto" style={{ background: 'var(--surface)', border: '1px solid var(--border-default)' }}>
+                        <button
+                            onClick={() => setActiveTab('form')}
+                            className="flex-1 sm:flex-none px-4 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-bold transition-all"
+                            style={{
+                                background: activeTab === 'form' ? 'var(--gradient-neural)' : 'transparent',
+                                color: activeTab === 'form' ? 'var(--void)' : 'var(--text-secondary)'
+                            }}
+                        >
+                            New Entry
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('history')}
+                            className="flex-1 sm:flex-none px-4 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2"
+                            style={{
+                                background: activeTab === 'history' ? 'var(--gradient-neural)' : 'transparent',
+                                color: activeTab === 'history' ? 'var(--void)' : 'var(--text-secondary)'
+                            }}
+                        >
+                            History
+                            {savedReports.length > 0 && (
+                                <span className="px-1.5 py-0.5 rounded text-[10px]" style={{ background: 'var(--neural-glow)' }}>
+                                    {savedReports.length}
+                                </span>
+                            )}
+                        </button>
+                    </div>
                 </div>
             </div>
 
             {activeTab === 'form' ? (
                 <>
                     {/* Quick Stats - SpaceX Mission Control Style */}
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-4">
                         {[
                             { icon: Ruler, value: totals.totalSpan.toLocaleString(), label: 'Total Feet', color: 'var(--neural-core)' },
                             { icon: Layers, value: totals.anchorCount, label: 'Anchors', color: 'var(--energy-core)' },
@@ -395,14 +397,14 @@ const DailyProductionForm: React.FC<DailyProductionFormProps> = ({ user, lang })
                             { icon: Hash, value: totals.snowshoeCount, label: 'Snowshoes', color: 'var(--alert-core)' },
                             { icon: FileSpreadsheet, value: totals.filledEntries, label: 'Entries', color: 'var(--text-secondary)' }
                         ].map((stat, i) => (
-                            <div key={i} className="mission-card nominal p-5">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 rounded-lg" style={{ background: `${stat.color}20` }}>
-                                        <stat.icon className="w-5 h-5" style={{ color: stat.color }} />
+                            <div key={i} className="mission-card nominal p-3 sm:p-5">
+                                <div className="flex items-center gap-2 sm:gap-3">
+                                    <div className="p-1.5 sm:p-2 rounded-lg" style={{ background: `${stat.color}20` }}>
+                                        <stat.icon className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: stat.color }} />
                                     </div>
                                     <div>
-                                        <p className="text-2xl font-black text-gradient-neural">{stat.value}</p>
-                                        <p className="text-[9px] uppercase tracking-widest font-bold" style={{ color: 'var(--text-ghost)' }}>{stat.label}</p>
+                                        <p className="text-lg sm:text-2xl font-black text-gradient-neural">{stat.value}</p>
+                                        <p className="text-[8px] sm:text-[9px] uppercase tracking-widest font-bold" style={{ color: 'var(--text-ghost)' }}>{stat.label}</p>
                                     </div>
                                 </div>
                             </div>
@@ -410,12 +412,12 @@ const DailyProductionForm: React.FC<DailyProductionFormProps> = ({ user, lang })
                     </div>
 
                     {/* Header Form - B&O Premium Style */}
-                    <div className="surface-premium rounded-2xl p-8 relative" style={{ background: 'var(--surface)' }}>
-                        <h3 className="text-[11px] font-bold uppercase tracking-[0.2em] mb-6 flex items-center gap-2" style={{ color: 'var(--text-ghost)' }}>
-                            <Building2 className="w-4 h-4" /> Project Information
+                    <div className="surface-premium rounded-xl sm:rounded-2xl p-4 sm:p-8 relative" style={{ background: 'var(--surface)' }}>
+                        <h3 className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.2em] mb-4 sm:mb-6 flex items-center gap-2" style={{ color: 'var(--text-ghost)' }}>
+                            <Building2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Project Information
                         </h3>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
                             {[
                                 { label: 'Lineman', icon: UserIcon, value: header.lineman, field: 'lineman', placeholder: 'Enter name...' },
                                 { label: 'Start Date', icon: Calendar, value: header.startDate, field: 'startDate', type: 'date' },
@@ -467,19 +469,19 @@ const DailyProductionForm: React.FC<DailyProductionFormProps> = ({ user, lang })
                     </div>
 
                     {/* Entries Table - Tesla Data Grid Style */}
-                    <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--surface)', border: '1px solid var(--border-subtle)' }}>
-                        <div className="p-5 flex items-center justify-between" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                            <h3 className="text-[11px] font-bold uppercase tracking-[0.2em] flex items-center gap-2" style={{ color: 'var(--text-ghost)' }}>
-                                <Cable className="w-4 h-4" /> Span Entries
+                    <div className="rounded-xl sm:rounded-2xl overflow-hidden" style={{ background: 'var(--surface)', border: '1px solid var(--border-subtle)' }}>
+                        <div className="p-3 sm:p-5 flex items-center justify-between gap-2" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                            <h3 className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.2em] flex items-center gap-2" style={{ color: 'var(--text-ghost)' }}>
+                                <Cable className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Span Entries
                             </h3>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1 sm:gap-2">
                                 {[5, 10].map(n => (
                                     <button
                                         key={n}
                                         onClick={() => addMultipleEntries(n)}
-                                        className="tesla-button px-3 py-1.5 text-[10px] flex items-center gap-1.5"
+                                        className="tesla-button px-2 sm:px-3 py-1 sm:py-1.5 text-[9px] sm:text-[10px] flex items-center gap-1 sm:gap-1.5"
                                     >
-                                        <PlusCircle className="w-3.5 h-3.5" /> Add {n} Rows
+                                        <PlusCircle className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> +{n}
                                     </button>
                                 ))}
                             </div>
@@ -652,53 +654,53 @@ const DailyProductionForm: React.FC<DailyProductionFormProps> = ({ user, lang })
                     )}
 
                     {/* Action Buttons - Tesla Style */}
-                    <div className="flex flex-col md:flex-row gap-4">
+                    <div className="grid grid-cols-2 sm:flex sm:flex-row gap-2 sm:gap-4">
                         <button
                             onClick={resetForm}
-                            className="flex-1 tesla-button flex items-center justify-center gap-3 px-6 py-4"
+                            className="tesla-button flex items-center justify-center gap-2 sm:gap-3 px-4 sm:px-6 py-3 sm:py-4 sm:flex-1"
                         >
-                            <RotateCcw className="w-5 h-5" />
-                            Reset
+                            <RotateCcw className="w-4 h-4 sm:w-5 sm:h-5" />
+                            <span className="text-xs sm:text-sm">Reset</span>
                         </button>
                         <button
                             onClick={exportToCSV}
-                            className="flex-1 tesla-button flex items-center justify-center gap-3 px-6 py-4"
+                            className="tesla-button flex items-center justify-center gap-2 sm:gap-3 px-4 sm:px-6 py-3 sm:py-4 sm:flex-1"
                         >
-                            <Download className="w-5 h-5" />
-                            CSV
+                            <Download className="w-4 h-4 sm:w-5 sm:h-5" />
+                            <span className="text-xs sm:text-sm">CSV</span>
                         </button>
                         <button
                             onClick={handleSave}
                             disabled={isSaving || totals.filledEntries === 0}
-                            className="flex-1 tesla-button flex items-center justify-center gap-3 px-6 py-4 disabled:opacity-50"
+                            className="tesla-button flex items-center justify-center gap-2 sm:gap-3 px-4 sm:px-6 py-3 sm:py-4 disabled:opacity-50 sm:flex-1"
                         >
                             {isSaving ? (
                                 <>
-                                    <div className="loading-ring w-5 h-5" />
-                                    Saving...
+                                    <div className="loading-ring w-4 h-4 sm:w-5 sm:h-5" />
+                                    <span className="text-xs sm:text-sm">Saving...</span>
                                 </>
                             ) : (
                                 <>
-                                    <Save className="w-5 h-5" />
-                                    Save Draft
+                                    <Save className="w-4 h-4 sm:w-5 sm:h-5" />
+                                    <span className="text-xs sm:text-sm">Save</span>
                                 </>
                             )}
                         </button>
                         <button
                             onClick={handleSubmitForApproval}
                             disabled={isSubmitting || totals.filledEntries === 0 || !header.clientId}
-                            className="flex-[2] btn-neural flex items-center justify-center gap-3 px-6 py-4 rounded-xl disabled:opacity-50"
+                            className="col-span-2 sm:col-span-1 btn-neural flex items-center justify-center gap-2 sm:gap-3 px-4 sm:px-6 py-3 sm:py-4 rounded-xl disabled:opacity-50 sm:flex-[2]"
                             style={{ boxShadow: 'var(--shadow-neural)' }}
                         >
                             {isSubmitting ? (
                                 <>
-                                    <div className="loading-ring w-5 h-5" />
-                                    Submitting...
+                                    <div className="loading-ring w-4 h-4 sm:w-5 sm:h-5" />
+                                    <span className="text-xs sm:text-sm">Submitting...</span>
                                 </>
                             ) : (
                                 <>
-                                    <Send className="w-5 h-5" />
-                                    Submit for Invoice
+                                    <Send className="w-4 h-4 sm:w-5 sm:h-5" />
+                                    <span className="text-xs sm:text-sm">Submit</span>
                                 </>
                             )}
                         </button>

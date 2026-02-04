@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx vite build)",
+      "Bash(git push:*)",
+      "Bash(/opt/homebrew/bin/npm run build)",
+      "Bash(npm run build:*)",
+      "Bash(/opt/homebrew/bin/npx tsc --noEmit)",
+      "Bash(PATH=\"/opt/homebrew/bin:$PATH\" /opt/homebrew/bin/npx tsc:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
+    ]
+  }
+}

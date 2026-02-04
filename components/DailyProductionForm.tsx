@@ -8,9 +8,11 @@ import {
     Plus, Trash2, Save, Calendar, User as UserIcon,
     MapPin, Hash, Cable, Ruler, CheckCircle,
     Download, FileSpreadsheet, Clock,
-    Building2, Layers, PlusCircle, Copy, RotateCcw
+    Building2, Layers, PlusCircle, Copy, RotateCcw, Send
 } from 'lucide-react';
 import { Language, User } from '../types';
+import { Project, ProjectStatus, WorkType, LineItem } from '../types/project';
+import { projectStorage, clientStorage } from '../services/projectStorage';
 
 interface DailyProductionFormProps {
     user: User;
@@ -37,6 +39,7 @@ interface ProductionHeader {
     fibraCT: string;
     prints: string;
     strandType: 'STRAND' | 'FIBER' | 'OVERLASH';
+    clientId: string;
 }
 
 const generateId = () => Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
@@ -50,7 +53,8 @@ const INITIAL_HEADER: ProductionHeader = {
     bspd: '',
     fibraCT: '',
     prints: '',
-    strandType: 'STRAND'
+    strandType: 'STRAND',
+    clientId: ''
 };
 
 const createEmptyEntry = (): SpanEntry => ({
@@ -158,6 +162,142 @@ const DailyProductionForm: React.FC<DailyProductionFormProps> = ({ user, lang })
         setIsSaving(false);
         resetForm();
     }, [header, entries, totals, user.name, resetForm]);
+
+    // Submit to workflow for owner approval
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submitSuccess, setSubmitSuccess] = useState(false);
+    const clients = clientStorage.getAll();
+
+    const handleSubmitForApproval = useCallback(async () => {
+        if (!header.clientId || totals.filledEntries === 0) return;
+
+        setIsSubmitting(true);
+
+        try {
+            // Calculate line items from production data
+            const rateCard = { rates: { fiber_per_foot: 0.35, anchor_each: 18.00, coil_each: 25.00, snowshoe_each: 15.00 } };
+            const lineItems: LineItem[] = [];
+
+            if (totals.totalSpan > 0) {
+                lineItems.push({
+                    id: generateId(),
+                    description: `${header.strandType} Installation`,
+                    description_pt: `Instalação de ${header.strandType === 'STRAND' ? 'Strand' : header.strandType === 'FIBER' ? 'Fibra' : 'Overlash'}`,
+                    quantity: totals.totalSpan,
+                    unit: 'ft',
+                    unitPrice: rateCard.rates.fiber_per_foot,
+                    total: totals.totalSpan * rateCard.rates.fiber_per_foot,
+                    category: 'footage'
+                });
+            }
+
+            if (totals.anchorCount > 0) {
+                lineItems.push({
+                    id: generateId(),
+                    description: 'Anchor Installation',
+                    description_pt: 'Instalação de Âncora',
+                    quantity: totals.anchorCount,
+                    unit: 'each',
+                    unitPrice: rateCard.rates.anchor_each,
+                    total: totals.anchorCount * rateCard.rates.anchor_each,
+                    category: 'hardware'
+                });
+            }
+
+            if (totals.coilCount > 0) {
+                lineItems.push({
+                    id: generateId(),
+                    description: 'Coil Installation',
+                    description_pt: 'Instalação de Bobina',
+                    quantity: totals.coilCount,
+                    unit: 'each',
+                    unitPrice: rateCard.rates.coil_each,
+                    total: totals.coilCount * rateCard.rates.coil_each,
+                    category: 'hardware'
+                });
+            }
+
+            if (totals.snowshoeCount > 0) {
+                lineItems.push({
+                    id: generateId(),
+                    description: 'Snowshoe Installation',
+                    description_pt: 'Instalação de Snowshoe',
+                    quantity: totals.snowshoeCount,
+                    unit: 'each',
+                    unitPrice: rateCard.rates.snowshoe_each,
+                    total: totals.snowshoeCount * rateCard.rates.snowshoe_each,
+                    category: 'hardware'
+                });
+            }
+
+            const subtotal = lineItems.reduce((sum, item) => sum + item.total, 0);
+
+            // Create project for workflow
+            const project = projectStorage.create({
+                mapCode: header.bspd || `MAP-${Date.now().toString(36).toUpperCase()}`,
+                clientId: header.clientId,
+                linemanId: user.id,
+                linemanName: user.name,
+                workType: header.strandType === 'OVERLASH' ? WorkType.OVERLASH : WorkType.AERIAL,
+                location: { address: header.city, city: header.city },
+                workDate: header.startDate,
+                description: `${header.projectOLT} - ${header.fibraCT}`,
+                status: ProjectStatus.READY_TO_INVOICE, // Skip AI since data is already structured
+                lineItems,
+                subtotal,
+                total: subtotal,
+                aiAnalysis: {
+                    processedAt: new Date().toISOString(),
+                    processingTimeMs: 0,
+                    footage: {
+                        aerial: header.strandType !== 'OVERLASH' ? totals.totalSpan : 0,
+                        underground: 0,
+                        overlash: header.strandType === 'OVERLASH' ? totals.totalSpan : 0,
+                        total: totals.totalSpan
+                    },
+                    hardware: {
+                        anchors: totals.anchorCount,
+                        coils: totals.coilCount,
+                        snowshoes: totals.snowshoeCount,
+                        poles: totals.filledEntries
+                    },
+                    complianceScore: 100,
+                    violations: [],
+                    nescCompliant: true,
+                    confidence: 100,
+                    notes: 'Data entered directly by lineman',
+                    flags: [],
+                    requiresReview: false
+                }
+            });
+
+            // Also save to local reports
+            const report = {
+                id: generateId(),
+                projectId: project.id,
+                header,
+                entries: entries.filter(e => e.spanFeet && e.spanFeet > 0),
+                totals,
+                createdAt: new Date().toISOString(),
+                createdBy: user.name
+            };
+
+            const existing = JSON.parse(localStorage.getItem('fs_daily_reports') || '[]');
+            localStorage.setItem('fs_daily_reports', JSON.stringify([report, ...existing]));
+            setSavedReports(prev => [report, ...prev]);
+
+            setSubmitSuccess(true);
+            setTimeout(() => {
+                setSubmitSuccess(false);
+                resetForm();
+            }, 2000);
+
+        } catch (error) {
+            console.error('Submit failed:', error);
+        } finally {
+            setIsSubmitting(false);
+        }
+    }, [header, entries, totals, user, resetForm]);
 
     React.useEffect(() => {
         const saved = JSON.parse(localStorage.getItem('fs_daily_reports') || '[]');
@@ -283,7 +423,7 @@ const DailyProductionForm: React.FC<DailyProductionFormProps> = ({ user, lang })
                                 { label: 'City', icon: MapPin, value: header.city, field: 'city', placeholder: 'City name...' },
                                 { label: 'Project OLT', value: header.projectOLT, field: 'projectOLT', placeholder: 'OLT identifier...' },
                                 { label: 'Map Code', value: header.bspd, field: 'bspd', placeholder: 'MAP-001...' },
-                                { label: 'Fibra CT', value: header.fibraCT, field: 'fibraCT', placeholder: 'Fiber CT...' }
+                                { label: 'Fibra CT', value: header.fibraCT, field: 'fibraCT', placeholder: 'Fiber CT...' },
                             ].map((input, i) => (
                                 <div key={i} className="space-y-2">
                                     <label className="text-[10px] font-bold uppercase tracking-wider flex items-center gap-2" style={{ color: 'var(--text-ghost)' }}>
@@ -298,6 +438,19 @@ const DailyProductionForm: React.FC<DailyProductionFormProps> = ({ user, lang })
                                     />
                                 </div>
                             ))}
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-ghost)' }}>Client *</label>
+                                <select
+                                    value={header.clientId}
+                                    onChange={(e) => handleHeaderChange('clientId', e.target.value)}
+                                    className="input-neural w-full cursor-pointer"
+                                >
+                                    <option value="">Select client...</option>
+                                    {clients.map(client => (
+                                        <option key={client.id} value={client.id}>{client.name}</option>
+                                    ))}
+                                </select>
+                            </div>
                             <div className="space-y-2">
                                 <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-ghost)' }}>Strand Type</label>
                                 <select
@@ -484,6 +637,20 @@ const DailyProductionForm: React.FC<DailyProductionFormProps> = ({ user, lang })
                         </button>
                     </div>
 
+                    {/* Success Message */}
+                    {submitSuccess && (
+                        <div
+                            className="p-4 rounded-xl flex items-center gap-3 animate-in fade-in"
+                            style={{ background: 'var(--online-glow)', border: '1px solid var(--border-online)' }}
+                        >
+                            <CheckCircle className="w-6 h-6" style={{ color: 'var(--online-core)' }} />
+                            <div>
+                                <p className="font-bold" style={{ color: 'var(--online-core)' }}>Submitted Successfully!</p>
+                                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Your production report is ready for invoicing</p>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Action Buttons - Tesla Style */}
                     <div className="flex flex-col md:flex-row gap-4">
                         <button
@@ -491,20 +658,19 @@ const DailyProductionForm: React.FC<DailyProductionFormProps> = ({ user, lang })
                             className="flex-1 tesla-button flex items-center justify-center gap-3 px-6 py-4"
                         >
                             <RotateCcw className="w-5 h-5" />
-                            Reset Form
+                            Reset
                         </button>
                         <button
                             onClick={exportToCSV}
                             className="flex-1 tesla-button flex items-center justify-center gap-3 px-6 py-4"
                         >
                             <Download className="w-5 h-5" />
-                            Export CSV
+                            CSV
                         </button>
                         <button
                             onClick={handleSave}
                             disabled={isSaving || totals.filledEntries === 0}
-                            className="flex-[2] btn-neural flex items-center justify-center gap-3 px-6 py-4 rounded-xl disabled:opacity-50"
-                            style={{ boxShadow: 'var(--shadow-neural)' }}
+                            className="flex-1 tesla-button flex items-center justify-center gap-3 px-6 py-4 disabled:opacity-50"
                         >
                             {isSaving ? (
                                 <>
@@ -514,7 +680,25 @@ const DailyProductionForm: React.FC<DailyProductionFormProps> = ({ user, lang })
                             ) : (
                                 <>
                                     <Save className="w-5 h-5" />
-                                    Save Report
+                                    Save Draft
+                                </>
+                            )}
+                        </button>
+                        <button
+                            onClick={handleSubmitForApproval}
+                            disabled={isSubmitting || totals.filledEntries === 0 || !header.clientId}
+                            className="flex-[2] btn-neural flex items-center justify-center gap-3 px-6 py-4 rounded-xl disabled:opacity-50"
+                            style={{ boxShadow: 'var(--shadow-neural)' }}
+                        >
+                            {isSubmitting ? (
+                                <>
+                                    <div className="loading-ring w-5 h-5" />
+                                    Submitting...
+                                </>
+                            ) : (
+                                <>
+                                    <Send className="w-5 h-5" />
+                                    Submit for Invoice
                                 </>
                             )}
                         </button>

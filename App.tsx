@@ -139,7 +139,7 @@ const App: React.FC = () => {
             case ViewState.DASHBOARD:
                 return <Dashboard onNavigate={setCurrentView} invoices={invoices} transactions={transactions} user={user} lang={currentLang} />;
             case ViewState.SUBMIT_WORK:
-                return <SubmitWork userId={user.id} userName={user.name} lang={currentLang} />;
+                return <DailyProductionForm user={user} lang={currentLang} />;
             case ViewState.MY_SUBMISSIONS:
                 return <OwnerInbox lang={currentLang} />; // Reuse with filter for lineman's own submissions
 

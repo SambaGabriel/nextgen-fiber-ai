@@ -31,9 +31,9 @@ const translations = {
     downloadMap: 'Download',
     noMap: 'No map uploaded for this job',
     noNotes: 'No notes from supervisor',
-    startWork: 'Start Work',
+    startWork: 'Enter Production',
     submitProduction: 'Submit Production Sheet',
-    continueWork: 'Entry Job',
+    continueWork: 'Enter Production',
     viewSubmission: 'View Submission',
     status: 'Status',
     client: 'Client',
@@ -73,9 +73,9 @@ const translations = {
     downloadMap: 'Baixar',
     noMap: 'Nenhum mapa enviado para este job',
     noNotes: 'Sem notas do supervisor',
-    startWork: 'Iniciar Trabalho',
+    startWork: 'Lançar Produção',
     submitProduction: 'Enviar Production Sheet',
-    continueWork: 'Entrar no Job',
+    continueWork: 'Lançar Produção',
     viewSubmission: 'Ver Envio',
     status: 'Status',
     client: 'Cliente',
@@ -115,9 +115,9 @@ const translations = {
     downloadMap: 'Descargar',
     noMap: 'No hay mapa cargado para este job',
     noNotes: 'Sin notas del supervisor',
-    startWork: 'Iniciar Trabajo',
+    startWork: 'Ingresar Producción',
     submitProduction: 'Enviar Production Sheet',
-    continueWork: 'Entrar al Job',
+    continueWork: 'Ingresar Producción',
     viewSubmission: 'Ver Envío',
     status: 'Estado',
     client: 'Cliente',
@@ -463,19 +463,6 @@ const JobDetails: React.FC<JobDetailsProps> = ({ job, user, lang, onBack, onStar
           </div>
         )}
 
-        {/* Mobile Action Button */}
-        {actionButton && (
-          <div className="sm:hidden pt-4">
-            <button
-              onClick={actionButton.action}
-              className="w-full px-6 py-4 rounded-xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-2"
-              style={actionButton.style as React.CSSProperties}
-            >
-              {actionButton.icon}
-              {actionButton.label}
-            </button>
-          </div>
-        )}
       </div>
     </div>
   );

@@ -8,7 +8,9 @@
       "Bash(/opt/homebrew/bin/npx tsc --noEmit)",
       "Bash(PATH=\"/opt/homebrew/bin:$PATH\" /opt/homebrew/bin/npx tsc:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(export PATH=\"/opt/homebrew/Cellar/node/25.5.0/bin:$PATH\")",
+      "Bash(npx tsc:*)"
     ]
   }
 }

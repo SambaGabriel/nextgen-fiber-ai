@@ -112,7 +112,9 @@ const App: React.FC = () => {
         setAuditQueue(prev => prev.map(f => f.id === idleFile.id ? { ...f, status: 'analyzing' as const } : f));
 
         try {
+            console.log('[MapAnalysis] Calling analyzeMapBoQ...');
             const result = await analyzeMapBoQ(idleFile.base64, 'application/pdf', currentLang);
+            console.log('[MapAnalysis] analyzeMapBoQ returned!');
             console.log('[MapAnalysis] Completed successfully:', idleFile.name);
             console.log('[MapAnalysis] Result totalCableLength:', result?.totalCableLength);
             setAuditQueue(prev => prev.map(f => f.id === idleFile.id ? { ...f, result, status: 'completed' as const } : f));

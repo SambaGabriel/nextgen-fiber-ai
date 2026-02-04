@@ -9,9 +9,13 @@ import { MapAnalysisResult, Language, AuditStatus, AuditResult } from '../types'
 const getClient = () => {
   const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
   console.log('[ClaudeService] API Key present:', !!apiKey, 'length:', apiKey?.length);
+  if (!apiKey) {
+    console.error('[ClaudeService] NO API KEY FOUND!');
+  }
   return new Anthropic({
     apiKey,
-    dangerouslyAllowBrowser: true
+    dangerouslyAllowBrowser: true,
+    timeout: 120000 // 2 minute timeout
   });
 };
 
@@ -72,6 +76,9 @@ export const analyzeMapWithClaude = async (
 ): Promise<MapAnalysisResult> => {
   console.log('[ClaudeService] Starting map analysis, mimeType:', mimeType);
 
+  // Visual feedback that analysis started
+  console.log('%c[ClaudeService] ANALYSIS STARTED', 'background: blue; color: white; font-size: 14px;');
+
   try {
     const client = getClient();
     console.log('[ClaudeService] Client created successfully');
@@ -82,6 +89,14 @@ export const analyzeMapWithClaude = async (
       : base64Data;
 
     console.log('[ClaudeService] Base64 length:', cleanBase64.length);
+
+    // Check size - base64 is ~33% larger than original
+    const estimatedSizeMB = (cleanBase64.length * 0.75) / (1024 * 1024);
+    console.log('[ClaudeService] Estimated file size:', estimatedSizeMB.toFixed(2), 'MB');
+
+    if (estimatedSizeMB > 25) {
+      throw new Error(`PDF muito grande (${estimatedSizeMB.toFixed(1)}MB). Máximo recomendado: 25MB`);
+    }
 
     // Validate base64
     if (!cleanBase64 || cleanBase64.length < 100) {
@@ -134,52 +149,63 @@ export const analyzeMapWithClaude = async (
     console.log('[ClaudeService] Content block type:', contentBlock.type);
     console.log('[ClaudeService] Sending request to Claude API...');
 
-    // Try primary model, fallback to Claude 3.5 Sonnet if needed
-    const models = ['claude-sonnet-4-20250514', 'claude-3-5-sonnet-20241022'];
-    let response: any = null;
-    let lastError: any = null;
+    // Use direct fetch for better control over large files
+    const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
 
-    for (const model of models) {
-      try {
-        console.log('[ClaudeService] Trying model:', model);
-        response = await client.messages.create({
-          model,
-          max_tokens: 4096,
-          system: BOQ_SYSTEM_PROMPT,
-          messages: [
-            {
-              role: 'user',
-              content: [
-                contentBlock,
-                {
-                  type: 'text',
-                  text: `Analyze this fiber optic construction map and extract the BOQ data.
+    console.log('[ClaudeService] Sending request via fetch...');
+    if (typeof document !== 'undefined') {
+      document.title = '⏳ Analisando PDF...';
+    }
+
+    const fetchResponse = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 4096,
+        system: BOQ_SYSTEM_PROMPT,
+        messages: [
+          {
+            role: 'user',
+            content: [
+              contentBlock,
+              {
+                type: 'text',
+                text: `Analyze this fiber optic construction map and extract the BOQ data.
 
 Return ONLY valid JSON in this exact format:
 ${getResponseSchema(lang)}
 
 If you cannot determine a value, use 0 for numbers or empty string for text.`
-                }
-              ]
-            }
-          ]
-        });
-        console.log('[ClaudeService] Success with model:', model);
-        break;
-      } catch (modelError: any) {
-        console.warn('[ClaudeService] Model failed:', model, modelError?.message);
-        lastError = modelError;
-      }
+              }
+            ]
+          }
+        ]
+      })
+    });
+
+    if (!fetchResponse.ok) {
+      const errorData = await fetchResponse.json().catch(() => ({}));
+      console.error('[ClaudeService] API Error:', fetchResponse.status, errorData);
+      throw new Error(errorData?.error?.message || `API Error: ${fetchResponse.status}`);
     }
 
-    if (!response) {
-      throw lastError || new Error('All models failed');
-    }
+    const response = await fetchResponse.json();
+    console.log('[ClaudeService] Response received!');
 
     console.log('[ClaudeService] Response received, stop_reason:', response.stop_reason);
 
+    if (typeof document !== 'undefined') {
+      document.title = 'NextGen AI Agent';
+    }
+
     // Extract text response
-    const textBlock = response.content.find(block => block.type === 'text');
+    const textBlock = response.content?.find((block: any) => block.type === 'text');
     if (!textBlock || textBlock.type !== 'text') {
       throw new Error('No text response from Claude');
     }
@@ -213,16 +239,28 @@ If you cannot determine a value, use 0 for numbers or empty string for text.`
 
   } catch (error: any) {
     console.error('[ClaudeService] Analysis Error:', error);
+
+    // Better error message for user
+    let userMessage = 'Erro na análise';
+    if (error?.message?.includes('Load failed') || error?.message?.includes('fetch')) {
+      userMessage = 'Erro de rede. PDF pode ser muito grande (max 10MB recomendado)';
+    } else if (error?.status === 400) {
+      userMessage = 'PDF inválido ou não suportado';
+    } else if (error?.status === 401) {
+      userMessage = 'API key inválida';
+    } else if (error?.status === 429) {
+      userMessage = 'Limite de requisições atingido. Aguarde um momento.';
+    }
+
+    console.error('[ClaudeService] User message:', userMessage);
     console.error('[ClaudeService] Error details:', JSON.stringify({
       message: error?.message,
       status: error?.status,
       statusCode: error?.statusCode,
-      type: error?.type,
-      error: error?.error,
-      body: error?.body,
-      headers: error?.headers
+      type: error?.type
     }, null, 2));
-    throw error;
+
+    throw new Error(userMessage);
   }
 };
 

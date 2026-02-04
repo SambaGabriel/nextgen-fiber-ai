@@ -334,6 +334,30 @@ export interface Job {
 }
 
 // ============================================
+// JOB CHAT MESSAGES
+// ============================================
+
+export type MessageStatus = 'QUEUED' | 'SENDING' | 'SENT' | 'FAILED';
+
+export interface JobChatMessage {
+  id: string;
+  jobId: string;
+  senderUserId: string;
+  senderName: string;
+  senderRole: 'LINEMAN' | 'ADMIN';
+  body: string;
+  createdAt: string;
+  clientMessageId?: string;      // For offline idempotency
+  status?: MessageStatus;
+}
+
+export interface JobUnreadCount {
+  jobId: string;
+  unreadCount: number;
+  lastReadAt: string;
+}
+
+// ============================================
 // DASHBOARD STATS
 // ============================================
 

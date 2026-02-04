@@ -12,6 +12,7 @@ import {
 import { Job, JobStatus, WorkType } from '../types/project';
 import { jobStorage } from '../services/jobStorage';
 import { Language, User as UserType } from '../types';
+import ChatSection from './ChatSection';
 
 interface JobDetailsProps {
   job: Job;
@@ -393,32 +394,14 @@ const JobDetails: React.FC<JobDetailsProps> = ({ job, user, lang, onBack, onStar
           )}
         </div>
 
-        {/* Supervisor Notes Card */}
-        <div
-          className="rounded-xl sm:rounded-2xl p-4 sm:p-6"
-          style={{ background: 'var(--surface)', border: '1px solid var(--border-subtle)' }}
-        >
-          <h3 className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.2em] mb-4 sm:mb-6 flex items-center gap-2" style={{ color: 'var(--text-ghost)' }}>
-            <MessageSquare className="w-4 h-4" /> {t.supervisorNotes}
-          </h3>
-
-          {currentJob.supervisorNotes ? (
-            <div className="p-4 rounded-xl" style={{ background: 'var(--elevated)', borderLeft: '3px solid var(--neural-core)' }}>
-              <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: 'var(--text-primary)' }}>
-                {lang === 'PT' && currentJob.supervisorNotes_pt ? currentJob.supervisorNotes_pt : currentJob.supervisorNotes}
-              </p>
-              <p className="text-xs mt-3 flex items-center gap-2" style={{ color: 'var(--text-ghost)' }}>
-                <User className="w-3 h-3" />
-                {currentJob.assignedByName} • {new Date(currentJob.assignedAt).toLocaleDateString()}
-              </p>
-            </div>
-          ) : (
-            <div className="text-center py-8" style={{ color: 'var(--text-ghost)' }}>
-              <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-50" />
-              <p className="text-sm">{t.noNotes}</p>
-            </div>
-          )}
-        </div>
+        {/* Chat Section */}
+        <ChatSection
+          jobId={currentJob.id}
+          userId={user.id}
+          userName={user.name}
+          userRole={user.role}
+          lang={lang}
+        />
 
         {/* Submitted Production Data (if exists) */}
         {currentJob.productionData && (

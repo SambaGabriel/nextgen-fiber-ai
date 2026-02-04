@@ -5,10 +5,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Briefcase, MapPin, Calendar, Clock, ChevronRight,
-  CheckCircle2, AlertTriangle, Play, Send, FileText
+  CheckCircle2, AlertTriangle, Play, Send, FileText, MessageCircle
 } from 'lucide-react';
-import { Job, JobStatus } from '../types/project';
+import { Job, JobStatus, JobUnreadCount } from '../types/project';
 import { jobStorage } from '../services/jobStorage';
+import { chatStorage } from '../services/chatStorage';
 import { Language, User } from '../types';
 import FiberLoader from './FiberLoader';
 
@@ -103,8 +104,9 @@ const MyJobs: React.FC<MyJobsProps> = ({ user, lang, onSelectJob }) => {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [activeTab, setActiveTab] = useState<TabType>('all');
   const [isLoading, setIsLoading] = useState(true);
+  const [unreadCounts, setUnreadCounts] = useState<Map<string, number>>(new Map());
 
-  // Load jobs
+  // Load jobs and unread counts
   const loadJobs = useCallback(() => {
     setIsLoading(true);
     // Initialize sample jobs if none exist
@@ -113,13 +115,38 @@ const MyJobs: React.FC<MyJobsProps> = ({ user, lang, onSelectJob }) => {
     setTimeout(() => {
       const userJobs = jobStorage.getByLineman(user.id);
       setJobs(userJobs);
+
+      // Load unread counts for all jobs
+      const counts = chatStorage.getUnreadCounts(user.id);
+      const countMap = new Map<string, number>();
+      counts.forEach(c => {
+        if (c.unreadCount > 0) {
+          countMap.set(c.jobId, c.unreadCount);
+        }
+      });
+      setUnreadCounts(countMap);
+
       setIsLoading(false);
     }, 300);
   }, [user.id, user.name]);
 
   useEffect(() => {
     loadJobs();
-  }, [loadJobs]);
+
+    // Poll for unread count updates every 10 seconds
+    const pollInterval = setInterval(() => {
+      const counts = chatStorage.getUnreadCounts(user.id);
+      const countMap = new Map<string, number>();
+      counts.forEach(c => {
+        if (c.unreadCount > 0) {
+          countMap.set(c.jobId, c.unreadCount);
+        }
+      });
+      setUnreadCounts(countMap);
+    }, 10000);
+
+    return () => clearInterval(pollInterval);
+  }, [loadJobs, user.id]);
 
   // Filter jobs by tab
   const filteredJobs = jobs.filter(job => {
@@ -258,24 +285,36 @@ const MyJobs: React.FC<MyJobsProps> = ({ user, lang, onSelectJob }) => {
           <div className="space-y-3">
             {filteredJobs.map(job => {
               const statusConfig = getStatusConfig(job.status);
+              const jobUnreadCount = unreadCounts.get(job.id) || 0;
               return (
                 <button
                   key={job.id}
                   onClick={() => onSelectJob(job)}
-                  className="w-full p-4 sm:p-5 rounded-xl sm:rounded-2xl transition-all hover:scale-[1.005] cursor-pointer group text-left"
+                  className="w-full p-4 sm:p-5 rounded-xl sm:rounded-2xl transition-all hover:scale-[1.005] cursor-pointer group text-left relative"
                   style={{
                     background: 'var(--surface)',
-                    border: '1px solid var(--border-default)'
+                    border: jobUnreadCount > 0 ? '1px solid var(--neural-core)' : '1px solid var(--border-default)'
                   }}
                 >
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
-                      {/* Status Icon */}
-                      <div
-                        className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0"
-                        style={{ background: statusConfig.bg }}
-                      >
-                        <div style={{ color: statusConfig.color }}>{statusConfig.icon}</div>
+                      {/* Status Icon with unread indicator */}
+                      <div className="relative flex-shrink-0">
+                        <div
+                          className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl flex items-center justify-center"
+                          style={{ background: statusConfig.bg }}
+                        >
+                          <div style={{ color: statusConfig.color }}>{statusConfig.icon}</div>
+                        </div>
+                        {/* Unread badge */}
+                        {jobUnreadCount > 0 && (
+                          <div
+                            className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black text-white animate-pulse"
+                            style={{ background: 'var(--gradient-neural)' }}
+                          >
+                            {jobUnreadCount > 9 ? '9+' : jobUnreadCount}
+                          </div>
+                        )}
                       </div>
 
                       {/* Job Info */}
@@ -290,6 +329,13 @@ const MyJobs: React.FC<MyJobsProps> = ({ user, lang, onSelectJob }) => {
                           >
                             {t.status[job.status]}
                           </span>
+                          {/* Message indicator on mobile */}
+                          {jobUnreadCount > 0 && (
+                            <span className="sm:hidden flex items-center gap-1 px-2 py-0.5 rounded-lg text-[8px] font-black" style={{ background: 'var(--neural-dim)', color: 'var(--neural-core)' }}>
+                              <MessageCircle className="w-3 h-3" />
+                              {jobUnreadCount}
+                            </span>
+                          )}
                         </div>
                         <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-[10px] sm:text-xs" style={{ color: 'var(--text-tertiary)' }}>
                           <span className="flex items-center gap-1">

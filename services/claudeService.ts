@@ -83,6 +83,20 @@ export const analyzeMapWithClaude = async (
 
     console.log('[ClaudeService] Base64 length:', cleanBase64.length);
 
+    // Validate base64
+    if (!cleanBase64 || cleanBase64.length < 100) {
+      throw new Error('Invalid or empty base64 data');
+    }
+
+    // Check if base64 is valid (basic check)
+    try {
+      // Try to decode first 100 chars to verify it's valid base64
+      atob(cleanBase64.substring(0, 100));
+    } catch (e) {
+      console.error('[ClaudeService] Invalid base64 encoding');
+      throw new Error('Invalid base64 encoding');
+    }
+
     // Determine content type based on file type
     const isPDF = mimeType.includes('pdf');
 

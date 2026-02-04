@@ -38,8 +38,9 @@ const LoadingFallback = (
 );
 
 const App: React.FC = () => {
-    // [rerender-lazy-state-init] - Use function for expensive initial state
-    const [user, setUser] = useState<User | null>(() => storage.getUser());
+    // [app-always-login] - Always start with null user to show login page
+    // User data is still saved in storage for reference, but requires fresh login each session
+    const [user, setUser] = useState<User | null>(null);
     const [currentView, setCurrentView] = useState<ViewState>(ViewState.DASHBOARD);
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [rates, setRates] = useState<UnitRates>(() => storage.getRates() || INITIAL_RATES);

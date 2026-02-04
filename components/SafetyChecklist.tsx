@@ -3,10 +3,10 @@
  * Must be completed before lineman can access production sheet
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   ShieldCheck, HardHat, Eye, Shirt, Hand, AlertTriangle,
-  CloudRain, Wind, Zap, CheckCircle2, XCircle, ChevronRight
+  CloudRain, Zap, CheckCircle2, ChevronRight, X
 } from 'lucide-react';
 import { offlineSync } from '../services/offlineSync';
 
@@ -165,51 +165,94 @@ const SafetyChecklist: React.FC<SafetyChecklistProps> = ({
       <button
         key={item.id}
         onClick={() => toggleItem(item.id)}
-        className={`w-full flex items-center gap-4 p-4 rounded-xl transition-all ${
-          isChecked
-            ? 'bg-emerald-500/20 border-2 border-emerald-500'
-            : 'bg-slate-800/50 border-2 border-transparent hover:border-slate-600'
-        }`}
+        className="w-full flex items-center gap-4 p-4 rounded-xl transition-all"
+        style={{
+          background: isChecked ? 'var(--online-glow)' : 'var(--surface)',
+          border: isChecked ? '2px solid var(--online-core)' : '2px solid var(--border-subtle)',
+        }}
       >
-        <div className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center ${
-          isChecked ? 'bg-emerald-500 text-white' : 'bg-slate-700 text-slate-400'
-        }`}>
+        <div
+          className="flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center"
+          style={{
+            background: isChecked ? 'var(--online-core)' : 'var(--elevated)',
+            color: isChecked ? 'white' : 'var(--text-tertiary)'
+          }}
+        >
           {isChecked ? <CheckCircle2 className="w-6 h-6" /> : item.icon}
         </div>
         <div className="flex-1 text-left">
           <div className="flex items-center gap-2">
-            <span className={`font-bold ${isChecked ? 'text-emerald-400' : 'text-white'}`}>
+            <span
+              className="font-bold"
+              style={{ color: isChecked ? 'var(--online-core)' : 'var(--text-primary)' }}
+            >
               {item.label}
             </span>
             {item.critical && !isChecked && (
-              <span className="text-[9px] px-1.5 py-0.5 bg-red-500/20 text-red-400 rounded font-bold">
-                REQUIRED
+              <span
+                className="text-[9px] px-1.5 py-0.5 rounded font-bold"
+                style={{ background: 'var(--energy-pulse)', color: 'var(--energy-core)' }}
+              >
+                {lang === 'PT' ? 'OBRIGATÓRIO' : lang === 'ES' ? 'REQUERIDO' : 'REQUIRED'}
               </span>
             )}
           </div>
-          <span className="text-xs text-slate-400">{item.description}</span>
+          <span className="text-xs" style={{ color: 'var(--text-ghost)' }}>{item.description}</span>
         </div>
-        <ChevronRight className={`w-5 h-5 transition-transform ${
-          isChecked ? 'text-emerald-400 rotate-90' : 'text-slate-600'
-        }`} />
+        <ChevronRight
+          className="w-5 h-5 transition-transform"
+          style={{
+            color: isChecked ? 'var(--online-core)' : 'var(--text-ghost)',
+            transform: isChecked ? 'rotate(90deg)' : 'none'
+          }}
+        />
       </button>
     );
   };
 
   return (
-    <div className="fixed inset-0 z-[150] bg-black/90 backdrop-blur-xl flex flex-col animate-in fade-in duration-300">
+    <div
+      className="fixed inset-0 z-[150] backdrop-blur-xl flex flex-col animate-in fade-in duration-300"
+      style={{ background: 'var(--void)', opacity: 0.98 }}
+    >
       {/* Header */}
-      <div className="flex-shrink-0 p-6 text-center border-b border-white/10">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 mb-4">
+      <div
+        className="flex-shrink-0 p-6 text-center"
+        style={{ borderBottom: '1px solid var(--border-subtle)' }}
+      >
+        {/* Close button */}
+        <button
+          onClick={onCancel}
+          className="absolute top-4 right-4 w-10 h-10 rounded-xl flex items-center justify-center transition-colors"
+          style={{ background: 'var(--surface)', color: 'var(--text-tertiary)' }}
+        >
+          <X className="w-5 h-5" />
+        </button>
+
+        <div
+          className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4"
+          style={{ background: 'var(--gradient-neural)' }}
+        >
           <ShieldCheck className="w-8 h-8 text-white" />
         </div>
-        <h1 className="text-2xl font-black text-white">{t.title}</h1>
-        <p className="text-sm text-slate-400 mt-1">{t.subtitle}</p>
+        <h1
+          className="text-2xl font-black"
+          style={{ color: 'var(--text-primary)' }}
+        >
+          {t.title}
+        </h1>
+        <p className="text-sm mt-1" style={{ color: 'var(--text-tertiary)' }}>{t.subtitle}</p>
       </div>
 
       {/* Warning */}
-      <div className="px-4 py-3 bg-amber-500/10 border-b border-amber-500/20">
-        <p className="text-xs text-amber-400 text-center font-bold flex items-center justify-center gap-2">
+      <div
+        className="px-4 py-3"
+        style={{ background: 'var(--energy-pulse)', borderBottom: '1px solid var(--border-subtle)' }}
+      >
+        <p
+          className="text-xs text-center font-bold flex items-center justify-center gap-2"
+          style={{ color: 'var(--energy-core)' }}
+        >
           <AlertTriangle className="w-4 h-4" />
           {t.warning}
         </p>
@@ -219,7 +262,10 @@ const SafetyChecklist: React.FC<SafetyChecklistProps> = ({
       <div className="flex-1 overflow-y-auto p-4 space-y-6">
         {/* PPE Section */}
         <div>
-          <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 px-2">
+          <h3
+            className="text-[10px] font-bold uppercase tracking-[0.2em] mb-3 px-2"
+            style={{ color: 'var(--text-ghost)' }}
+          >
             {t.ppeSection}
           </h3>
           <div className="space-y-2">
@@ -229,7 +275,10 @@ const SafetyChecklist: React.FC<SafetyChecklistProps> = ({
 
         {/* Conditions Section */}
         <div>
-          <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 px-2">
+          <h3
+            className="text-[10px] font-bold uppercase tracking-[0.2em] mb-3 px-2"
+            style={{ color: 'var(--text-ghost)' }}
+          >
             {t.conditionsSection}
           </h3>
           <div className="space-y-2">
@@ -239,27 +288,35 @@ const SafetyChecklist: React.FC<SafetyChecklistProps> = ({
       </div>
 
       {/* Actions */}
-      <div className="flex-shrink-0 p-4 border-t border-white/10 space-y-3">
+      <div
+        className="flex-shrink-0 p-4 space-y-3"
+        style={{ borderTop: '1px solid var(--border-subtle)' }}
+      >
         {!allChecked && criticalMissing.length > 0 && (
-          <p className="text-xs text-red-400 text-center">{t.incomplete}</p>
+          <p className="text-xs text-center" style={{ color: 'var(--energy-core)' }}>{t.incomplete}</p>
         )}
 
         <button
           onClick={handleConfirm}
           disabled={!allChecked}
-          className={`w-full py-4 rounded-xl font-black text-lg uppercase tracking-wider flex items-center justify-center gap-2 transition-all ${
-            allChecked
-              ? 'bg-gradient-to-r from-emerald-500 to-green-600 text-white hover:scale-[1.02]'
-              : 'bg-slate-800 text-slate-500 cursor-not-allowed'
-          }`}
+          className="w-full py-4 rounded-xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-2 transition-all"
+          style={{
+            background: allChecked ? 'var(--gradient-neural)' : 'var(--surface)',
+            color: allChecked ? 'var(--void)' : 'var(--text-ghost)',
+            cursor: allChecked ? 'pointer' : 'not-allowed',
+            transform: allChecked ? 'scale(1)' : 'scale(1)',
+          }}
+          onMouseEnter={(e) => allChecked && (e.currentTarget.style.transform = 'scale(1.02)')}
+          onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
         >
-          <ShieldCheck className="w-6 h-6" />
+          <ShieldCheck className="w-5 h-5" />
           {t.confirm}
         </button>
 
         <button
           onClick={onCancel}
-          className="w-full py-3 rounded-xl font-bold text-slate-400 hover:text-white transition-colors"
+          className="w-full py-3 rounded-xl font-bold transition-colors"
+          style={{ color: 'var(--text-tertiary)' }}
         >
           {t.cancel}
         </button>

@@ -18,104 +18,10 @@ import {
 } from '../../types/billing';
 
 // ============================================
-// MOCK DATA (Replace with API calls)
+// PRODUCTION LINES - Empty array, ready for real data
 // ============================================
 
-const MOCK_LINES: ProductionLine[] = [
-  {
-    id: 'line_001',
-    externalId: 'SS-ROW-456',
-    sourceSystem: 'smartsheet',
-    jobId: 'JOB-2024-0001',
-    description: 'Install 288F Aerial - Main St to Oak Ave',
-    quantity: 1250,
-    unit: 'FT',
-    projectId: 'PROJ-001',
-    projectName: 'Spectrum Loudoun Phase 2',
-    primeContractor: 'Spectrum',
-    crewId: 'CREW-A',
-    crewName: 'Potomac Valley Utility',
-    workDate: '2024-01-15',
-    completedDate: '2024-01-15',
-    location: { latitude: 39.0458, longitude: -77.4875, address: 'Main St & Oak Ave' },
-    workType: 'AERIAL',
-    activityCode: 'FIBER-288-AERIAL',
-    status: ProductionLineStatus.READY_TO_INVOICE,
-    statusChangedAt: '2024-01-16T10:30:00Z',
-    statusChangedBy: 'user_reviewer1',
-    evidenceAssets: [],
-    evidenceCount: 3,
-    hasRequiredEvidence: true,
-    appliedRate: 0.42,
-    extendedAmount: 525.00,
-    validationResults: [],
-    complianceScore: 95,
-    flags: [],
-    createdAt: '2024-01-15T18:00:00Z',
-    updatedAt: '2024-01-16T10:30:00Z',
-    syncedAt: '2024-01-16T08:00:00Z'
-  },
-  {
-    id: 'line_002',
-    externalId: 'SS-ROW-457',
-    sourceSystem: 'smartsheet',
-    jobId: 'JOB-2024-0002',
-    description: 'Install Anchor Assembly - Pole 30054',
-    quantity: 2,
-    unit: 'EA',
-    projectId: 'PROJ-001',
-    projectName: 'Spectrum Loudoun Phase 2',
-    primeContractor: 'Spectrum',
-    crewId: 'CREW-A',
-    crewName: 'Potomac Valley Utility',
-    workDate: '2024-01-15',
-    workType: 'AERIAL',
-    status: ProductionLineStatus.PENDING_REVIEW,
-    statusChangedAt: '2024-01-16T08:00:00Z',
-    statusChangedBy: 'system',
-    evidenceAssets: [],
-    evidenceCount: 1,
-    hasRequiredEvidence: false,
-    appliedRate: 18.00,
-    extendedAmount: 36.00,
-    validationResults: [],
-    complianceScore: 65,
-    flags: [{ type: 'MISSING_EVIDENCE', message: 'Missing required photo', severity: 'WARNING', detectedAt: '2024-01-16T08:00:00Z' }],
-    createdAt: '2024-01-15T18:00:00Z',
-    updatedAt: '2024-01-16T08:00:00Z',
-    syncedAt: '2024-01-16T08:00:00Z'
-  },
-  {
-    id: 'line_003',
-    externalId: 'SS-ROW-458',
-    sourceSystem: 'smartsheet',
-    jobId: 'JOB-2024-0003',
-    description: 'Underground Conduit - Commercial Plaza',
-    quantity: 450,
-    unit: 'FT',
-    projectId: 'PROJ-002',
-    projectName: 'BrightSpeed Fairfax',
-    primeContractor: 'BrightSpeed',
-    crewId: 'CREW-B',
-    crewName: 'Virginia Underground Inc',
-    workDate: '2024-01-14',
-    workType: 'UNDERGROUND',
-    status: ProductionLineStatus.REVIEWED,
-    statusChangedAt: '2024-01-15T14:00:00Z',
-    statusChangedBy: 'user_reviewer2',
-    evidenceAssets: [],
-    evidenceCount: 5,
-    hasRequiredEvidence: true,
-    appliedRate: 0.55,
-    extendedAmount: 247.50,
-    validationResults: [],
-    complianceScore: 88,
-    flags: [],
-    createdAt: '2024-01-14T18:00:00Z',
-    updatedAt: '2024-01-15T14:00:00Z',
-    syncedAt: '2024-01-16T08:00:00Z'
-  }
-];
+const MOCK_LINES: ProductionLine[] = [];
 
 // ============================================
 // SUB-COMPONENTS

@@ -36,30 +36,30 @@ interface QuickStat {
   color: 'neural' | 'energy' | 'online' | 'critical';
 }
 
-// Quick stats for sidebar
+// Quick stats for sidebar - values will be populated from real data
 const useQuickStats = (): QuickStat[] => {
   return [
     {
       label: 'Ready to Invoice',
-      value: 47,
+      value: 0,
       icon: <CheckCircle className="w-4 h-4" />,
       color: 'online'
     },
     {
       label: 'Needs Review',
-      value: 12,
+      value: 0,
       icon: <AlertCircle className="w-4 h-4" />,
       color: 'energy'
     },
     {
       label: 'Outstanding',
-      value: '$124.5K',
+      value: '$0',
       icon: <Clock className="w-4 h-4" />,
       color: 'neural'
     },
     {
       label: 'Overdue',
-      value: '$18.2K',
+      value: '$0',
       icon: <XCircle className="w-4 h-4" />,
       color: 'critical'
     }
@@ -88,7 +88,7 @@ const BillingLayout: React.FC<BillingLayoutProps> = ({
   const quickStats = useQuickStats();
 
   const navItems = [
-    { id: 'inbox' as BillingView, label: 'Production Inbox', icon: Inbox, badge: 47 },
+    { id: 'inbox' as BillingView, label: 'Production Inbox', icon: Inbox, badge: 0 },
     { id: 'quick-invoice' as BillingView, label: 'Quick Invoice', icon: Plus, highlight: true },
     { id: 'batches' as BillingView, label: 'Invoice Batches', icon: Receipt },
     { id: 'tracker' as BillingView, label: 'AR Tracker', icon: TrendingUp },

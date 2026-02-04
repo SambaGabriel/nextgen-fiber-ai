@@ -17,75 +17,10 @@ import {
 } from '../../types/billing';
 
 // ============================================
-// MOCK DATA
+// AGING ENTRIES - Empty array, ready for real data
 // ============================================
 
-const MOCK_AGING: AgingEntry[] = [
-  {
-    invoiceBatchId: 'batch_001',
-    invoiceNumber: 'INV-2024-0001',
-    primeContractor: 'Spectrum',
-    projectName: 'Loudoun Phase 2',
-    invoiceAmount: 45250.00,
-    submittedAt: '2024-01-16',
-    dueDate: '2024-02-15',
-    status: InvoiceBatchStatus.SUBMITTED,
-    daysOutstanding: 5,
-    agingBucket: '0-30'
-  },
-  {
-    invoiceBatchId: 'batch_002',
-    invoiceNumber: 'INV-2024-0002',
-    primeContractor: 'Spectrum',
-    projectName: 'Loudoun Phase 2',
-    invoiceAmount: 32100.00,
-    submittedAt: '2024-01-10',
-    dueDate: '2024-02-09',
-    status: InvoiceBatchStatus.APPROVED,
-    daysOutstanding: 11,
-    agingBucket: '0-30'
-  },
-  {
-    invoiceBatchId: 'batch_003',
-    invoiceNumber: 'INV-2023-0089',
-    primeContractor: 'BrightSpeed',
-    projectName: 'Fairfax Expansion',
-    invoiceAmount: 28750.00,
-    submittedAt: '2023-12-15',
-    dueDate: '2024-01-14',
-    status: InvoiceBatchStatus.APPROVED,
-    daysOutstanding: 37,
-    agingBucket: '31-60'
-  },
-  {
-    invoiceBatchId: 'batch_004',
-    invoiceNumber: 'INV-2023-0078',
-    primeContractor: 'All Points',
-    projectName: 'DC Metro Underground',
-    invoiceAmount: 67500.00,
-    submittedAt: '2023-11-20',
-    dueDate: '2023-12-20',
-    status: InvoiceBatchStatus.DISPUTED,
-    daysOutstanding: 62,
-    agingBucket: '61-90',
-    lastActivity: 'Dispute filed: qty mismatch',
-    lastActivityAt: '2024-01-10'
-  },
-  {
-    invoiceBatchId: 'batch_005',
-    invoiceNumber: 'INV-2023-0065',
-    primeContractor: 'Masterque',
-    projectName: 'Richmond Build',
-    invoiceAmount: 18200.00,
-    submittedAt: '2023-10-01',
-    dueDate: '2023-10-31',
-    status: InvoiceBatchStatus.REJECTED,
-    daysOutstanding: 112,
-    agingBucket: '90+',
-    lastActivity: 'Rejected: missing documentation',
-    lastActivityAt: '2023-11-15'
-  }
-];
+const MOCK_AGING: AgingEntry[] = [];
 
 // ============================================
 // SUB-COMPONENTS

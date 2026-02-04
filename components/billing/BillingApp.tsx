@@ -18,145 +18,8 @@ import {
 import { Receipt, Calculator, FileText, Settings, Zap } from 'lucide-react';
 
 // ============================================
-// MOCK LINE FOR REVIEW PANEL
+// SELECTED LINE - Will be fetched from real data when available
 // ============================================
-
-const MOCK_LINE: ProductionLine = {
-  id: 'line_001',
-  externalId: 'SS-ROW-456',
-  sourceSystem: 'smartsheet',
-  jobId: 'JOB-2024-0001',
-  description: 'Install 288F Aerial - Main St to Oak Ave (Pole 30054 to 30067)',
-  quantity: 1250,
-  unit: 'FT',
-  projectId: 'PROJ-001',
-  projectName: 'Spectrum Loudoun Phase 2',
-  primeContractor: 'Spectrum',
-  crewId: 'CREW-A',
-  crewName: 'Potomac Valley Utility Services',
-  workDate: '2024-01-15',
-  completedDate: '2024-01-15',
-  location: {
-    latitude: 39.0458,
-    longitude: -77.4875,
-    address: 'Main St & Oak Ave, Leesburg VA 20176',
-    poleId: 'P-30054'
-  },
-  workType: 'AERIAL',
-  activityCode: 'FIBER-288-AERIAL',
-  status: ProductionLineStatus.PENDING_REVIEW,
-  statusChangedAt: '2024-01-16T10:30:00Z',
-  statusChangedBy: 'system',
-  evidenceAssets: [
-    {
-      id: 'ev_001',
-      type: 'PHOTO',
-      filename: 'pole_30054_install.jpg',
-      mimeType: 'image/jpeg',
-      fileSize: 2456789,
-      url: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800',
-      thumbnailUrl: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=200',
-      metadata: {
-        latitude: 39.0458,
-        longitude: -77.4875,
-        capturedAt: '2024-01-15T14:30:00Z',
-        deviceModel: 'iPhone 14 Pro'
-      },
-      uploadedBy: 'user_field1',
-      uploadedAt: '2024-01-15T16:00:00Z',
-      isVerified: true,
-      verifiedBy: 'user_reviewer1',
-      verifiedAt: '2024-01-16T10:00:00Z'
-    },
-    {
-      id: 'ev_002',
-      type: 'PHOTO',
-      filename: 'pole_30060_install.jpg',
-      mimeType: 'image/jpeg',
-      fileSize: 2123456,
-      url: 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=800',
-      thumbnailUrl: 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=200',
-      metadata: {
-        latitude: 39.0462,
-        longitude: -77.4880,
-        capturedAt: '2024-01-15T15:45:00Z',
-        deviceModel: 'iPhone 14 Pro'
-      },
-      uploadedBy: 'user_field1',
-      uploadedAt: '2024-01-15T17:00:00Z',
-      isVerified: false
-    },
-    {
-      id: 'ev_003',
-      type: 'PHOTO',
-      filename: 'pole_30067_install.jpg',
-      mimeType: 'image/jpeg',
-      fileSize: 1987654,
-      url: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800',
-      thumbnailUrl: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=200',
-      metadata: {
-        latitude: 39.0470,
-        longitude: -77.4890,
-        capturedAt: '2024-01-15T16:30:00Z',
-        deviceModel: 'iPhone 14 Pro'
-      },
-      uploadedBy: 'user_field1',
-      uploadedAt: '2024-01-15T18:00:00Z',
-      isVerified: false
-    }
-  ],
-  evidenceCount: 3,
-  hasRequiredEvidence: true,
-  billingLineItemId: 'LI-AERIAL-288',
-  billingLineItemDescription: 'Aerial Fiber Installation - 288F',
-  appliedRateCardId: 'RC-SPECTRUM-001',
-  appliedRateCardVersion: 2,
-  appliedRate: 0.42,
-  extendedAmount: 525.00,
-  validationResults: [
-    {
-      id: 'val_001',
-      ruleId: 'EVIDENCE_REQUIRED',
-      ruleName: 'Required Evidence',
-      passed: true,
-      severity: 'ERROR',
-      message: 'All required evidence present (3 photos)',
-      checkedAt: '2024-01-16T10:30:00Z'
-    },
-    {
-      id: 'val_002',
-      ruleId: 'QTY_RANGE',
-      ruleName: 'Quantity Range',
-      passed: true,
-      severity: 'WARNING',
-      message: 'Quantity 1250 FT within expected range (100-5000)',
-      checkedAt: '2024-01-16T10:30:00Z'
-    },
-    {
-      id: 'val_003',
-      ruleId: 'GPS_MATCH',
-      ruleName: 'GPS Location',
-      passed: true,
-      severity: 'INFO',
-      message: 'Photo GPS matches reported location',
-      checkedAt: '2024-01-16T10:30:00Z'
-    },
-    {
-      id: 'val_004',
-      ruleId: 'DUPLICATE_CHECK',
-      ruleName: 'Duplicate Check',
-      passed: true,
-      severity: 'ERROR',
-      message: 'No duplicate entries found',
-      checkedAt: '2024-01-16T10:30:00Z'
-    }
-  ],
-  complianceScore: 95,
-  flags: [],
-  createdAt: '2024-01-15T18:00:00Z',
-  updatedAt: '2024-01-16T10:30:00Z',
-  syncedAt: '2024-01-16T08:00:00Z'
-};
 
 // ============================================
 // PLACEHOLDER VIEWS
@@ -266,8 +129,8 @@ const BillingApp: React.FC = () => {
     console.log('Recording payment for:', batchId);
   }, []);
 
-  // Get selected line for review panel
-  const selectedLine = selectedLineId ? MOCK_LINE : null;
+  // Get selected line for review panel - will fetch from real data
+  const selectedLine: ProductionLine | null = null;
 
   // Render content based on current view
   const renderContent = () => {

@@ -8,7 +8,6 @@ import {
 } from 'lucide-react';
 import { Language, User, MapAnalysisResult, AuditFile, MapAuditReport, UnitRates } from '../types';
 import { translations } from '../services/translations';
-import { analyzeMapWithClaude } from '../services/claudeService';
 import FiberLoader from './FiberLoader';
 
 declare const L: any;
@@ -23,15 +22,19 @@ interface MapAuditProps {
     onSaveToReports: (report: MapAuditReport) => void;
 }
 
-const MapAudit: React.FC<MapAuditProps> = ({ lang, user, onSaveToReports }) => {
+const MapAudit: React.FC<MapAuditProps> = ({ lang, user, onSaveToReports, auditQueue, setAuditQueue, isAnalyzing }) => {
     const t = translations[lang];
-    const [analysisResult, setAnalysisResult] = useState<MapAnalysisResult | null>(null);
-    const [isInternalAnalyzing, setIsInternalAnalyzing] = useState(false);
-    const [mapType, setMapType] = useState<'roadmap' | 'hybrid'>('roadmap'); 
+    const [mapType, setMapType] = useState<'roadmap' | 'hybrid'>('roadmap');
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [cleanMode, setCleanMode] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
-    
+    const [currentFileId, setCurrentFileId] = useState<string | null>(null);
+
+    // Derive analysis result from the queue (persists across tab changes)
+    const currentFile = auditQueue.find(f => f.id === currentFileId);
+    const analysisResult = currentFile?.result || null;
+    const isInternalAnalyzing = currentFile?.status === 'analyzing' || (currentFile?.status === 'idle' && isAnalyzing);
+
     const [currentStepIndex, setCurrentStepIndex] = useState(0);
     const analysisSteps = [
         t.mapping_layers,
@@ -201,24 +204,32 @@ const MapAudit: React.FC<MapAuditProps> = ({ lang, user, onSaveToReports }) => {
     const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
-        setIsInternalAnalyzing(true);
 
-        try {
-            const reader = new FileReader();
-            reader.onload = async (ev) => {
-                const base64 = (ev.target?.result as string).split(',')[1];
-                const result = await analyzeMapWithClaude(base64, 'application/pdf', lang);
-                setAnalysisResult(result);
-                renderEngineeringLayer(result);
-                setSidebarOpen(true);
-            };
-            reader.readAsDataURL(file);
-        } catch (error) {
-            console.error("Analysis Failed", error);
-        } finally {
-            setIsInternalAnalyzing(false);
-        }
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            const base64 = (ev.target?.result as string).split(',')[1];
+            const newFileId = `map-${Date.now()}`;
+
+            // Add to global queue - analysis will happen in App.tsx background
+            setAuditQueue(prev => [...prev, {
+                id: newFileId,
+                fileName: file.name,
+                base64,
+                status: 'idle' as const
+            }]);
+
+            setCurrentFileId(newFileId);
+        };
+        reader.readAsDataURL(file);
     };
+
+    // Watch for analysis completion and render results
+    useEffect(() => {
+        if (currentFile?.status === 'completed' && currentFile.result) {
+            renderEngineeringLayer(currentFile.result);
+            setSidebarOpen(true);
+        }
+    }, [currentFile?.status, currentFile?.result]);
 
     return (
         <div className="h-full flex flex-col relative overflow-hidden bg-[#F2F2F7]">

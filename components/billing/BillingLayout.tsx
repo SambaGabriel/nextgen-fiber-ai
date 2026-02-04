@@ -186,7 +186,7 @@ const BillingLayout: React.FC<BillingLayoutProps> = ({
         )}
 
         {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
           {navItems.map((item) => {
             const isActive = currentView === item.id;
             const isHighlight = 'highlight' in item && item.highlight;
@@ -196,30 +196,29 @@ const BillingLayout: React.FC<BillingLayoutProps> = ({
                 onClick={() => onViewChange(item.id)}
                 className={`
                   w-full flex items-center gap-3 px-4 py-3 rounded-xl
-                  text-xs font-bold uppercase tracking-widest transition-all duration-300
+                  text-[11px] font-bold uppercase tracking-wider transition-all duration-200
                   ${isCollapsed ? 'justify-center' : ''}
-                  group
+                  hover:scale-[1.02] active:scale-[0.98]
                 `}
                 style={{
-                  background: isHighlight && !isActive
+                  background: isHighlight
                     ? 'var(--gradient-neural)'
                     : isActive
-                      ? 'var(--neural-dim)'
+                      ? 'var(--elevated)'
                       : 'transparent',
-                  border: isActive ? '1px solid var(--border-neural)' : '1px solid transparent',
-                  color: isHighlight && !isActive
+                  color: isHighlight
                     ? 'var(--void)'
                     : isActive
-                      ? 'var(--neural-core)'
+                      ? 'var(--text-primary)'
                       : 'var(--text-tertiary)',
-                  boxShadow: isHighlight && !isActive ? 'var(--shadow-neural)' : 'none'
+                  boxShadow: isHighlight ? 'var(--shadow-neural)' : 'none'
                 }}
                 title={isCollapsed ? item.label : undefined}
               >
                 <item.icon
-                  className={`w-5 h-5 transition-all ${isActive ? '' : 'group-hover:scale-110'}`}
+                  className="w-5 h-5 flex-shrink-0"
                   style={{
-                    color: isHighlight && !isActive
+                    color: isHighlight
                       ? 'var(--void)'
                       : isActive
                         ? 'var(--neural-core)'

@@ -155,10 +155,13 @@ export enum ViewState {
     PRODUCTION = 'PRODUCTION',
     FINANCE_HUB = 'FINANCE_HUB',
     MAP_ANALYZER = 'MAP_ANALYZER',
-    // New workflow views
-    SUBMIT_WORK = 'SUBMIT_WORK',       // Lineman uploads map + photos
-    INBOX = 'INBOX',                   // Owner's command center
+    // Lineman workflow views
+    MY_JOBS = 'MY_JOBS',               // Lineman's assigned jobs list
+    JOB_DETAILS = 'JOB_DETAILS',       // Single job details with map & notes
+    SUBMIT_WORK = 'SUBMIT_WORK',       // Production sheet for a job
     MY_SUBMISSIONS = 'MY_SUBMISSIONS', // Lineman's history
+    // Owner workflow views
+    INBOX = 'INBOX',                   // Owner's command center
     BY_CLIENT = 'BY_CLIENT',           // View by client
     BY_PROJECT = 'BY_PROJECT'          // View by project
 }

@@ -250,6 +250,90 @@ export interface Project {
 }
 
 // ============================================
+// JOB - Work assigned by supervisor to lineman
+// ============================================
+
+export enum JobStatus {
+  ASSIGNED = 'assigned',           // Job assigned, waiting lineman to start
+  IN_PROGRESS = 'in_progress',     // Lineman started working
+  SUBMITTED = 'submitted',         // Lineman submitted production sheet
+  APPROVED = 'approved',           // Supervisor approved
+  NEEDS_REVISION = 'needs_revision', // Supervisor requested changes
+  COMPLETED = 'completed'          // Fully complete and paid
+}
+
+export interface Job {
+  id: string;
+  jobCode: string;                 // JOB-2024-001
+  title: string;
+
+  // Assignment
+  assignedToId: string;            // Lineman user ID
+  assignedToName: string;          // Lineman name
+  assignedById: string;            // Supervisor user ID
+  assignedByName: string;          // Supervisor name
+  assignedAt: string;
+
+  // Client
+  clientId: string;
+  clientName: string;
+
+  // Job details
+  workType: WorkType;
+  location: {
+    address?: string;
+    city?: string;
+    state?: string;
+    coordinates?: { lat: number; lng: number };
+  };
+  scheduledDate?: string;          // When work should be done
+  dueDate?: string;                // Deadline
+  estimatedFootage?: number;       // Expected footage
+
+  // Map/Documents from supervisor
+  mapFile?: {
+    filename: string;
+    url: string;                   // Base64 or URL to PDF
+    size: number;
+    uploadedAt: string;
+  };
+
+  // Supervisor instructions
+  supervisorNotes?: string;
+  supervisorNotes_pt?: string;
+
+  // Status
+  status: JobStatus;
+  statusChangedAt: string;
+
+  // Production Sheet submission (linked when lineman submits)
+  productionData?: {
+    submittedAt: string;
+    totalFootage: number;
+    anchorCount: number;
+    coilCount: number;
+    snowshoeCount: number;
+    entries: Array<{
+      spanFeet: number;
+      anchor: boolean;
+      fiberNumber: string;
+      coil: boolean;
+      snowshoe: boolean;
+      notes?: string;
+    }>;
+    photos?: Photo[];
+    linemanNotes?: string;
+  };
+
+  // Project link (created when submitted for invoicing)
+  projectId?: string;
+
+  // Timestamps
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ============================================
 // DASHBOARD STATS
 // ============================================
 

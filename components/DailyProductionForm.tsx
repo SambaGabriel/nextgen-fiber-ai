@@ -3,20 +3,23 @@
  * Modern minimalist design with premium feel
  */
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import {
     Plus, Trash2, Save, Calendar, User as UserIcon,
     MapPin, Hash, Cable, Ruler, CheckCircle,
     Download, FileSpreadsheet, Clock,
-    Building2, Layers, PlusCircle, Copy, RotateCcw, Send
+    Building2, Layers, PlusCircle, Copy, RotateCcw, Send, ArrowLeft, Briefcase
 } from 'lucide-react';
 import { Language, User } from '../types';
-import { Project, ProjectStatus, WorkType, LineItem } from '../types/project';
+import { Project, ProjectStatus, WorkType, LineItem, Job, JobStatus } from '../types/project';
 import { projectStorage, clientStorage } from '../services/projectStorage';
+import { jobStorage } from '../services/jobStorage';
 
 interface DailyProductionFormProps {
     user: User;
     lang: Language;
+    job?: Job | null;        // Optional linked job
+    onBack?: () => void;     // Optional back navigation
 }
 
 interface SpanEntry {
@@ -67,11 +70,17 @@ const createEmptyEntry = (): SpanEntry => ({
     notes: ''
 });
 
-const DailyProductionForm: React.FC<DailyProductionFormProps> = ({ user, lang }) => {
-    const [header, setHeader] = useState<ProductionHeader>({
+const DailyProductionForm: React.FC<DailyProductionFormProps> = ({ user, lang, job, onBack }) => {
+    // Initialize header with job data if linked
+    const [header, setHeader] = useState<ProductionHeader>(() => ({
         ...INITIAL_HEADER,
-        lineman: user.name
-    });
+        lineman: user.name,
+        city: job?.location?.city || '',
+        projectOLT: job?.title || '',
+        bspd: job?.jobCode || '',
+        strandType: job?.workType === WorkType.OVERLASH ? 'OVERLASH' : job?.workType === WorkType.AERIAL ? 'STRAND' : 'FIBER',
+        clientId: job?.clientId || ''
+    }));
     const [entries, setEntries] = useState<SpanEntry[]>([
         createEmptyEntry(),
         createEmptyEntry(),
@@ -169,12 +178,60 @@ const DailyProductionForm: React.FC<DailyProductionFormProps> = ({ user, lang })
     const clients = clientStorage.getAll();
 
     const handleSubmitForApproval = useCallback(async () => {
-        if (!header.clientId || totals.filledEntries === 0) return;
+        // For job-linked submissions, we don't need clientId
+        if (!job && (!header.clientId || totals.filledEntries === 0)) return;
+        if (job && totals.filledEntries === 0) return;
 
         setIsSubmitting(true);
 
         try {
-            // Calculate line items from production data
+            // If linked to a job, save production data to the job
+            if (job) {
+                const productionData: Job['productionData'] = {
+                    submittedAt: new Date().toISOString(),
+                    totalFootage: totals.totalSpan,
+                    anchorCount: totals.anchorCount,
+                    coilCount: totals.coilCount,
+                    snowshoeCount: totals.snowshoeCount,
+                    entries: entries.filter(e => e.spanFeet && e.spanFeet > 0).map(e => ({
+                        spanFeet: e.spanFeet || 0,
+                        anchor: e.anchor,
+                        fiberNumber: e.fiberNumber,
+                        coil: e.coil,
+                        snowshoe: e.snowshoe,
+                        notes: e.notes || undefined
+                    }))
+                };
+
+                // Update job with production data
+                jobStorage.submitProduction(job.id, productionData);
+
+                // Save to local reports
+                const report = {
+                    id: generateId(),
+                    jobId: job.id,
+                    jobCode: job.jobCode,
+                    header: { ...header, clientId: job.clientId },
+                    entries: entries.filter(e => e.spanFeet && e.spanFeet > 0),
+                    totals,
+                    createdAt: new Date().toISOString(),
+                    createdBy: user.name
+                };
+
+                const existing = JSON.parse(localStorage.getItem('fs_daily_reports') || '[]');
+                localStorage.setItem('fs_daily_reports', JSON.stringify([report, ...existing]));
+                setSavedReports(prev => [report, ...prev]);
+
+                setSubmitSuccess(true);
+                setTimeout(() => {
+                    setSubmitSuccess(false);
+                    if (onBack) onBack();
+                }, 2000);
+
+                return;
+            }
+
+            // Calculate line items from production data (for non-job submissions)
             const rateCard = { rates: { fiber_per_foot: 0.35, anchor_each: 18.00, coil_each: 25.00, snowshoe_each: 15.00 } };
             const lineItems: LineItem[] = [];
 
@@ -297,7 +354,7 @@ const DailyProductionForm: React.FC<DailyProductionFormProps> = ({ user, lang })
         } finally {
             setIsSubmitting(false);
         }
-    }, [header, entries, totals, user, resetForm]);
+    }, [header, entries, totals, user, resetForm, job, onBack]);
 
     React.useEffect(() => {
         const saved = JSON.parse(localStorage.getItem('fs_daily_reports') || '[]');
@@ -343,6 +400,45 @@ const DailyProductionForm: React.FC<DailyProductionFormProps> = ({ user, lang })
 
     return (
         <div className="max-w-7xl mx-auto space-y-4 sm:space-y-8 pb-10">
+            {/* Back button for job-linked form */}
+            {job && onBack && (
+                <button
+                    onClick={onBack}
+                    className="flex items-center gap-2 text-sm font-bold transition-colors"
+                    style={{ color: 'var(--text-tertiary)' }}
+                >
+                    <ArrowLeft className="w-4 h-4" />
+                    Back to Job
+                </button>
+            )}
+
+            {/* Job Info Banner */}
+            {job && (
+                <div
+                    className="p-4 rounded-xl flex items-center gap-4"
+                    style={{ background: 'var(--neural-dim)', border: '1px solid var(--border-neural)' }}
+                >
+                    <div
+                        className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                        style={{ background: 'var(--neural-glow)' }}
+                    >
+                        <Briefcase className="w-6 h-6" style={{ color: 'var(--neural-core)' }} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <p className="font-black text-lg truncate" style={{ color: 'var(--text-primary)' }}>{job.title}</p>
+                        <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                            {job.jobCode} • {job.clientName} • {job.location?.city}
+                        </p>
+                    </div>
+                    {job.estimatedFootage && (
+                        <div className="text-right hidden sm:block">
+                            <p className="text-lg font-black" style={{ color: 'var(--neural-core)' }}>{job.estimatedFootage.toLocaleString()} ft</p>
+                            <p className="text-[9px] font-bold uppercase" style={{ color: 'var(--text-ghost)' }}>Estimated</p>
+                        </div>
+                    )}
+                </div>
+            )}
+
             {/* Header - Tesla Style */}
             <div className="flex flex-col gap-4 sm:gap-6 pb-4 sm:pb-8" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
@@ -351,42 +447,44 @@ const DailyProductionForm: React.FC<DailyProductionFormProps> = ({ user, lang })
                             Production Sheet
                         </h1>
                         <p className="text-xs sm:text-sm font-medium" style={{ color: 'var(--text-tertiary)' }}>
-                            Fill in your daily production data directly in the app
+                            {job ? `Submit production data for ${job.jobCode}` : 'Fill in your daily production data directly in the app'}
                         </p>
                     </div>
 
-                    {/* Tab Switcher - Nothing Style */}
-                    <div className="flex items-center gap-1 p-1 rounded-xl w-full sm:w-auto" style={{ background: 'var(--surface)', border: '1px solid var(--border-default)' }}>
-                        <button
-                            onClick={() => setActiveTab('form')}
-                            className="flex-1 sm:flex-none px-4 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-bold transition-all"
-                            style={{
-                                background: activeTab === 'form' ? 'var(--gradient-neural)' : 'transparent',
-                                color: activeTab === 'form' ? 'var(--void)' : 'var(--text-secondary)'
-                            }}
-                        >
-                            New Entry
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('history')}
-                            className="flex-1 sm:flex-none px-4 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2"
-                            style={{
-                                background: activeTab === 'history' ? 'var(--gradient-neural)' : 'transparent',
-                                color: activeTab === 'history' ? 'var(--void)' : 'var(--text-secondary)'
-                            }}
-                        >
-                            History
-                            {savedReports.length > 0 && (
-                                <span className="px-1.5 py-0.5 rounded text-[10px]" style={{ background: 'var(--neural-glow)' }}>
-                                    {savedReports.length}
-                                </span>
-                            )}
-                        </button>
-                    </div>
+                    {/* Tab Switcher - Only show when not job-linked */}
+                    {!job && (
+                        <div className="flex items-center gap-1 p-1 rounded-xl w-full sm:w-auto" style={{ background: 'var(--surface)', border: '1px solid var(--border-default)' }}>
+                            <button
+                                onClick={() => setActiveTab('form')}
+                                className="flex-1 sm:flex-none px-4 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-bold transition-all"
+                                style={{
+                                    background: activeTab === 'form' ? 'var(--gradient-neural)' : 'transparent',
+                                    color: activeTab === 'form' ? 'var(--void)' : 'var(--text-secondary)'
+                                }}
+                            >
+                                New Entry
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('history')}
+                                className="flex-1 sm:flex-none px-4 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2"
+                                style={{
+                                    background: activeTab === 'history' ? 'var(--gradient-neural)' : 'transparent',
+                                    color: activeTab === 'history' ? 'var(--void)' : 'var(--text-secondary)'
+                                }}
+                            >
+                                History
+                                {savedReports.length > 0 && (
+                                    <span className="px-1.5 py-0.5 rounded text-[10px]" style={{ background: 'var(--neural-glow)' }}>
+                                        {savedReports.length}
+                                    </span>
+                                )}
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
 
-            {activeTab === 'form' ? (
+            {(activeTab === 'form' || job) ? (
                 <>
                     {/* Quick Stats - SpaceX Mission Control Style */}
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-4">
@@ -688,7 +786,7 @@ const DailyProductionForm: React.FC<DailyProductionFormProps> = ({ user, lang })
                         </button>
                         <button
                             onClick={handleSubmitForApproval}
-                            disabled={isSubmitting || totals.filledEntries === 0 || !header.clientId}
+                            disabled={isSubmitting || totals.filledEntries === 0 || (!job && !header.clientId)}
                             className="col-span-2 sm:col-span-1 btn-neural flex items-center justify-center gap-2 sm:gap-3 px-4 sm:px-6 py-3 sm:py-4 rounded-xl disabled:opacity-50 sm:flex-[2]"
                             style={{ boxShadow: 'var(--shadow-neural)' }}
                         >

@@ -3,7 +3,7 @@ import { ViewState, Notification, User, Language } from '../types';
 import { translations } from '../services/translations';
 import {
     LayoutDashboard, LogOut, Globe, Settings, Bell, ClipboardList, Wallet, ScanLine, ChevronRight,
-    Upload, Inbox, History, Users, FolderOpen, Mic
+    Upload, Inbox, History, Users, FolderOpen, Mic, Briefcase
 } from 'lucide-react';
 import Logo from './Logo';
 
@@ -39,7 +39,7 @@ const Layout: React.FC<LayoutProps> = ({ currentView, onChangeView, children, no
     ] : [
         // Lineman Navigation - Simple & Mobile-first
         { id: ViewState.DASHBOARD, label: 'Home', icon: LayoutDashboard }, // Overview
-        { id: ViewState.SUBMIT_WORK, label: 'Submit', icon: Upload },      // Upload map + photos
+        { id: ViewState.MY_JOBS, label: 'My Jobs', icon: Briefcase },      // Jobs assigned to lineman
         { id: ViewState.MY_SUBMISSIONS, label: 'History', icon: History }, // Past submissions
     ];
 

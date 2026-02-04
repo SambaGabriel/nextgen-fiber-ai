@@ -7,6 +7,7 @@ import { storage } from './services/storageService';
 import { analyzeMapBoQ } from './services/claudeService';
 import { aiProcessingService } from './services/aiProcessingService';
 import { ViewState, Notification, User, Invoice, Transaction, UnitRates, AuditResult, Language, AuditFile, MapAuditReport } from './types';
+import { Job } from './types/project';
 
 // [bundle-dynamic-imports] - Lazy load heavy components to reduce initial bundle size
 const AdminPortal = lazy(() => import('./components/AdminPortal'));
@@ -21,6 +22,9 @@ const BillingApp = lazy(() => import('./components/billing/BillingApp'));
 // New workflow components
 const SubmitWork = lazy(() => import('./components/SubmitWork'));
 const OwnerInbox = lazy(() => import('./components/OwnerInbox'));
+// Lineman job workflow
+const MyJobs = lazy(() => import('./components/MyJobs'));
+const JobDetails = lazy(() => import('./components/JobDetails'));
 
 const INITIAL_RATES: UnitRates = { fiber: 0.35, anchor: 18.00 };
 
@@ -51,6 +55,8 @@ const App: React.FC = () => {
     const [currentLang, setCurrentLang] = useState<Language>(Language.PT);
     const [auditQueue, setAuditQueue] = useState<AuditFile[]>([]);
     const [isGlobalAnalyzing, setIsGlobalAnalyzing] = useState(false);
+    // Selected job for lineman workflow
+    const [selectedJob, setSelectedJob] = useState<Job | null>(null);
 
     // Refs to track latest values without causing re-renders
     const auditQueueRef = useRef<AuditFile[]>([]);
@@ -85,7 +91,24 @@ const App: React.FC = () => {
     const handleLogout = useCallback(() => {
         storage.saveUser(null);
         setUser(null);
+        setSelectedJob(null);
         setCurrentView(ViewState.DASHBOARD);
+    }, []);
+
+    // Job navigation handlers
+    const handleSelectJob = useCallback((job: Job) => {
+        setSelectedJob(job);
+        setCurrentView(ViewState.JOB_DETAILS);
+    }, []);
+
+    const handleBackToJobs = useCallback(() => {
+        setSelectedJob(null);
+        setCurrentView(ViewState.MY_JOBS);
+    }, []);
+
+    const handleStartProduction = useCallback((job: Job) => {
+        setSelectedJob(job);
+        setCurrentView(ViewState.SUBMIT_WORK);
     }, []);
 
     const handleUpdateRates = useCallback((newRates: UnitRates) => {
@@ -162,8 +185,20 @@ const App: React.FC = () => {
             // Lineman views
             case ViewState.DASHBOARD:
                 return <Dashboard onNavigate={setCurrentView} invoices={invoices} transactions={transactions} user={user} lang={currentLang} />;
+            case ViewState.MY_JOBS:
+                return <MyJobs user={user} lang={currentLang} onSelectJob={handleSelectJob} />;
+            case ViewState.JOB_DETAILS:
+                return selectedJob ? (
+                    <JobDetails
+                        job={selectedJob}
+                        user={user}
+                        lang={currentLang}
+                        onBack={handleBackToJobs}
+                        onStartProduction={handleStartProduction}
+                    />
+                ) : <MyJobs user={user} lang={currentLang} onSelectJob={handleSelectJob} />;
             case ViewState.SUBMIT_WORK:
-                return <DailyProductionForm user={user} lang={currentLang} />;
+                return <DailyProductionForm user={user} lang={currentLang} job={selectedJob} onBack={selectedJob ? handleBackToJobs : undefined} />;
             case ViewState.MY_SUBMISSIONS:
                 return <OwnerInbox lang={currentLang} />; // Reuse with filter for lineman's own submissions
 

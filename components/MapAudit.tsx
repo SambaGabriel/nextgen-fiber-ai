@@ -435,8 +435,25 @@ const MapAudit: React.FC<MapAuditProps> = ({ lang, user, onSaveToReports, auditQ
                 </div>
             )}
 
+            {/* DEBUG PANEL - Remove after fixing */}
+            <div className="fixed bottom-4 left-4 z-[3000] bg-black/80 text-white p-3 rounded-lg text-xs font-mono max-w-xs">
+                <div className="font-bold mb-1 text-yellow-400">DEBUG INFO</div>
+                <div>Queue: {auditQueue.length} files</div>
+                <div>CurrentFileId: {currentFileId || 'null'}</div>
+                <div>CurrentFile Status: {currentFile?.status || 'N/A'}</div>
+                <div>isReadingFile: {isReadingFile ? 'true' : 'false'}</div>
+                <div>isAnalyzing (prop): {isAnalyzing ? 'true' : 'false'}</div>
+                <div>isInternalAnalyzing: {isInternalAnalyzing ? 'true' : 'false'}</div>
+                <div>hasError: {hasError ? 'true' : 'false'}</div>
+                {auditQueue.map(f => (
+                    <div key={f.id} className="text-[10px] text-gray-400 truncate">
+                        {f.id.slice(-6)}: {f.status} - {f.name?.slice(0, 15)}
+                    </div>
+                ))}
+            </div>
+
             <style>{`
-                .leaflet-tile-pane { 
+                .leaflet-tile-pane {
                     filter: contrast(1.18) brightness(1.04) saturate(0.85) !important;
                 }
                 .leaflet-container { background: #F2F2F7 !important; }

@@ -16,7 +16,7 @@ const AgencyHub = lazy(() => import('./components/AgencyHub'));
 const DailyProductionForm = lazy(() => import('./components/DailyProductionForm'));
 const FiberMapTester = lazy(() => import('./components/FiberMapTester'));
 // [bundle-barrel-imports] - Import directly instead of barrel file
-const BillingApp = lazy(() => import('./components/billing/BillingApp').then(m => ({ default: m.BillingApp })));
+const BillingApp = lazy(() => import('./components/billing/BillingApp'));
 
 const INITIAL_RATES: UnitRates = { fiber: 0.35, anchor: 18.00 };
 
@@ -141,7 +141,7 @@ const App: React.FC = () => {
             case ViewState.MAP_ANALYZER:
                 return <FiberMapTester />;
             case ViewState.ADMIN:
-                return <AdminPortal invoices={invoices} rates={rates} onUpdateRates={handleUpdateRates} user={user} onUpdateUser={setUser} onPayInvoice={() => {}} />;
+                return <AdminPortal invoices={invoices} rates={rates} onUpdateRates={handleUpdateRates} user={user} onUpdateUser={setUser} onPayInvoice={() => {}} lang={currentLang} />;
             default:
                 return <Dashboard onNavigate={setCurrentView} invoices={invoices} transactions={transactions} user={user} lang={currentLang} />;
         }

@@ -216,31 +216,31 @@ const BillingLayout: React.FC<BillingLayoutProps> = ({
                 }}
                 title={isCollapsed ? item.label : undefined}
               >
-                <item.icon
-                  className={`w-5 h-5 transition-all ${isActive ? '' : 'group-hover:scale-110'}`}
-                  style={{
-                    color: isHighlight && !isActive
-                      ? 'var(--void)'
-                      : isActive
-                        ? 'var(--neural-core)'
-                        : 'var(--text-tertiary)'
-                  }}
-                />
+                <div className="relative">
+                  <item.icon
+                    className={`w-5 h-5 transition-all ${isActive ? '' : 'group-hover:scale-110'}`}
+                    style={{
+                      color: isHighlight && !isActive
+                        ? 'var(--void)'
+                        : isActive
+                          ? 'var(--neural-core)'
+                          : 'var(--text-tertiary)'
+                    }}
+                  />
+                  {item.badge && isCollapsed && (
+                    <span
+                      className="absolute -top-2 -right-2 min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-[9px] font-black"
+                      style={{
+                        background: 'var(--energy-core)',
+                        color: 'var(--void)'
+                      }}
+                    >
+                      {item.badge}
+                    </span>
+                  )}
+                </div>
                 {!isCollapsed && (
-                  <>
-                    <span className="flex-1 text-left">{item.label}</span>
-                    {item.badge && (
-                      <span
-                        className="px-2 py-0.5 rounded-lg text-[10px] font-black"
-                        style={{
-                          background: 'var(--gradient-neural)',
-                          color: 'var(--void)'
-                        }}
-                      >
-                        {item.badge}
-                      </span>
-                    )}
-                  </>
+                  <span className="flex-1 text-left">{item.label}</span>
                 )}
               </button>
             );

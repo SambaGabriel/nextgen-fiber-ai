@@ -98,3 +98,40 @@ const TechnicalReports: React.FC<TechnicalReportsProps> = ({ user, auditData, ma
 
                         <div className="space-y-8">
                             <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100">
+                                <h3 className="text-sm font-black uppercase tracking-tight mb-4 flex items-center gap-2">
+                                    <UserIcon className="w-4 h-4" /> Inspector Information
+                                </h3>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div><span className="text-[8px] font-bold text-slate-500 uppercase">Name</span><p className="font-bold">{user.name}</p></div>
+                                    <div><span className="text-[8px] font-bold text-slate-500 uppercase">Company</span><p className="font-bold">{user.companyName}</p></div>
+                                </div>
+                            </div>
+
+                            <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100">
+                                <h3 className="text-sm font-black uppercase tracking-tight mb-4 flex items-center gap-2">
+                                    <Hash className="w-4 h-4" /> Audit Summary
+                                </h3>
+                                <div className="grid grid-cols-3 gap-4">
+                                    <div className="text-center p-4 bg-white rounded-xl">
+                                        <p className="text-2xl font-black text-emerald-600">{auditData.length}</p>
+                                        <p className="text-[8px] font-bold text-slate-500 uppercase">Total Audits</p>
+                                    </div>
+                                    <div className="text-center p-4 bg-white rounded-xl">
+                                        <p className="text-2xl font-black text-blue-600">{mapReports.length}</p>
+                                        <p className="text-[8px] font-bold text-slate-500 uppercase">Map Reports</p>
+                                    </div>
+                                    <div className="text-center p-4 bg-white rounded-xl">
+                                        <p className="text-2xl font-black text-purple-600">100%</p>
+                                        <p className="text-[8px] font-bold text-slate-500 uppercase">Compliance</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
+export default TechnicalReports;

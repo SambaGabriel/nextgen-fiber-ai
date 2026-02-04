@@ -1,7 +1,7 @@
 
 import React, { useState, useRef } from 'react';
 import { Camera, UploadCloud, Sparkles, ArrowRight } from 'lucide-react';
-import { analyzeConstructionImage } from '../services/geminiService';
+import { analyzeConstructionImage } from '../services/claudeService';
 import { AuditResult, User, Language } from '../types';
 import { translations } from '../services/translations';
 import FiberLoader from './FiberLoader';

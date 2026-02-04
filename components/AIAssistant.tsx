@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { createChatSession } from '../services/geminiService';
+import { createChatSession } from '../services/claudeService';
 import { Send, BrainCircuit, Bot, Loader2, Sparkles, Globe } from 'lucide-react';
 import { Language } from '../types';
 
@@ -31,8 +31,8 @@ const AIAssistant: React.FC<{ lang: Language }> = ({ lang }) => {
         setIsLoading(true);
 
         try {
-            const result = await chatSession.sendMessage({ message: text });
-            setMessages(prev => [...prev, { role: 'model', text: result.text || '' }]);
+            const result = await chatSession.sendMessage(text);
+            setMessages(prev => [...prev, { role: 'model', text: result }]);
         } catch (error) {
             setMessages(prev => [...prev, { role: 'model', text: "Error." }]);
         } finally {

@@ -1,10 +1,10 @@
 /**
  * AI Processing Service
- * Automated analysis of submitted projects using Gemini AI
+ * Automated analysis of submitted projects using Claude AI
  * Zero-Touch workflow: Upload → AI Analysis → Auto-Invoice
  */
 
-import { analyzeMapBoQ, analyzeConstructionImage } from './geminiService';
+import { analyzeMapBoQ, analyzeConstructionImage } from './claudeService';
 import { projectStorage, rateCardStorage, clientStorage } from './projectStorage';
 import {
   Project,

@@ -4,7 +4,7 @@
  */
 
 import Anthropic from '@anthropic-ai/sdk';
-import { MapAnalysisResult, Language } from '../types';
+import { MapAnalysisResult, Language, AuditStatus, AuditResult } from '../types';
 
 const getClient = () => new Anthropic({
   apiKey: import.meta.env.VITE_ANTHROPIC_API_KEY,
@@ -221,9 +221,156 @@ Focus on: cable routing, attachment quality, safety clearances, workmanship.`
   }
 };
 
+/**
+ * Analyze construction image for audit (compatible with old API)
+ */
+export const analyzeConstructionImage = async (
+  base64Image: string,
+  lang: Language = Language.PT
+): Promise<AuditResult> => {
+  try {
+    const client = getClient();
+
+    const cleanBase64 = base64Image.includes('base64,')
+      ? base64Image.split('base64,')[1]
+      : base64Image;
+
+    const response = await client.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 2048,
+      messages: [
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'image',
+              source: {
+                type: 'base64',
+                media_type: 'image/jpeg',
+                data: cleanBase64
+              }
+            },
+            {
+              type: 'text',
+              text: `You are a fiber optic construction QC inspector. Analyze this field photo.
+
+Return JSON:
+{
+  "status": "COMPLIANT" | "DIVERGENT" | "CRITICAL" | "PENDING",
+  "complianceScore": number (0-100),
+  "detectedItems": [string] (list of detected equipment/materials),
+  "issues": [string] (list of issues found),
+  "aiSummary": string (${lang === 'PT' ? 'Portuguese' : 'English'} summary of findings)
+}
+
+Evaluate: cable sag, attachment quality, clearances, safety, NESC compliance, workmanship.`
+            }
+          ]
+        }
+      ]
+    });
+
+    const textBlock = response.content.find(block => block.type === 'text');
+    if (!textBlock || textBlock.type !== 'text') {
+      throw new Error('No text response');
+    }
+
+    let jsonStr = textBlock.text;
+    if (jsonStr.includes('```')) {
+      jsonStr = jsonStr.split('```')[1].split('```')[0].replace('json', '');
+    }
+
+    const result = JSON.parse(jsonStr.trim());
+
+    // Map status string to AuditStatus enum
+    const statusMap: Record<string, AuditStatus> = {
+      'COMPLIANT': AuditStatus.COMPLIANT,
+      'DIVERGENT': AuditStatus.DIVERGENT,
+      'CRITICAL': AuditStatus.CRITICAL,
+      'PENDING': AuditStatus.PENDING
+    };
+
+    return {
+      id: generateId(),
+      timestamp: new Date().toISOString(),
+      status: statusMap[result.status] || AuditStatus.PENDING,
+      complianceScore: result.complianceScore || 0,
+      detectedItems: result.detectedItems || [],
+      issues: result.issues || [],
+      aiSummary: result.aiSummary || '',
+      auditedBy: 'Claude AI',
+      companyName: 'System'
+    };
+
+  } catch (error) {
+    console.error('Claude Construction Analysis Error:', error);
+    return {
+      id: generateId(),
+      timestamp: new Date().toISOString(),
+      status: AuditStatus.PENDING,
+      complianceScore: 0,
+      detectedItems: [],
+      issues: ['Analysis failed'],
+      aiSummary: 'Unable to analyze image',
+      auditedBy: 'System',
+      companyName: 'System'
+    };
+  }
+};
+
+/**
+ * Analyze map/BOQ (compatible with old API name)
+ */
+export const analyzeMapBoQ = analyzeMapWithClaude;
+
+/**
+ * Create chat session with Claude
+ */
+export const createChatSession = (lang: Language = Language.PT) => {
+  const client = getClient();
+
+  const systemPrompt = lang === Language.PT
+    ? 'Você é um assistente especializado em construção de fibra óptica. Responda em português de forma técnica e precisa.'
+    : lang === Language.ES
+      ? 'Eres un asistente especializado en construcción de fibra óptica. Responde en español de forma técnica y precisa.'
+      : 'You are an assistant specialized in fiber optic construction. Respond in English technically and precisely.';
+
+  let conversationHistory: Array<{ role: 'user' | 'assistant'; content: string }> = [];
+
+  return {
+    sendMessage: async (message: string): Promise<string> => {
+      conversationHistory.push({ role: 'user', content: message });
+
+      const response = await client.messages.create({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 2048,
+        system: systemPrompt,
+        messages: conversationHistory
+      });
+
+      const textBlock = response.content.find(block => block.type === 'text');
+      const assistantMessage = textBlock && textBlock.type === 'text' ? textBlock.text : 'No response';
+
+      conversationHistory.push({ role: 'assistant', content: assistantMessage });
+
+      return assistantMessage;
+    },
+    reset: () => {
+      conversationHistory = [];
+    }
+  };
+};
+
+/**
+ * Field assistant session
+ */
+export const createFieldAssistantSession = createChatSession;
+
 export const claudeService = {
   analyzeMap: analyzeMapWithClaude,
-  analyzePhoto: analyzePhotoWithClaude
+  analyzePhoto: analyzePhotoWithClaude,
+  analyzeConstruction: analyzeConstructionImage,
+  createChat: createChatSession
 };
 
 export default claudeService;

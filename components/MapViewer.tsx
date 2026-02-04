@@ -9,7 +9,7 @@ import {
     Navigation, Cpu, Wifi, WifiOff, CloudDownload, RefreshCw, UploadCloud
 } from 'lucide-react';
 import FiberLoader from './FiberLoader';
-import { analyzeMapBoQ } from '../services/geminiService';
+import { analyzeMapBoQ } from '../services/claudeService';
 import { MapAnalysisResult, Language } from '../types';
 import { translations } from '../services/translations';
 import { jsPDF } from 'jspdf';

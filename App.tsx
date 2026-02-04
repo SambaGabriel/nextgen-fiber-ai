@@ -4,7 +4,7 @@ import Dashboard from './components/Dashboard';
 import AuthPage from './components/AuthPage';
 import FiberLoader from './components/FiberLoader';
 import { storage } from './services/storageService';
-import { analyzeMapBoQ } from './services/geminiService';
+import { analyzeMapBoQ } from './services/claudeService';
 import { aiProcessingService } from './services/aiProcessingService';
 import { ViewState, Notification, User, Invoice, Transaction, UnitRates, AuditResult, Language, AuditFile, MapAuditReport } from './types';
 

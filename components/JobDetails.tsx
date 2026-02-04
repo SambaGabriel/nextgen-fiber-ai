@@ -394,9 +394,10 @@ const JobDetails: React.FC<JobDetailsProps> = ({ job, user, lang, onBack, onStar
           )}
         </div>
 
-        {/* Chat Section */}
+        {/* Chat Section - AI Supervisor */}
         <ChatSection
           jobId={currentJob.id}
+          job={currentJob}
           userId={user.id}
           userName={user.name}
           userRole={user.role}

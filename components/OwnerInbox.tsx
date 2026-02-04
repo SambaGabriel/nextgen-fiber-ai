@@ -8,10 +8,11 @@ import {
   Inbox, Clock, CheckCircle2, AlertTriangle, DollarSign,
   Eye, Send, MoreHorizontal, Filter, RefreshCw, Search,
   ChevronRight, FileText, User, MapPin, Calendar, Zap,
-  TrendingUp, AlertCircle, CheckSquare, XCircle
+  TrendingUp, AlertCircle, CheckSquare, XCircle, RotateCcw
 } from 'lucide-react';
 import { Project, ProjectStatus, DashboardStats } from '../types/project';
 import { projectStorage, clientStorage } from '../services/projectStorage';
+import { aiProcessingService } from '../services/aiProcessingService';
 import { Language } from '../types';
 import FiberLoader from './FiberLoader';
 
@@ -55,7 +56,9 @@ const translations = {
     search: 'Search projects...',
     aiProcessing: 'AI is analyzing...',
     complianceScore: 'Compliance',
-    flags: 'flags'
+    flags: 'flags',
+    reprocess: 'Reprocess',
+    reprocessing: 'Reprocessing...'
   },
   PT: {
     title: 'Central de Comando',
@@ -89,7 +92,9 @@ const translations = {
     search: 'Buscar projetos...',
     aiProcessing: 'AI está analisando...',
     complianceScore: 'Conformidade',
-    flags: 'alertas'
+    flags: 'alertas',
+    reprocess: 'Reprocessar',
+    reprocessing: 'Reprocessando...'
   },
   ES: {
     title: 'Centro de Comando',
@@ -123,7 +128,9 @@ const translations = {
     search: 'Buscar proyectos...',
     aiProcessing: 'AI está analizando...',
     complianceScore: 'Cumplimiento',
-    flags: 'alertas'
+    flags: 'alertas',
+    reprocess: 'Reprocesar',
+    reprocessing: 'Reprocesando...'
   }
 };
 
@@ -142,6 +149,8 @@ const OwnerInbox: React.FC<OwnerInboxProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [reprocessingId, setReprocessingId] = useState<string | null>(null);
+  const [processingProjectId, setProcessingProjectId] = useState<string | null>(null);
 
   // Load data
   const loadData = useCallback(() => {
@@ -156,6 +165,50 @@ const OwnerInbox: React.FC<OwnerInboxProps> = ({
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Subscribe to AI processing state changes
+  useEffect(() => {
+    const unsubscribe = aiProcessingService.subscribeToProcessingState((state) => {
+      setProcessingProjectId(state.currentProjectId);
+      // Refresh data when processing state changes
+      if (state.currentProjectId === null) {
+        loadData();
+      }
+    });
+    return unsubscribe;
+  }, [loadData]);
+
+  // Auto-refresh while processing
+  useEffect(() => {
+    if (processingProjectId) {
+      const interval = setInterval(loadData, 2000);
+      return () => clearInterval(interval);
+    }
+  }, [processingProjectId, loadData]);
+
+  // Handle reprocess
+  const handleReprocess = useCallback(async (project: Project) => {
+    setReprocessingId(project.id);
+    try {
+      await aiProcessingService.reprocessProject(project.id, lang);
+      loadData();
+    } finally {
+      setReprocessingId(null);
+    }
+  }, [lang, loadData]);
+
+  // Handle approve (move to READY_TO_INVOICE)
+  const handleApprove = useCallback((project: Project) => {
+    projectStorage.update(project.id, {
+      status: ProjectStatus.READY_TO_INVOICE
+    });
+    projectStorage.addEvent(project.id, {
+      action: 'approved',
+      description: 'Project approved for invoicing'
+    });
+    loadData();
+    onApproveProject?.(project);
+  }, [loadData, onApproveProject]);
 
   // Filter projects by tab
   const filteredProjects = useMemo(() => {
@@ -465,6 +518,58 @@ const OwnerInbox: React.FC<OwnerInboxProps> = ({
 
                     {/* Actions */}
                     <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {project.status === ProjectStatus.NEEDS_ATTENTION && (
+                        <>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleReprocess(project);
+                            }}
+                            disabled={reprocessingId === project.id}
+                            className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 disabled:opacity-50"
+                            style={{
+                              background: 'rgba(251, 146, 60, 0.1)',
+                              border: '1px solid rgba(251, 146, 60, 0.3)',
+                              color: '#fb923c'
+                            }}
+                          >
+                            <RotateCcw className={`w-4 h-4 ${reprocessingId === project.id ? 'animate-spin' : ''}`} />
+                            {reprocessingId === project.id ? t.reprocessing : t.reprocess}
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleApprove(project);
+                            }}
+                            className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2"
+                            style={{
+                              background: 'var(--online-glow)',
+                              border: '1px solid var(--border-online)',
+                              color: 'var(--online-core)'
+                            }}
+                          >
+                            <CheckCircle2 className="w-4 h-4" />
+                            {t.approve}
+                          </button>
+                        </>
+                      )}
+                      {project.status === ProjectStatus.AI_COMPLETE && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleApprove(project);
+                          }}
+                          className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2"
+                          style={{
+                            background: 'var(--online-glow)',
+                            border: '1px solid var(--border-online)',
+                            color: 'var(--online-core)'
+                          }}
+                        >
+                          <CheckCircle2 className="w-4 h-4" />
+                          {t.approve}
+                        </button>
+                      )}
                       {project.status === ProjectStatus.READY_TO_INVOICE && (
                         <button
                           onClick={(e) => {

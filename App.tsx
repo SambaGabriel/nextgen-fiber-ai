@@ -5,6 +5,7 @@ import AuthPage from './components/AuthPage';
 import FiberLoader from './components/FiberLoader';
 import { storage } from './services/storageService';
 import { analyzeMapBoQ } from './services/geminiService';
+import { aiProcessingService } from './services/aiProcessingService';
 import { ViewState, Notification, User, Invoice, Transaction, UnitRates, AuditResult, Language, AuditFile, MapAuditReport } from './types';
 
 // [bundle-dynamic-imports] - Lazy load heavy components to reduce initial bundle size
@@ -57,6 +58,14 @@ const App: React.FC = () => {
     useEffect(() => {
         localStorage.setItem('fs_map_reports', JSON.stringify(mapReports));
     }, [mapReports]);
+
+    // [ai-processing] - Start AI processing queue when user is logged in
+    useEffect(() => {
+        if (user) {
+            aiProcessingService.startProcessingQueue(currentLang);
+            return () => aiProcessingService.stopProcessingQueue();
+        }
+    }, [user, currentLang]);
 
     // [rerender-functional-setstate] - Stable callback using functional setState
     const handleLogin = useCallback((newUser: User) => {

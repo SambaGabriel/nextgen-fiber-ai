@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { Project, ProjectStatus, WorkType, Photo } from '../types/project';
 import { projectStorage, clientStorage } from '../services/projectStorage';
+import { aiProcessingService } from '../services/aiProcessingService';
 import { Language } from '../types';
 import FiberLoader from './FiberLoader';
 
@@ -256,12 +257,8 @@ const SubmitWork: React.FC<SubmitWorkProps> = ({
         }
       });
 
-      // Simulate AI processing start
-      setTimeout(() => {
-        projectStorage.update(project.id, {
-          status: ProjectStatus.AI_PROCESSING
-        });
-      }, 1000);
+      // Trigger AI processing immediately
+      aiProcessingService.triggerProcessing(project.id, lang);
 
       setIsSuccess(true);
       onSubmitSuccess?.(project);

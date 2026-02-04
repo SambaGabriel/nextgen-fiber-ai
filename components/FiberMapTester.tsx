@@ -44,13 +44,36 @@ type ResultTab = 'overview' | 'spans' | 'cables' | 'equipment' | 'poles' | 'vali
 // MAIN COMPONENT
 // ============================================
 
+// Storage keys
+const STORAGE_KEY_RESULT = 'fs_map_analyzer_result';
+const STORAGE_KEY_FILENAME = 'fs_map_analyzer_filename';
+
 const FiberMapTester: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [result, setResult] = useState<FiberMapAnalysisResult | null>(null);
+  // Restore result from localStorage on mount
+  const [result, setResult] = useState<FiberMapAnalysisResult | null>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_RESULT);
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [savedFileName, setSavedFileName] = useState<string | null>(() => {
+    return localStorage.getItem(STORAGE_KEY_FILENAME);
+  });
   const [error, setError] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<ViewMode>('upload');
+  // Start in results view if we have saved results
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_RESULT);
+      return saved ? 'results' : 'upload';
+    } catch {
+      return 'upload';
+    }
+  });
   const [activeTab, setActiveTab] = useState<ResultTab>('overview');
 
   const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -70,6 +93,18 @@ const FiberMapTester: React.FC = () => {
     }
   }, []);
 
+  // Clear results and go back to upload
+  const handleClearResults = useCallback(() => {
+    localStorage.removeItem(STORAGE_KEY_RESULT);
+    localStorage.removeItem(STORAGE_KEY_FILENAME);
+    setResult(null);
+    setSavedFileName(null);
+    setFile(null);
+    setPreview(null);
+    setViewMode('upload');
+    setError(null);
+  }, []);
+
   const handleAnalyze = useCallback(async () => {
     if (!file) return;
 
@@ -85,6 +120,10 @@ const FiberMapTester: React.FC = () => {
         try {
           const analysisResult = await analyzeMapWithClaude(base64, mimeType);
           setResult(analysisResult as any);
+          // Save to localStorage for persistence across tab changes
+          localStorage.setItem(STORAGE_KEY_RESULT, JSON.stringify(analysisResult));
+          localStorage.setItem(STORAGE_KEY_FILENAME, file.name);
+          setSavedFileName(file.name);
           setViewMode('results');
         } catch (err: any) {
           setError(err.message || 'Analysis failed');
@@ -395,10 +434,19 @@ const FiberMapTester: React.FC = () => {
             </div>
             <p className="text-sm" style={{ color: 'var(--text-ghost)' }}>
               {result.header.location || 'Location not specified'} • {result.header.contractor || 'Unknown contractor'}
+              {savedFileName && <span> • 📄 {savedFileName}</span>}
             </p>
           </div>
 
           <div className="flex items-center gap-2">
+            <button
+              onClick={handleClearResults}
+              className="px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all hover:scale-105"
+              style={{ background: '#FF5500', color: 'white' }}
+            >
+              <Upload className="w-4 h-4" />
+              Nova Análise
+            </button>
             <button
               onClick={handleExportCSV}
               className="px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all hover:scale-105"

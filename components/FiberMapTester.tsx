@@ -493,16 +493,6 @@ const FiberMapTester: React.FC = () => {
           )}
         </div>
 
-        {/* Footer Metadata */}
-        <div
-          className="mt-8 p-4 rounded-xl flex items-center justify-between text-[10px] uppercase tracking-widest"
-          style={{ background: 'var(--surface)', border: '1px solid var(--border-subtle)', color: 'var(--text-ghost)' }}
-        >
-          <span>Engine v{result.metadata.engineVersion}</span>
-          <span>{result.metadata.modelUsed}</span>
-          <span>{result.metadata.processingTimeMs}ms</span>
-          <span>{result.metadata.extractionPasses} passes</span>
-        </div>
       </div>
     </div>
   );

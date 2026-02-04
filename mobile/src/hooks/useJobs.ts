@@ -13,13 +13,16 @@ import {
   Comment,
   PaginatedResponse,
 } from '../types/jobs';
-import {
-  fetchJobs,
-  fetchJobById,
-  fetchSubmissions,
-  fetchComments,
-} from '../api/jobsApi';
 import { trackEvent } from '../services/telemetry';
+import {
+  mockJobsList,
+  mockJobDetail,
+  mockSubmissions,
+  mockComments,
+} from '../mocks/mockData';
+
+// Use mock data for now (set to false when backend is ready)
+const USE_MOCK_DATA = true;
 
 // ============================================
 // CONSTANTS
@@ -115,15 +118,30 @@ export function useJobs(): UseJobsReturn {
     }));
 
     try {
-      const status = filterToStatus(currentFilter);
-      const response = await fetchJobs({ page, status });
+      // Simulate network delay
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      let jobs: JobListItem[];
+
+      if (USE_MOCK_DATA) {
+        // Filter mock data based on current filter
+        const status = filterToStatus(currentFilter);
+        jobs = status
+          ? mockJobsList.filter((j) => j.status === status)
+          : mockJobsList;
+      } else {
+        // TODO: Use real API when backend is ready
+        // const response = await fetchJobs({ page, status });
+        // jobs = response.data;
+        jobs = [];
+      }
 
       setState((prev) => ({
         ...prev,
-        jobs: page === 1 ? response.data : [...prev.jobs, ...response.data],
+        jobs: page === 1 ? jobs : [...prev.jobs, ...jobs],
         isLoading: false,
         isRefreshing: false,
-        hasMore: response.pagination.hasMore,
+        hasMore: false, // Mock data doesn't paginate
         page,
       }));
 
@@ -132,7 +150,7 @@ export function useJobs(): UseJobsReturn {
         await AsyncStorage.setItem(
           `${JOBS_CACHE_KEY}_${currentFilter}`,
           JSON.stringify({
-            data: response.data,
+            data: jobs,
             timestamp: Date.now(),
           })
         );
@@ -226,31 +244,51 @@ export function useJobDetail(jobId: string): UseJobDetailReturn {
     setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
     try {
-      // Load all data in parallel
-      const [job, submissionsRes, commentsRes] = await Promise.all([
-        fetchJobById(jobId),
-        fetchSubmissions(jobId),
-        fetchComments(jobId),
-      ]);
+      // Simulate network delay
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      let job: Job | null;
+      let submissions: ProductionSubmission[];
+      let comments: Comment[];
+
+      if (USE_MOCK_DATA) {
+        // Use mock data
+        job = jobId === 'job-001' ? mockJobDetail : {
+          ...mockJobDetail,
+          id: jobId,
+          city: 'Mock City',
+          status: JobStatus.AVAILABLE,
+        };
+        submissions = mockSubmissions.filter((s) => s.jobId === jobId || jobId === 'job-001');
+        comments = mockComments.filter((c) => c.jobId === jobId || jobId === 'job-001');
+      } else {
+        // TODO: Use real API when backend is ready
+        // const [jobRes, submissionsRes, commentsRes] = await Promise.all([...]);
+        job = null;
+        submissions = [];
+        comments = [];
+      }
 
       setState({
         job,
-        submissions: submissionsRes.data,
-        comments: commentsRes.data,
+        submissions,
+        comments,
         isLoading: false,
         error: null,
       });
 
       // Cache job detail
-      await AsyncStorage.setItem(
-        `${JOB_DETAIL_CACHE_PREFIX}${jobId}`,
-        JSON.stringify({
-          job,
-          submissions: submissionsRes.data,
-          comments: commentsRes.data,
-          timestamp: Date.now(),
-        })
-      );
+      if (job) {
+        await AsyncStorage.setItem(
+          `${JOB_DETAIL_CACHE_PREFIX}${jobId}`,
+          JSON.stringify({
+            job,
+            submissions,
+            comments,
+            timestamp: Date.now(),
+          })
+        );
+      }
 
       trackEvent({ type: 'JOB_OPENED', jobId });
     } catch (error) {
@@ -300,11 +338,17 @@ export function useJobDetail(jobId: string): UseJobDetailReturn {
 
   const refreshComments = useCallback(async () => {
     try {
-      const commentsRes = await fetchComments(jobId);
-      setState((prev) => ({
-        ...prev,
-        comments: commentsRes.data,
-      }));
+      if (USE_MOCK_DATA) {
+        const comments = mockComments.filter((c) => c.jobId === jobId || jobId === 'job-001');
+        setState((prev) => ({
+          ...prev,
+          comments,
+        }));
+      } else {
+        // TODO: Use real API
+        // const commentsRes = await fetchComments(jobId);
+        // setState((prev) => ({ ...prev, comments: commentsRes.data }));
+      }
     } catch (error) {
       console.error('[useJobDetail] Failed to refresh comments:', error);
     }

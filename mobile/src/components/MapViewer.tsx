@@ -3,7 +3,7 @@
  * Displays job map asset with zoom/pan capabilities
  */
 
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -14,8 +14,8 @@ import {
   Dimensions,
   Modal,
   Linking,
+  ScrollView,
 } from 'react-native';
-import { ReactNativeZoomableView } from '@openspacelabs/react-native-zoomable-view';
 import { MapAsset, MapAssetType } from '../types/jobs';
 import { trackEvent } from '../services/telemetry';
 
@@ -36,7 +36,6 @@ export function MapViewer({ mapAsset, jobId }: MapViewerProps): JSX.Element {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const zoomableViewRef = useRef(null);
 
   const handleLoad = useCallback(() => {
     setIsLoading(false);
@@ -129,14 +128,14 @@ export function MapViewer({ mapAsset, jobId }: MapViewerProps): JSX.Element {
           </TouchableOpacity>
         </View>
       ) : (
-        <ReactNativeZoomableView
-          ref={zoomableViewRef}
-          maxZoom={5}
-          minZoom={0.5}
-          initialZoom={1}
-          bindToBorders={true}
-          onZoomAfter={handleZoom}
+        <ScrollView
           style={styles.zoomableView}
+          contentContainerStyle={styles.scrollContent}
+          maximumZoomScale={5}
+          minimumZoomScale={1}
+          showsHorizontalScrollIndicator={false}
+          showsVerticalScrollIndicator={false}
+          bouncesZoom={true}
         >
           <Image
             source={{ uri: imageUrl }}
@@ -145,7 +144,7 @@ export function MapViewer({ mapAsset, jobId }: MapViewerProps): JSX.Element {
             onLoad={handleLoad}
             onError={handleError}
           />
-        </ReactNativeZoomableView>
+        </ScrollView>
       )}
     </View>
   );
@@ -300,6 +299,11 @@ const styles = StyleSheet.create({
   },
   zoomableView: {
     flex: 1,
+  },
+  scrollContent: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   image: {
     width: '100%',

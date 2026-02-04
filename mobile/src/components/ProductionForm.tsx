@@ -14,9 +14,9 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  Modal,
+  FlatList,
 } from 'react-native';
-import DateTimePicker from '@react-native-community/datetimepicker';
-import { Picker } from '@react-native-picker/picker';
 import {
   FormSchema,
   FormField,
@@ -52,7 +52,6 @@ function getInitialValues(fields: FormField[]): FormValues {
 }
 
 function validateField(field: FormField, value: string | number | null): string | null {
-  // Required check
   if (field.required && (value === null || value === '' || value === undefined)) {
     return `${field.label} é obrigatório`;
   }
@@ -62,7 +61,6 @@ function validateField(field: FormField, value: string | number | null): string 
   const validation = field.validation;
   if (!validation) return null;
 
-  // Number validations
   if (field.type === FormFieldType.NUMBER && typeof value === 'number') {
     if (validation.min !== null && value < validation.min) {
       return `Valor mínimo: ${validation.min}`;
@@ -72,7 +70,6 @@ function validateField(field: FormField, value: string | number | null): string 
     }
   }
 
-  // Text validations
   if (typeof value === 'string') {
     if (validation.minLength !== null && value.length < validation.minLength) {
       return `Mínimo ${validation.minLength} caracteres`;
@@ -80,19 +77,73 @@ function validateField(field: FormField, value: string | number | null): string 
     if (validation.maxLength !== null && value.length > validation.maxLength) {
       return `Máximo ${validation.maxLength} caracteres`;
     }
-    if (validation.pattern) {
-      const regex = new RegExp(validation.pattern);
-      if (!regex.test(value)) {
-        return validation.patternMessage || 'Formato inválido';
-      }
-    }
   }
 
   return null;
 }
 
+function formatDate(date: Date): string {
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+}
+
 // ============================================
-// COMPONENT
+// SELECT MODAL COMPONENT
+// ============================================
+
+interface SelectModalProps {
+  visible: boolean;
+  options: { value: string; label: string }[];
+  selectedValue: string | null;
+  onSelect: (value: string) => void;
+  onClose: () => void;
+  title: string;
+}
+
+function SelectModal({ visible, options, selectedValue, onSelect, onClose, title }: SelectModalProps) {
+  return (
+    <Modal visible={visible} transparent animationType="slide">
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>{title}</Text>
+          <FlatList
+            data={options}
+            keyExtractor={(item) => item.value}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={[
+                  styles.modalOption,
+                  selectedValue === item.value && styles.modalOptionSelected,
+                ]}
+                onPress={() => {
+                  onSelect(item.value);
+                  onClose();
+                }}
+              >
+                <Text
+                  style={[
+                    styles.modalOptionText,
+                    selectedValue === item.value && styles.modalOptionTextSelected,
+                  ]}
+                >
+                  {item.label}
+                </Text>
+              </TouchableOpacity>
+            )}
+          />
+          <TouchableOpacity style={styles.modalCloseButton} onPress={onClose}>
+            <Text style={styles.modalCloseButtonText}>Cancelar</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+// ============================================
+// MAIN COMPONENT
 // ============================================
 
 export function ProductionForm({
@@ -110,11 +161,11 @@ export function ProductionForm({
   const [values, setValues] = useState<FormValues>(() => getInitialValues(sortedFields));
   const [errors, setErrors] = useState<FormErrors>({});
   const [completionDate, setCompletionDate] = useState(new Date());
-  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [dateText, setDateText] = useState(formatDate(new Date()));
+  const [selectModalField, setSelectModalField] = useState<FormField | null>(null);
 
   const handleChange = useCallback((fieldName: string, value: string | number | null) => {
     setValues((prev) => ({ ...prev, [fieldName]: value }));
-    // Clear error on change
     setErrors((prev) => {
       const next = { ...prev };
       delete next[fieldName];
@@ -150,13 +201,30 @@ export function ProductionForm({
 
     try {
       await onSubmit(payload);
-      // Reset form on success
       setValues(getInitialValues(sortedFields));
       setCompletionDate(new Date());
+      setDateText(formatDate(new Date()));
     } catch (error) {
       Alert.alert('Erro', 'Falha ao enviar produção. Será salvo para retry automático.');
     }
   }, [validateForm, jobId, completionDate, values, onSubmit, sortedFields]);
+
+  const handleDateChange = (text: string) => {
+    setDateText(text);
+    // Try to parse DD/MM/YYYY format
+    const parts = text.split('/');
+    if (parts.length === 3) {
+      const day = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1;
+      const year = parseInt(parts[2], 10);
+      if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+        const date = new Date(year, month, day);
+        if (!isNaN(date.getTime())) {
+          setCompletionDate(date);
+        }
+      }
+    }
+  };
 
   const renderField = (field: FormField) => {
     const error = errors[field.name];
@@ -231,29 +299,23 @@ export function ProductionForm({
         );
 
       case FormFieldType.SELECT:
+        const selectedOption = field.options?.find((o) => o.value === values[field.name]);
         return (
           <View key={field.id} style={styles.fieldContainer}>
             <Text style={styles.label}>
               {field.label}
               {field.required && <Text style={styles.required}> *</Text>}
             </Text>
-            <View style={[styles.pickerContainer, hasError && styles.inputError]}>
-              <Picker
-                selectedValue={values[field.name]}
-                onValueChange={(value) => handleChange(field.name, value)}
-                enabled={!disabled && !isSubmitting}
-                style={styles.picker}
-              >
-                <Picker.Item label="Selecione..." value="" />
-                {field.options?.map((option) => (
-                  <Picker.Item
-                    key={option.value}
-                    label={option.label}
-                    value={option.value}
-                  />
-                ))}
-              </Picker>
-            </View>
+            <TouchableOpacity
+              style={[styles.input, styles.selectInput, hasError && styles.inputError]}
+              onPress={() => setSelectModalField(field)}
+              disabled={disabled || isSubmitting}
+            >
+              <Text style={selectedOption ? styles.selectText : styles.selectPlaceholder}>
+                {selectedOption ? selectedOption.label : 'Selecione...'}
+              </Text>
+              <Text style={styles.selectArrow}>▼</Text>
+            </TouchableOpacity>
             {field.helpText && <Text style={styles.helpText}>{field.helpText}</Text>}
             {hasError && <Text style={styles.errorText}>{error}</Text>}
           </View>
@@ -266,17 +328,15 @@ export function ProductionForm({
               {field.label}
               {field.required && <Text style={styles.required}> *</Text>}
             </Text>
-            <TouchableOpacity
-              style={[styles.input, styles.dateInput, hasError && styles.inputError]}
-              onPress={() => setShowDatePicker(true)}
-              disabled={disabled || isSubmitting}
-            >
-              <Text style={styles.dateText}>
-                {values[field.name]
-                  ? new Date(values[field.name] as string).toLocaleDateString('pt-BR')
-                  : 'Selecione uma data'}
-              </Text>
-            </TouchableOpacity>
+            <TextInput
+              style={[styles.input, hasError && styles.inputError]}
+              value={String(values[field.name] || '')}
+              onChangeText={(text) => handleChange(field.name, text)}
+              placeholder="DD/MM/AAAA"
+              placeholderTextColor="#9CA3AF"
+              keyboardType="numeric"
+              editable={!disabled && !isSubmitting}
+            />
             {field.helpText && <Text style={styles.helpText}>{field.helpText}</Text>}
             {hasError && <Text style={styles.errorText}>{error}</Text>}
           </View>
@@ -302,29 +362,16 @@ export function ProductionForm({
           <Text style={styles.label}>
             Data de Conclusão <Text style={styles.required}>*</Text>
           </Text>
-          <TouchableOpacity
-            style={styles.dateInput}
-            onPress={() => setShowDatePicker(true)}
-            disabled={disabled || isSubmitting}
-          >
-            <Text style={styles.dateText}>
-              {completionDate.toLocaleDateString('pt-BR')}
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {showDatePicker && (
-          <DateTimePicker
-            value={completionDate}
-            mode="date"
-            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-            onChange={(event, date) => {
-              setShowDatePicker(Platform.OS === 'ios');
-              if (date) setCompletionDate(date);
-            }}
-            maximumDate={new Date()}
+          <TextInput
+            style={styles.input}
+            value={dateText}
+            onChangeText={handleDateChange}
+            placeholder="DD/MM/AAAA"
+            placeholderTextColor="#9CA3AF"
+            keyboardType="numeric"
+            editable={!disabled && !isSubmitting}
           />
-        )}
+        </View>
 
         {/* Dynamic Fields */}
         {sortedFields.map(renderField)}
@@ -343,6 +390,18 @@ export function ProductionForm({
           </Text>
         </TouchableOpacity>
       </ScrollView>
+
+      {/* Select Modal */}
+      {selectModalField && (
+        <SelectModal
+          visible={true}
+          title={selectModalField.label}
+          options={selectModalField.options || []}
+          selectedValue={values[selectModalField.name] as string | null}
+          onSelect={(value) => handleChange(selectModalField.name, value)}
+          onClose={() => setSelectModalField(null)}
+        />
+      )}
     </KeyboardAvoidingView>
   );
 }
@@ -403,29 +462,22 @@ const styles = StyleSheet.create({
     minHeight: 100,
   },
 
-  pickerContainer: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-    borderRadius: 8,
-    overflow: 'hidden',
+  selectInput: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
-  picker: {
-    height: 50,
-  },
-
-  dateInput: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 14,
-    justifyContent: 'center',
-  },
-  dateText: {
+  selectText: {
     fontSize: 16,
     color: '#111827',
+  },
+  selectPlaceholder: {
+    fontSize: 16,
+    color: '#9CA3AF',
+  },
+  selectArrow: {
+    fontSize: 12,
+    color: '#6B7280',
   },
 
   submitButton: {
@@ -442,5 +494,54 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
+  },
+
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    maxHeight: '60%',
+    paddingBottom: 34,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#111827',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  modalOption: {
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  modalOptionSelected: {
+    backgroundColor: '#EFF6FF',
+  },
+  modalOptionText: {
+    fontSize: 16,
+    color: '#374151',
+  },
+  modalOptionTextSelected: {
+    color: '#2563EB',
+    fontWeight: '600',
+  },
+  modalCloseButton: {
+    padding: 16,
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+  },
+  modalCloseButtonText: {
+    fontSize: 16,
+    color: '#6B7280',
+    fontWeight: '500',
   },
 });

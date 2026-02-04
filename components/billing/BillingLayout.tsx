@@ -5,9 +5,9 @@
 
 import React, { useState } from 'react';
 import {
-  Inbox, Receipt, Calculator, FileText, TrendingUp,
+  Receipt, Calculator, FileText, TrendingUp,
   Settings, ChevronLeft, ChevronRight, DollarSign,
-  AlertCircle, Clock, CheckCircle, XCircle, Zap, Plus
+  AlertCircle, Clock, CheckCircle, XCircle, Plus
 } from 'lucide-react';
 
 // Types
@@ -88,7 +88,6 @@ const BillingLayout: React.FC<BillingLayoutProps> = ({
   const quickStats = useQuickStats();
 
   const navItems = [
-    { id: 'inbox' as BillingView, label: 'Production Inbox', icon: Inbox },
     { id: 'quick-invoice' as BillingView, label: 'Quick Invoice', icon: Plus, highlight: true },
     { id: 'batches' as BillingView, label: 'Invoice Batches', icon: Receipt },
     { id: 'tracker' as BillingView, label: 'AR Tracker', icon: TrendingUp },

@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { ViewState, Notification, User, Language } from '../types';
 import { translations } from '../services/translations';
 import {
-    LayoutDashboard, LogOut, Globe, Settings, Bell, ClipboardList, Wallet, ScanLine, ChevronRight
+    LayoutDashboard, LogOut, Globe, Settings, Bell, ClipboardList, Wallet, ScanLine, ChevronRight,
+    Upload, Inbox, History, Users, FolderOpen, Mic
 } from 'lucide-react';
 import Logo from './Logo';
 
@@ -26,17 +27,19 @@ const Layout: React.FC<LayoutProps> = ({ currentView, onChangeView, children, no
     // Check if user is admin
     const isAdmin = user?.role === 'ADMIN';
 
-    // Flat navigation items (no categories/divisions)
+    // Navigation items based on role
     const navItems = isAdmin ? [
-        { id: ViewState.DASHBOARD, label: 'Dashboard', icon: LayoutDashboard },
-        { id: ViewState.PRODUCTION, label: 'Production', icon: ClipboardList },
-        { id: ViewState.FINANCE_HUB, label: 'Finance', icon: Wallet },
-        { id: ViewState.MAP_ANALYZER, label: 'Maps', icon: ScanLine },
-        { id: ViewState.ADMIN, label: 'Admin', icon: Settings },
+        // Owner/Admin Navigation - Workflow Optimized
+        { id: ViewState.INBOX, label: 'Inbox', icon: Inbox },              // Command center - all projects
+        { id: ViewState.BY_CLIENT, label: 'By Client', icon: Users },      // Group by client
+        { id: ViewState.FINANCE_HUB, label: 'Invoices', icon: Wallet },    // Billing & invoices
+        { id: ViewState.MAP_ANALYZER, label: 'Maps', icon: ScanLine },     // Map analyzer tool
+        { id: ViewState.ADMIN, label: 'Settings', icon: Settings },        // Configuration
     ] : [
-        { id: ViewState.DASHBOARD, label: 'Dashboard', icon: LayoutDashboard },
-        { id: ViewState.PRODUCTION, label: 'Production', icon: ClipboardList },
-        { id: ViewState.MAP_ANALYZER, label: 'Maps', icon: ScanLine },
+        // Lineman Navigation - Simple & Mobile-first
+        { id: ViewState.DASHBOARD, label: 'Home', icon: LayoutDashboard }, // Overview
+        { id: ViewState.SUBMIT_WORK, label: 'Submit', icon: Upload },      // Upload map + photos
+        { id: ViewState.MY_SUBMISSIONS, label: 'History', icon: History }, // Past submissions
     ];
 
     const handleNavClick = (id: ViewState) => {

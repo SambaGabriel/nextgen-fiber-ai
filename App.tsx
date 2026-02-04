@@ -17,6 +17,9 @@ const DailyProductionForm = lazy(() => import('./components/DailyProductionForm'
 const FiberMapTester = lazy(() => import('./components/FiberMapTester'));
 // [bundle-barrel-imports] - Import directly instead of barrel file
 const BillingApp = lazy(() => import('./components/billing/BillingApp'));
+// New workflow components
+const SubmitWork = lazy(() => import('./components/SubmitWork'));
+const OwnerInbox = lazy(() => import('./components/OwnerInbox'));
 
 const INITIAL_RATES: UnitRates = { fiber: 0.35, anchor: 18.00 };
 
@@ -123,8 +126,23 @@ const App: React.FC = () => {
 
         // [rendering-conditional-render] - Using switch for multiple conditions
         switch (currentView) {
+            // Lineman views
             case ViewState.DASHBOARD:
                 return <Dashboard onNavigate={setCurrentView} invoices={invoices} transactions={transactions} user={user} lang={currentLang} />;
+            case ViewState.SUBMIT_WORK:
+                return <SubmitWork userId={user.id} userName={user.name} lang={currentLang} />;
+            case ViewState.MY_SUBMISSIONS:
+                return <OwnerInbox lang={currentLang} />; // Reuse with filter for lineman's own submissions
+
+            // Owner/Admin views
+            case ViewState.INBOX:
+                return <OwnerInbox lang={currentLang} />;
+            case ViewState.BY_CLIENT:
+                return <OwnerInbox lang={currentLang} />; // TODO: Add client filter mode
+            case ViewState.BY_PROJECT:
+                return <OwnerInbox lang={currentLang} />; // TODO: Add project filter mode
+
+            // Existing views
             case ViewState.MAPS:
             case ViewState.BOQ:
                 return <MapAudit rates={rates} lang={currentLang} auditQueue={auditQueue} setAuditQueue={setAuditQueue} isAnalyzing={isGlobalAnalyzing} user={user} onSaveToReports={handleSaveMapReport} />;
@@ -143,7 +161,10 @@ const App: React.FC = () => {
             case ViewState.ADMIN:
                 return <AdminPortal invoices={invoices} rates={rates} onUpdateRates={handleUpdateRates} user={user} onUpdateUser={setUser} onPayInvoice={() => {}} lang={currentLang} />;
             default:
-                return <Dashboard onNavigate={setCurrentView} invoices={invoices} transactions={transactions} user={user} lang={currentLang} />;
+                // Default view based on role
+                return user.role === 'ADMIN'
+                    ? <OwnerInbox lang={currentLang} />
+                    : <Dashboard onNavigate={setCurrentView} invoices={invoices} transactions={transactions} user={user} lang={currentLang} />;
         }
     };
 

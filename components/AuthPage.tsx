@@ -83,7 +83,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin, lang }) => {
                                 <span className="font-bold text-[10px] tracking-widest uppercase" style={{ color: 'var(--neural-core)' }}>The First AI for Fiber</span>
                             </div>
 
-                            <h2 className="text-5xl xl:text-6xl font-black text-white tracking-tighter leading-[1.05]">
+                            <h2 className="text-5xl xl:text-6xl font-black tracking-tighter leading-[1.05]" style={{ color: 'var(--text-primary)' }}>
                                 Neural Control<br/>for <span className="text-gradient-neural">Fiber</span> Networks
                             </h2>
 
@@ -100,7 +100,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin, lang }) => {
                                 <div key={i} className="flex items-start gap-4 p-5 rounded-2xl backdrop-blur-sm transition-all duration-300 hover:scale-[1.02] cursor-default neural-border" style={{ background: item.bg, border: `1px solid ${item.border}` }}>
                                     <item.icon className="w-6 h-6 shrink-0" style={{ color: item.color }} />
                                     <div>
-                                        <p className="text-xs font-black text-white uppercase tracking-wider">{item.label}</p>
+                                        <p className="text-xs font-black uppercase tracking-wider" style={{ color: 'var(--text-primary)' }}>{item.label}</p>
                                         <p className="text-[10px] font-bold uppercase tracking-widest mt-1" style={{ color: 'var(--text-tertiary)' }}>{item.desc}</p>
                                     </div>
                                 </div>
@@ -129,7 +129,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin, lang }) => {
                         </div>
 
                         <div className="text-center space-y-3">
-                            <h3 className="text-3xl font-black text-white uppercase tracking-tight">
+                            <h3 className="text-3xl font-black uppercase tracking-tight" style={{ color: 'var(--text-primary)' }}>
                                 Access Portal
                             </h3>
                             <p className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
@@ -159,7 +159,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin, lang }) => {
                                         background: selectedRole === 'LINEMAN' ? 'var(--neural-glow)' : 'var(--elevated)'
                                     }}>
                                         <HardHat className="w-10 h-10 transition-colors" style={{
-                                            color: selectedRole === 'LINEMAN' ? 'var(--neural-core)' : 'var(--text-tertiary)'
+                                            color: selectedRole === 'LINEMAN' ? 'var(--neural-core)' : 'var(--energy-core)'
                                         }} />
                                     </div>
                                     <div className="text-center">
@@ -200,7 +200,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin, lang }) => {
                                         background: selectedRole === 'ADMIN' ? 'var(--energy-glow)' : 'var(--elevated)'
                                     }}>
                                         <Shield className="w-10 h-10 transition-colors" style={{
-                                            color: selectedRole === 'ADMIN' ? 'var(--energy-core)' : 'var(--text-tertiary)'
+                                            color: selectedRole === 'ADMIN' ? 'var(--energy-core)' : 'var(--energy-core)'
                                         }} />
                                     </div>
                                     <div className="text-center">

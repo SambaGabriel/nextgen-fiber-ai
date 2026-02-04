@@ -31,7 +31,7 @@ export const analyzeMapBoQ = async (base64Data: string, mimeType: string, lang: 
         const cleanBase64 = base64Data.includes('base64,') ? base64Data.split('base64,')[1] : base64Data;
 
         const response = await ai.models.generateContent({
-            model: 'gemini-3-pro-preview',
+            model: 'gemini-2.0-flash',
             contents: {
                 parts: [
                     { inlineData: { mimeType: mimeType, data: cleanBase64 } },
@@ -100,7 +100,7 @@ export const analyzeFieldEvidence = async (base64Image: string, lang: Language =
         const ai = getAi();
         const cleanBase64 = base64Image.includes('base64,') ? base64Image.split('base64,')[1] : base64Image;
         const response = await ai.models.generateContent({
-            model: 'gemini-3-pro-preview',
+            model: 'gemini-2.0-flash',
             contents: {
                 parts: [
                     { inlineData: { mimeType: 'image/jpeg', data: cleanBase64 } },
@@ -118,7 +118,7 @@ export const analyzeMarketExpansion = async (base64Image: string, regionName: st
         const ai = getAi();
         const cleanBase64 = base64Image.includes('base64,') ? base64Image.split('base64,')[1] : base64Image;
         const response = await ai.models.generateContent({
-            model: 'gemini-3-pro-preview',
+            model: 'gemini-2.0-flash',
             contents: {
                 parts: [
                     { inlineData: { mimeType: 'image/jpeg', data: cleanBase64 } },

@@ -209,7 +209,18 @@ Return complete JSON with ALL data found. Do not skip anything.` }
   if (!response.ok) {
     const err = await response.json().catch(() => ({}));
     console.error('[ClaudeAnalyzer] API Error:', response.status, err);
-    throw new Error(err?.error?.message || `API Error: ${response.status}`);
+
+    // Handle rate limit error
+    if (response.status === 429 || err?.error?.message?.includes('rate limit')) {
+      throw new Error('⏳ Limite de requisições atingido. Aguarde 1 minuto e tente novamente.');
+    }
+
+    // Handle token limit error
+    if (err?.error?.message?.includes('token')) {
+      throw new Error('📄 PDF muito grande. Tente com um arquivo menor (máx ~5MB recomendado para plano gratuito).');
+    }
+
+    throw new Error(err?.error?.message || `Erro da API: ${response.status}`);
   }
 
   const data = await response.json();

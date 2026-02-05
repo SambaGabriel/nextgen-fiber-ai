@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User as UserIcon, Mail, ArrowRight, Cpu, Zap, CheckCircle2, HardHat, Shield } from 'lucide-react';
+import { User as UserIcon, Mail, ArrowRight, Cpu, Zap, CheckCircle2, HardHat, Shield, Lock, Building2, UserPlus, LogIn } from 'lucide-react';
 import Logo from './Logo';
 import { User, Language } from '../types';
 import { translations } from '../services/translations';
@@ -10,34 +10,74 @@ interface AuthPageProps {
 }
 
 type UserRole = 'LINEMAN' | 'ADMIN';
+type AuthMode = 'login' | 'register';
 
 const AuthPage: React.FC<AuthPageProps> = ({ onLogin, lang }) => {
     const t = translations[lang];
+    const [authMode, setAuthMode] = useState<AuthMode>('login');
     const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
     const [email, setEmail] = useState('');
     const [name, setName] = useState('');
+    const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [companyName, setCompanyName] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState('');
 
-    const handleLogin = (e: React.FormEvent) => {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (isLoading || !selectedRole) return;
+        setError('');
+
+        // Validation for registration
+        if (authMode === 'register') {
+            if (!password || password.length < 6) {
+                setError('Password must be at least 6 characters');
+                return;
+            }
+            if (password !== confirmPassword) {
+                setError('Passwords do not match');
+                return;
+            }
+            if (!name.trim()) {
+                setError('Name is required');
+                return;
+            }
+        }
+
         setIsLoading(true);
 
         const safeId = Date.now().toString(36) + Math.random().toString(36).substring(2);
 
+        // Simulate API call
         setTimeout(() => {
+            // Store user credentials in localStorage for demo
+            if (authMode === 'register') {
+                const users = JSON.parse(localStorage.getItem('fs_registered_users') || '[]');
+                users.push({ email, password, name, role: selectedRole, companyName: companyName || 'NextGen Fiber' });
+                localStorage.setItem('fs_registered_users', JSON.stringify(users));
+            }
+
             onLogin({
                 id: safeId,
                 email,
                 name: name || (selectedRole === 'ADMIN' ? 'Administrator' : 'Lineman'),
                 role: selectedRole,
-                companyName: 'NextGen Fiber',
+                companyName: companyName || 'NextGen Fiber',
             });
         }, 1000);
     };
 
     const handleRoleSelect = (role: UserRole) => {
         setSelectedRole(role);
+        setError('');
+    };
+
+    const switchAuthMode = (mode: AuthMode) => {
+        setAuthMode(mode);
+        setError('');
+        setPassword('');
+        setConfirmPassword('');
     };
 
     return (
@@ -128,12 +168,46 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin, lang }) => {
                             <Logo className="w-14 h-14" showText={true} />
                         </div>
 
+                        {/* Auth Mode Tabs */}
+                        <div className="flex gap-2 p-1 rounded-2xl" style={{ background: 'var(--surface)' }}>
+                            <button
+                                type="button"
+                                onClick={() => switchAuthMode('login')}
+                                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
+                                    authMode === 'login' ? '' : 'opacity-60 hover:opacity-100'
+                                }`}
+                                style={{
+                                    background: authMode === 'login' ? 'var(--neural-dim)' : 'transparent',
+                                    color: authMode === 'login' ? 'var(--neural-core)' : 'var(--text-secondary)',
+                                    border: authMode === 'login' ? '1px solid var(--border-neural)' : '1px solid transparent'
+                                }}
+                            >
+                                <LogIn className="w-4 h-4" />
+                                Login
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => switchAuthMode('register')}
+                                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
+                                    authMode === 'register' ? '' : 'opacity-60 hover:opacity-100'
+                                }`}
+                                style={{
+                                    background: authMode === 'register' ? 'var(--energy-pulse)' : 'transparent',
+                                    color: authMode === 'register' ? 'var(--energy-core)' : 'var(--text-secondary)',
+                                    border: authMode === 'register' ? '1px solid rgba(168, 85, 247, 0.3)' : '1px solid transparent'
+                                }}
+                            >
+                                <UserPlus className="w-4 h-4" />
+                                Create Account
+                            </button>
+                        </div>
+
                         <div className="text-center space-y-2 sm:space-y-3">
                             <h3 className="text-2xl sm:text-3xl font-black uppercase tracking-tight" style={{ color: 'var(--text-primary)' }}>
-                                Access Portal
+                                {authMode === 'login' ? 'Access Portal' : 'Create Account'}
                             </h3>
                             <p className="text-xs sm:text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
-                                Select your access type to continue
+                                {authMode === 'login' ? 'Select your access type to continue' : 'Register as a new user'}
                             </p>
                         </div>
 
@@ -222,11 +296,19 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin, lang }) => {
                             </button>
                         </div>
 
-                        {/* Login Form - Appears after role selection */}
+                        {/* Auth Form - Appears after role selection */}
                         {selectedRole && (
-                            <form onSubmit={handleLogin} className="space-y-5 animate-fade-in-up">
+                            <form onSubmit={handleSubmit} className="space-y-4 animate-fade-in-up">
+                                {/* Error Message */}
+                                {error && (
+                                    <div className="p-3 rounded-xl text-xs font-bold text-center" style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+                                        {error}
+                                    </div>
+                                )}
+
+                                {/* Name Field */}
                                 <div className="space-y-1.5">
-                                    <label className="text-[10px] font-black uppercase ml-2" style={{ color: 'var(--text-tertiary)' }}>Name</label>
+                                    <label className="text-[10px] font-black uppercase ml-2" style={{ color: 'var(--text-tertiary)' }}>Name {authMode === 'register' && '*'}</label>
                                     <div className="input-neural p-1.5 flex items-center group" style={{
                                         borderColor: selectedRole === 'LINEMAN' ? 'var(--border-neural)' : 'rgba(168, 85, 247, 0.3)'
                                     }}>
@@ -240,12 +322,14 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin, lang }) => {
                                             className="bg-transparent w-full p-2 text-sm font-bold outline-none"
                                             style={{ color: 'var(--text-primary)' }}
                                             placeholder={selectedRole === 'ADMIN' ? 'Admin Name' : 'Lineman Name'}
+                                            required={authMode === 'register'}
                                         />
                                     </div>
                                 </div>
 
+                                {/* Email Field */}
                                 <div className="space-y-1.5">
-                                    <label className="text-[10px] font-black uppercase ml-2" style={{ color: 'var(--text-tertiary)' }}>Email</label>
+                                    <label className="text-[10px] font-black uppercase ml-2" style={{ color: 'var(--text-tertiary)' }}>Email *</label>
                                     <div className="input-neural p-1.5 flex items-center group" style={{
                                         borderColor: selectedRole === 'LINEMAN' ? 'var(--border-neural)' : 'rgba(168, 85, 247, 0.3)'
                                     }}>
@@ -264,6 +348,70 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin, lang }) => {
                                     </div>
                                 </div>
 
+                                {/* Password Fields - Only for Register */}
+                                {authMode === 'register' && (
+                                    <>
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-black uppercase ml-2" style={{ color: 'var(--text-tertiary)' }}>Password *</label>
+                                            <div className="input-neural p-1.5 flex items-center group" style={{
+                                                borderColor: selectedRole === 'LINEMAN' ? 'var(--border-neural)' : 'rgba(168, 85, 247, 0.3)'
+                                            }}>
+                                                <div className="p-3 rounded-xl transition-colors" style={{ background: 'var(--elevated)' }}>
+                                                    <Lock className="w-4 h-4" style={{ color: selectedRole === 'LINEMAN' ? 'var(--neural-core)' : 'var(--energy-core)' }} />
+                                                </div>
+                                                <input
+                                                    type="password"
+                                                    value={password}
+                                                    onChange={e => setPassword(e.target.value)}
+                                                    className="bg-transparent w-full p-2 text-sm font-bold outline-none"
+                                                    style={{ color: 'var(--text-primary)' }}
+                                                    placeholder="Min. 6 characters"
+                                                    required
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-black uppercase ml-2" style={{ color: 'var(--text-tertiary)' }}>Confirm Password *</label>
+                                            <div className="input-neural p-1.5 flex items-center group" style={{
+                                                borderColor: selectedRole === 'LINEMAN' ? 'var(--border-neural)' : 'rgba(168, 85, 247, 0.3)'
+                                            }}>
+                                                <div className="p-3 rounded-xl transition-colors" style={{ background: 'var(--elevated)' }}>
+                                                    <Lock className="w-4 h-4" style={{ color: selectedRole === 'LINEMAN' ? 'var(--neural-core)' : 'var(--energy-core)' }} />
+                                                </div>
+                                                <input
+                                                    type="password"
+                                                    value={confirmPassword}
+                                                    onChange={e => setConfirmPassword(e.target.value)}
+                                                    className="bg-transparent w-full p-2 text-sm font-bold outline-none"
+                                                    style={{ color: 'var(--text-primary)' }}
+                                                    placeholder="Repeat password"
+                                                    required
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-black uppercase ml-2" style={{ color: 'var(--text-tertiary)' }}>Company Name</label>
+                                            <div className="input-neural p-1.5 flex items-center group" style={{
+                                                borderColor: selectedRole === 'LINEMAN' ? 'var(--border-neural)' : 'rgba(168, 85, 247, 0.3)'
+                                            }}>
+                                                <div className="p-3 rounded-xl transition-colors" style={{ background: 'var(--elevated)' }}>
+                                                    <Building2 className="w-4 h-4" style={{ color: selectedRole === 'LINEMAN' ? 'var(--neural-core)' : 'var(--energy-core)' }} />
+                                                </div>
+                                                <input
+                                                    type="text"
+                                                    value={companyName}
+                                                    onChange={e => setCompanyName(e.target.value)}
+                                                    className="bg-transparent w-full p-2 text-sm font-bold outline-none"
+                                                    style={{ color: 'var(--text-primary)' }}
+                                                    placeholder="Your company name"
+                                                />
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
+
                                 <button
                                     type="submit"
                                     disabled={isLoading}
@@ -277,7 +425,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin, lang }) => {
                                         <div className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin" />
                                     ) : (
                                         <>
-                                            Enter as {selectedRole === 'LINEMAN' ? 'Lineman' : 'Administrator'}
+                                            {authMode === 'login' ? `Enter as ${selectedRole === 'LINEMAN' ? 'Lineman' : 'Administrator'}` : 'Create Account'}
                                             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                                         </>
                                     )}

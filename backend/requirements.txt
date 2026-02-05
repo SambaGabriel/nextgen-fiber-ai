@@ -8,6 +8,7 @@ python-multipart==0.0.6
 
 # Data Validation (Pydantic v1 for Python 3.9 stability)
 pydantic==1.10.13
+email-validator==2.1.0
 
 # AI/ML - Vision
 anthropic>=0.39.0
@@ -18,6 +19,7 @@ pypdf2==3.0.1
 pdf2image==1.17.0
 pillow==10.2.0
 reportlab==4.1.0
+pymupdf==1.24.1
 
 # Spreadsheet Integrations
 smartsheet-python-sdk==3.0.2
@@ -26,9 +28,20 @@ gspread==6.0.2
 google-auth==2.27.0
 google-auth-oauthlib==1.2.0
 
-# Database (future)
+# Database (PostgreSQL)
 sqlalchemy==2.0.25
 alembic==1.13.1
+psycopg2-binary==2.9.9
+
+# Redis Queue
+redis==5.0.1
+
+# Object Storage (S3/MinIO)
+boto3==1.34.34
+
+# Authentication
+PyJWT==2.8.0
+passlib[bcrypt]==1.7.4
 
 # Logging & Monitoring
 structlog==24.1.0

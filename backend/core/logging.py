@@ -76,8 +76,8 @@ class AuditLogger:
         self,
         document_id: str,
         validation_passed: bool,
-        errors: list[str],
-        warnings: list[str]
+        errors: List[str],
+        warnings: List[str]
     ) -> None:
         """Log validation event"""
         self._logger.info(
@@ -98,7 +98,7 @@ class AuditLogger:
         operation: str,
         record_id: str,
         success: bool,
-        details: dict[str, Any] | None = None
+        details: Optional[Dict[str, Any]] = None
     ) -> None:
         """Log external integration event"""
         self._logger.info(

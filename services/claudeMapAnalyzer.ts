@@ -231,10 +231,42 @@ Return complete JSON with ALL data found. Do not skip anything.` }
   if (!textBlock?.text) throw new Error('No response from Claude');
 
   let jsonStr = textBlock.text;
-  if (jsonStr.includes('```json')) jsonStr = jsonStr.split('```json')[1].split('```')[0];
-  else if (jsonStr.includes('```')) jsonStr = jsonStr.split('```')[1].split('```')[0];
 
-  const result = JSON.parse(jsonStr.trim());
+  // Try to extract JSON from various formats
+  if (jsonStr.includes('```json')) {
+    jsonStr = jsonStr.split('```json')[1].split('```')[0];
+  } else if (jsonStr.includes('```')) {
+    jsonStr = jsonStr.split('```')[1].split('```')[0];
+  }
+
+  // Try to find JSON object boundaries
+  const jsonStart = jsonStr.indexOf('{');
+  const jsonEnd = jsonStr.lastIndexOf('}');
+  if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+    jsonStr = jsonStr.substring(jsonStart, jsonEnd + 1);
+  }
+
+  let result;
+  try {
+    result = JSON.parse(jsonStr.trim());
+  } catch (parseError) {
+    console.error('[ClaudeAnalyzer] JSON Parse Error:', parseError);
+    console.error('[ClaudeAnalyzer] Raw response:', textBlock.text.substring(0, 500));
+
+    // Try to fix common JSON issues
+    let fixedJson = jsonStr
+      .replace(/,\s*}/g, '}')  // Remove trailing commas
+      .replace(/,\s*]/g, ']')  // Remove trailing commas in arrays
+      .replace(/'/g, '"')      // Replace single quotes
+      .replace(/\n/g, ' ')     // Remove newlines
+      .trim();
+
+    try {
+      result = JSON.parse(fixedJson);
+    } catch {
+      throw new Error('Erro ao processar resposta do Claude. Tente novamente ou use uma imagem mais clara.');
+    }
+  }
   result.metadata = result.metadata || {};
   result.metadata.analyzedAt = new Date().toISOString();
   result.metadata.processingTimeMs = processingTime;

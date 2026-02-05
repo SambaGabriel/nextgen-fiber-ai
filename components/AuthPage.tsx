@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { User as UserIcon, Mail, ArrowRight, Cpu, Zap, CheckCircle2, HardHat, Shield, Lock, Building2, UserPlus, LogIn } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { User as UserIcon, Mail, ArrowRight, Cpu, Zap, CheckCircle2, HardHat, Shield, Lock, Building2, UserPlus, LogIn, RefreshCw, AlertCircle } from 'lucide-react';
 import Logo from './Logo';
 import { User, Language } from '../types';
 import { translations } from '../services/translations';
+import { authService } from '../services/supabase';
 
 interface AuthPageProps {
     onLogin: (user: User) => void;
@@ -11,26 +12,57 @@ interface AuthPageProps {
 
 type UserRole = 'LINEMAN' | 'ADMIN';
 type AuthMode = 'login' | 'register';
+type AuthStatus = 'idle' | 'loading' | 'check_email' | 'error';
 
 const AuthPage: React.FC<AuthPageProps> = ({ onLogin, lang }) => {
     const t = translations[lang];
     const [authMode, setAuthMode] = useState<AuthMode>('login');
+    const [authStatus, setAuthStatus] = useState<AuthStatus>('idle');
     const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
     const [email, setEmail] = useState('');
     const [name, setName] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [companyName, setCompanyName] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
+    const [successMessage, setSuccessMessage] = useState('');
 
-    const handleSubmit = (e: React.FormEvent) => {
+    // Check for existing session on mount
+    useEffect(() => {
+        checkExistingSession();
+    }, []);
+
+    const checkExistingSession = async () => {
+        try {
+            const session = await authService.getSession();
+            if (session?.user) {
+                const userData = session.user.user_metadata;
+                onLogin({
+                    id: session.user.id,
+                    email: session.user.email || '',
+                    name: userData?.name || 'User',
+                    role: userData?.role || 'LINEMAN',
+                    companyName: userData?.companyName || 'NextGen Fiber',
+                });
+            }
+        } catch (err) {
+            console.log('No existing session');
+        }
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (isLoading || !selectedRole) return;
-        setError('');
+        if (authStatus === 'loading' || !selectedRole) return;
 
-        // Validation for registration
+        setError('');
+        setSuccessMessage('');
+
+        // Validation
         if (authMode === 'register') {
+            if (!name.trim()) {
+                setError('Name is required');
+                return;
+            }
             if (!password || password.length < 6) {
                 setError('Password must be at least 6 characters');
                 return;
@@ -39,33 +71,83 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin, lang }) => {
                 setError('Passwords do not match');
                 return;
             }
-            if (!name.trim()) {
-                setError('Name is required');
-                return;
-            }
         }
 
-        setIsLoading(true);
+        if (!email.trim()) {
+            setError('Email is required');
+            return;
+        }
 
-        const safeId = Date.now().toString(36) + Math.random().toString(36).substring(2);
+        setAuthStatus('loading');
 
-        // Simulate API call
-        setTimeout(() => {
-            // Store user credentials in localStorage for demo
+        try {
             if (authMode === 'register') {
-                const users = JSON.parse(localStorage.getItem('fs_registered_users') || '[]');
-                users.push({ email, password, name, role: selectedRole, companyName: companyName || 'NextGen Fiber' });
-                localStorage.setItem('fs_registered_users', JSON.stringify(users));
-            }
+                // Register new user
+                const result = await authService.signUp(email, password, {
+                    name,
+                    role: selectedRole,
+                    companyName: companyName || 'NextGen Fiber'
+                });
 
-            onLogin({
-                id: safeId,
-                email,
-                name: name || (selectedRole === 'ADMIN' ? 'Administrator' : 'Lineman'),
-                role: selectedRole,
-                companyName: companyName || 'NextGen Fiber',
-            });
-        }, 1000);
+                if (result.user && !result.user.email_confirmed_at) {
+                    // Email confirmation required
+                    setAuthStatus('check_email');
+                    setSuccessMessage(`Confirmation email sent to ${email}. Please check your inbox and click the link to activate your account.`);
+                } else if (result.user) {
+                    // Already confirmed (shouldn't happen on fresh signup)
+                    onLogin({
+                        id: result.user.id,
+                        email: result.user.email || '',
+                        name,
+                        role: selectedRole,
+                        companyName: companyName || 'NextGen Fiber',
+                    });
+                }
+            } else {
+                // Login existing user
+                const result = await authService.signIn(email, password);
+
+                if (result.user) {
+                    const userData = result.user.user_metadata;
+                    onLogin({
+                        id: result.user.id,
+                        email: result.user.email || '',
+                        name: userData?.name || name || 'User',
+                        role: userData?.role || selectedRole || 'LINEMAN',
+                        companyName: userData?.companyName || 'NextGen Fiber',
+                    });
+                }
+            }
+        } catch (err: any) {
+            setAuthStatus('error');
+
+            // Handle specific error messages
+            if (err.message?.includes('Invalid login credentials')) {
+                setError('Invalid email or password. Please check your credentials.');
+            } else if (err.message?.includes('Email not confirmed')) {
+                setError('Please confirm your email before logging in. Check your inbox for the confirmation link.');
+            } else if (err.message?.includes('User already registered')) {
+                setError('This email is already registered. Please login instead.');
+            } else if (err.message?.includes('rate limit')) {
+                setError('Too many attempts. Please wait a few minutes and try again.');
+            } else {
+                setError(err.message || 'An error occurred. Please try again.');
+            }
+        }
+    };
+
+    const handleResendConfirmation = async () => {
+        if (!email) return;
+
+        setAuthStatus('loading');
+        try {
+            await authService.resendConfirmation(email);
+            setSuccessMessage('Confirmation email resent! Please check your inbox.');
+            setAuthStatus('check_email');
+        } catch (err: any) {
+            setError(err.message || 'Failed to resend confirmation email.');
+            setAuthStatus('error');
+        }
     };
 
     const handleRoleSelect = (role: UserRole) => {
@@ -75,10 +157,66 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin, lang }) => {
 
     const switchAuthMode = (mode: AuthMode) => {
         setAuthMode(mode);
+        setAuthStatus('idle');
         setError('');
+        setSuccessMessage('');
         setPassword('');
         setConfirmPassword('');
     };
+
+    // Check Email Confirmation Screen
+    if (authStatus === 'check_email') {
+        return (
+            <div className="min-h-screen flex items-center justify-center p-4 lg:p-8 relative overflow-hidden font-sans" style={{ background: 'var(--abyss)' }}>
+                <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] rounded-full blur-[180px] animate-pulse" style={{ background: 'var(--neural-pulse)' }}></div>
+                <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] rounded-full blur-[180px]" style={{ background: 'var(--energy-pulse)' }}></div>
+
+                <div className="w-full max-w-md p-8 glass-strong rounded-3xl text-center space-y-6" style={{ boxShadow: 'var(--shadow-glow)' }}>
+                    <div className="w-20 h-20 mx-auto rounded-full flex items-center justify-center" style={{ background: 'var(--neural-dim)', border: '2px solid var(--neural-core)' }}>
+                        <Mail className="w-10 h-10" style={{ color: 'var(--neural-core)' }} />
+                    </div>
+
+                    <h2 className="text-2xl font-black uppercase" style={{ color: 'var(--text-primary)' }}>
+                        Check Your Email
+                    </h2>
+
+                    <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                        {successMessage}
+                    </p>
+
+                    <div className="p-4 rounded-xl" style={{ background: 'var(--surface)', border: '1px solid var(--border-default)' }}>
+                        <p className="text-xs font-bold" style={{ color: 'var(--text-tertiary)' }}>
+                            Sent to: <span style={{ color: 'var(--neural-core)' }}>{email}</span>
+                        </p>
+                    </div>
+
+                    <div className="space-y-3 pt-4">
+                        <button
+                            onClick={handleResendConfirmation}
+                            disabled={authStatus === 'loading'}
+                            className="w-full py-3 rounded-xl text-xs font-bold uppercase flex items-center justify-center gap-2 transition-all hover:scale-[1.02]"
+                            style={{ background: 'var(--surface)', color: 'var(--text-secondary)', border: '1px solid var(--border-default)' }}
+                        >
+                            <RefreshCw className="w-4 h-4" />
+                            Resend Confirmation Email
+                        </button>
+
+                        <button
+                            onClick={() => {
+                                setAuthStatus('idle');
+                                setAuthMode('login');
+                            }}
+                            className="w-full py-3 rounded-xl text-xs font-bold uppercase flex items-center justify-center gap-2 transition-all hover:scale-[1.02]"
+                            style={{ background: 'var(--neural-dim)', color: 'var(--neural-core)', border: '1px solid var(--border-neural)' }}
+                        >
+                            <LogIn className="w-4 h-4" />
+                            Back to Login
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen flex items-center justify-center p-4 lg:p-8 relative overflow-hidden font-sans" style={{ background: 'var(--abyss)' }}>
@@ -161,7 +299,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin, lang }) => {
                     {/* Subtle gradient overlay */}
                     <div className="absolute inset-0 opacity-50" style={{ background: 'radial-gradient(circle at center, var(--neural-dim) 0%, transparent 70%)' }}></div>
 
-                    <div className="w-full max-w-md mx-auto space-y-8 relative z-10">
+                    <div className="w-full max-w-md mx-auto space-y-6 relative z-10">
 
                         {/* Logo Mobile */}
                         <div className="lg:hidden flex justify-center mb-8">
@@ -301,31 +439,34 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin, lang }) => {
                             <form onSubmit={handleSubmit} className="space-y-4 animate-fade-in-up">
                                 {/* Error Message */}
                                 {error && (
-                                    <div className="p-3 rounded-xl text-xs font-bold text-center" style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+                                    <div className="p-3 rounded-xl text-xs font-bold flex items-start gap-2" style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+                                        <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                                         {error}
                                     </div>
                                 )}
 
-                                {/* Name Field */}
-                                <div className="space-y-1.5">
-                                    <label className="text-[10px] font-black uppercase ml-2" style={{ color: 'var(--text-tertiary)' }}>Name {authMode === 'register' && '*'}</label>
-                                    <div className="input-neural p-1.5 flex items-center group" style={{
-                                        borderColor: selectedRole === 'LINEMAN' ? 'var(--border-neural)' : 'rgba(168, 85, 247, 0.3)'
-                                    }}>
-                                        <div className="p-3 rounded-xl transition-colors" style={{ background: 'var(--elevated)' }}>
-                                            <UserIcon className="w-4 h-4" style={{ color: selectedRole === 'LINEMAN' ? 'var(--neural-core)' : 'var(--energy-core)' }} />
+                                {/* Name Field - Required for register, optional for login */}
+                                {authMode === 'register' && (
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-black uppercase ml-2" style={{ color: 'var(--text-tertiary)' }}>Name *</label>
+                                        <div className="input-neural p-1.5 flex items-center group" style={{
+                                            borderColor: selectedRole === 'LINEMAN' ? 'var(--border-neural)' : 'rgba(168, 85, 247, 0.3)'
+                                        }}>
+                                            <div className="p-3 rounded-xl transition-colors" style={{ background: 'var(--elevated)' }}>
+                                                <UserIcon className="w-4 h-4" style={{ color: selectedRole === 'LINEMAN' ? 'var(--neural-core)' : 'var(--energy-core)' }} />
+                                            </div>
+                                            <input
+                                                type="text"
+                                                value={name}
+                                                onChange={e => setName(e.target.value)}
+                                                className="bg-transparent w-full p-2 text-sm font-bold outline-none"
+                                                style={{ color: 'var(--text-primary)' }}
+                                                placeholder={selectedRole === 'ADMIN' ? 'Admin Name' : 'Lineman Name'}
+                                                required
+                                            />
                                         </div>
-                                        <input
-                                            type="text"
-                                            value={name}
-                                            onChange={e => setName(e.target.value)}
-                                            className="bg-transparent w-full p-2 text-sm font-bold outline-none"
-                                            style={{ color: 'var(--text-primary)' }}
-                                            placeholder={selectedRole === 'ADMIN' ? 'Admin Name' : 'Lineman Name'}
-                                            required={authMode === 'register'}
-                                        />
                                     </div>
-                                </div>
+                                )}
 
                                 {/* Email Field */}
                                 <div className="space-y-1.5">
@@ -348,29 +489,30 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin, lang }) => {
                                     </div>
                                 </div>
 
-                                {/* Password Fields - Only for Register */}
+                                {/* Password Field */}
+                                <div className="space-y-1.5">
+                                    <label className="text-[10px] font-black uppercase ml-2" style={{ color: 'var(--text-tertiary)' }}>Password *</label>
+                                    <div className="input-neural p-1.5 flex items-center group" style={{
+                                        borderColor: selectedRole === 'LINEMAN' ? 'var(--border-neural)' : 'rgba(168, 85, 247, 0.3)'
+                                    }}>
+                                        <div className="p-3 rounded-xl transition-colors" style={{ background: 'var(--elevated)' }}>
+                                            <Lock className="w-4 h-4" style={{ color: selectedRole === 'LINEMAN' ? 'var(--neural-core)' : 'var(--energy-core)' }} />
+                                        </div>
+                                        <input
+                                            type="password"
+                                            value={password}
+                                            onChange={e => setPassword(e.target.value)}
+                                            className="bg-transparent w-full p-2 text-sm font-bold outline-none"
+                                            style={{ color: 'var(--text-primary)' }}
+                                            placeholder={authMode === 'register' ? 'Min. 6 characters' : 'Your password'}
+                                            required
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Confirm Password - Only for Register */}
                                 {authMode === 'register' && (
                                     <>
-                                        <div className="space-y-1.5">
-                                            <label className="text-[10px] font-black uppercase ml-2" style={{ color: 'var(--text-tertiary)' }}>Password *</label>
-                                            <div className="input-neural p-1.5 flex items-center group" style={{
-                                                borderColor: selectedRole === 'LINEMAN' ? 'var(--border-neural)' : 'rgba(168, 85, 247, 0.3)'
-                                            }}>
-                                                <div className="p-3 rounded-xl transition-colors" style={{ background: 'var(--elevated)' }}>
-                                                    <Lock className="w-4 h-4" style={{ color: selectedRole === 'LINEMAN' ? 'var(--neural-core)' : 'var(--energy-core)' }} />
-                                                </div>
-                                                <input
-                                                    type="password"
-                                                    value={password}
-                                                    onChange={e => setPassword(e.target.value)}
-                                                    className="bg-transparent w-full p-2 text-sm font-bold outline-none"
-                                                    style={{ color: 'var(--text-primary)' }}
-                                                    placeholder="Min. 6 characters"
-                                                    required
-                                                />
-                                            </div>
-                                        </div>
-
                                         <div className="space-y-1.5">
                                             <label className="text-[10px] font-black uppercase ml-2" style={{ color: 'var(--text-tertiary)' }}>Confirm Password *</label>
                                             <div className="input-neural p-1.5 flex items-center group" style={{
@@ -414,18 +556,18 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin, lang }) => {
 
                                 <button
                                     type="submit"
-                                    disabled={isLoading}
+                                    disabled={authStatus === 'loading'}
                                     className="w-full py-3 sm:py-5 rounded-xl sm:rounded-2xl text-black font-black uppercase text-[10px] sm:text-xs tracking-widest hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 group mt-4 sm:mt-6 btn-neural"
                                     style={{
                                         background: selectedRole === 'LINEMAN' ? 'var(--gradient-neural)' : 'linear-gradient(135deg, #a855f7 0%, #00d4ff 100%)',
                                         boxShadow: selectedRole === 'LINEMAN' ? 'var(--shadow-neural)' : 'var(--shadow-energy)'
                                     }}
                                 >
-                                    {isLoading ? (
+                                    {authStatus === 'loading' ? (
                                         <div className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin" />
                                     ) : (
                                         <>
-                                            {authMode === 'login' ? `Enter as ${selectedRole === 'LINEMAN' ? 'Lineman' : 'Administrator'}` : 'Create Account'}
+                                            {authMode === 'login' ? `Login as ${selectedRole === 'LINEMAN' ? 'Lineman' : 'Administrator'}` : 'Create Account'}
                                             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                                         </>
                                     )}

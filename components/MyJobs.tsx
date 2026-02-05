@@ -113,8 +113,21 @@ const MyJobs: React.FC<MyJobsProps> = ({ user, lang, onSelectJob }) => {
     jobStorage.initializeSampleJobs(user.id, user.name);
 
     setTimeout(() => {
+      // Get jobs assigned to this user OR unassigned jobs (from Map Audit auto-publish)
       const userJobs = jobStorage.getByLineman(user.id);
-      setJobs(userJobs);
+      const unassignedJobs = jobStorage.getAll().filter(j =>
+        j.assignedToId === 'lineman-default' || j.assignedToName === 'Unassigned'
+      );
+
+      // Merge and deduplicate
+      const allJobs = [...userJobs];
+      unassignedJobs.forEach(job => {
+        if (!allJobs.find(j => j.id === job.id)) {
+          allJobs.push(job);
+        }
+      });
+
+      setJobs(allJobs);
 
       // Load unread counts for all jobs
       const counts = chatStorage.getUnreadCounts(user.id);

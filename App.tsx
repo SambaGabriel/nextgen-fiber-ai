@@ -5,6 +5,7 @@ import AuthPage from './components/AuthPage';
 import FiberLoader from './components/FiberLoader';
 import OfflineIndicator from './components/OfflineIndicator';
 import { storage } from './services/storageService';
+import { authService } from './services/supabase';
 import { analyzeMapBoQ } from './services/claudeService';
 import { aiProcessingService } from './services/aiProcessingService';
 import { offlineSync } from './services/offlineSync';
@@ -97,7 +98,12 @@ const App: React.FC = () => {
         setUser(newUser);
     }, []);
 
-    const handleLogout = useCallback(() => {
+    const handleLogout = useCallback(async () => {
+        try {
+            await authService.signOut();
+        } catch (err) {
+            console.error('Logout error:', err);
+        }
         storage.saveUser(null);
         setUser(null);
         setSelectedJob(null);

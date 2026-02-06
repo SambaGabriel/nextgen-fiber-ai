@@ -10,7 +10,7 @@ import {
   Ruler, Building2, MessageSquare, ExternalLink, Camera, Image
 } from 'lucide-react';
 import { Job, JobStatus, WorkType } from '../types/project';
-import { jobStorage } from '../services/jobStorage';
+import { jobStorageSupabase } from '../services/jobStorageSupabase';
 import { Language, User as UserType } from '../types';
 import ChatSection from './ChatSection';
 import SafetyChecklist, { isChecklistValid } from './SafetyChecklist';
@@ -215,7 +215,7 @@ const JobDetails: React.FC<JobDetailsProps> = ({ job, user, lang, onBack, onStar
   }, []);
 
   // Handle start work - requires safety checklist
-  const handleStartWork = useCallback(() => {
+  const handleStartWork = useCallback(async () => {
     // Check if safety checklist is valid
     if (!isChecklistValid(currentJob.id)) {
       setShowChecklist(true);
@@ -223,7 +223,7 @@ const JobDetails: React.FC<JobDetailsProps> = ({ job, user, lang, onBack, onStar
     }
 
     // Update job status to in_progress
-    const updated = jobStorage.update(currentJob.id, { status: JobStatus.IN_PROGRESS });
+    const updated = await jobStorageSupabase.update(currentJob.id, { status: JobStatus.IN_PROGRESS });
     if (updated) {
       setCurrentJob(updated);
     }
@@ -232,10 +232,10 @@ const JobDetails: React.FC<JobDetailsProps> = ({ job, user, lang, onBack, onStar
   }, [currentJob, onStartProduction]);
 
   // Handle checklist complete
-  const handleChecklistComplete = useCallback(() => {
+  const handleChecklistComplete = useCallback(async () => {
     setShowChecklist(false);
     // Now proceed with starting work
-    const updated = jobStorage.update(currentJob.id, { status: JobStatus.IN_PROGRESS });
+    const updated = await jobStorageSupabase.update(currentJob.id, { status: JobStatus.IN_PROGRESS });
     if (updated) {
       setCurrentJob(updated);
     }

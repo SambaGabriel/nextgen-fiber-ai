@@ -9,7 +9,7 @@ import {
 import { Language, User, MapAnalysisResult, AuditFile, MapAuditReport, UnitRates } from '../types';
 import { translations } from '../services/translations';
 import FiberLoader from './FiberLoader';
-import { jobStorage } from '../services/jobStorage';
+import { jobStorageSupabase } from '../services/jobStorageSupabase';
 import { JobStatus, WorkType } from '../types/project';
 
 declare const L: any;
@@ -205,7 +205,7 @@ const MapAudit: React.FC<MapAuditProps> = ({ lang, user, onSaveToReports, auditQ
         engineeringLayerRef.current = group.addTo(mapInstance.current);
     };
 
-    const finalizeAudit = () => {
+    const finalizeAudit = async () => {
         if (!analysisResult) return;
         setIsSaving(true);
 
@@ -231,44 +231,48 @@ const MapAudit: React.FC<MapAuditProps> = ({ lang, user, onSaveToReports, auditQ
             ? `${analysisResult.cableType} - ${currentFile?.name?.replace('.pdf', '') || 'New Job'}`
             : currentFile?.name?.replace('.pdf', '') || 'New Fiber Installation Job';
 
-        const newJob = jobStorage.create({
-            title: jobTitle,
-            assignedToId: 'lineman-default',  // Will be reassigned by supervisor
-            assignedToName: 'Unassigned',
-            assignedById: user.id || 'admin',
-            assignedByName: user.name,
-            assignedAt: new Date().toISOString(),
-            clientId: 'client-default',
-            clientName: 'Pending Assignment',
-            workType,
-            location: {
-                address: analysisResult.projectStartGps?.label || 'See map for location',
-                city: '',
-                state: '',
-                coordinates: analysisResult.projectStartGps
-                    ? { lat: analysisResult.projectStartGps.lat, lng: analysisResult.projectStartGps.lng }
-                    : undefined
-            },
-            scheduledDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 1 week from now
-            estimatedFootage: analysisResult.totalCableLength,
-            supervisorNotes: `Auto-generated from Map Audit.\n\nTotal Footage: ${analysisResult.totalCableLength.toLocaleString()} ft\nAerial: ${analysisResult.aerialFootage.toLocaleString()} ft\nUnderground: ${analysisResult.undergroundFootage.toLocaleString()} ft\nSpans: ${analysisResult.spanCount}\nAnchors: ${analysisResult.anchorCount || 0}`,
-            status: JobStatus.ASSIGNED,
-            mapFile: currentFile ? {
-                filename: currentFile.name,
-                url: currentFile.blobUrl,
-                size: currentFile.base64?.length || 0,
-                uploadedAt: new Date().toISOString()
-            } : undefined
-        });
+        try {
+            const newJob = await jobStorageSupabase.create({
+                title: jobTitle,
+                assignedToId: 'lineman-default',  // Will be reassigned by supervisor
+                assignedToName: 'Unassigned',
+                assignedById: user.id || 'admin',
+                assignedByName: user.name,
+                assignedAt: new Date().toISOString(),
+                clientId: 'client-default',
+                clientName: 'Pending Assignment',
+                workType,
+                location: {
+                    address: analysisResult.projectStartGps?.label || 'See map for location',
+                    city: '',
+                    state: '',
+                    coordinates: analysisResult.projectStartGps
+                        ? { lat: analysisResult.projectStartGps.lat, lng: analysisResult.projectStartGps.lng }
+                        : undefined
+                },
+                scheduledDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 1 week from now
+                estimatedFootage: analysisResult.totalCableLength,
+                supervisorNotes: `Auto-generated from Map Audit.\n\nTotal Footage: ${analysisResult.totalCableLength.toLocaleString()} ft\nAerial: ${analysisResult.aerialFootage.toLocaleString()} ft\nUnderground: ${analysisResult.undergroundFootage.toLocaleString()} ft\nSpans: ${analysisResult.spanCount}\nAnchors: ${analysisResult.anchorCount || 0}`,
+                status: JobStatus.ASSIGNED,
+                mapFile: currentFile ? {
+                    filename: currentFile.name,
+                    url: '', // Don't store large base64 in DB
+                    size: currentFile.base64?.length || 0,
+                    uploadedAt: new Date().toISOString()
+                } : undefined
+            });
 
-        console.log('[MapAudit] Job created:', newJob.jobCode);
+            console.log('[MapAudit] Job created in Supabase:', newJob?.jobCode);
 
-        setTimeout(() => {
+            setSidebarOpen(false);
+            alert(`${t.report_saved}\n\nJob ${newJob?.jobCode || 'created'} salvo no Supabase!`);
+        } catch (error) {
+            console.error('[MapAudit] Error creating job:', error);
             onSaveToReports(finalReport);
             setIsSaving(false);
             setSidebarOpen(false);
-            alert(`${t.report_saved}\n\nJob ${newJob.jobCode} criado automaticamente!`);
-        }, 1000);
+            alert(`${t.report_saved}\n\n(Job não foi salvo no banco - verifique a conexão)`);
+        }
     };
 
     const handlePdfUpload = (e: React.ChangeEvent<HTMLInputElement>) => {

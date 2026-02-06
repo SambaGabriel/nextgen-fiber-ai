@@ -8,7 +8,7 @@ import {
   CheckCircle2, AlertTriangle, Play, Send, FileText, MessageCircle
 } from 'lucide-react';
 import { Job, JobStatus, JobUnreadCount } from '../types/project';
-import { jobStorage } from '../services/jobStorage';
+import { jobStorageSupabase } from '../services/jobStorageSupabase';
 import { chatStorage } from '../services/chatStorage';
 import { Language, User } from '../types';
 import FiberLoader from './FiberLoader';
@@ -107,26 +107,12 @@ const MyJobs: React.FC<MyJobsProps> = ({ user, lang, onSelectJob }) => {
   const [unreadCounts, setUnreadCounts] = useState<Map<string, number>>(new Map());
 
   // Load jobs and unread counts
-  const loadJobs = useCallback(() => {
+  const loadJobs = useCallback(async () => {
     setIsLoading(true);
-    // Initialize sample jobs if none exist
-    jobStorage.initializeSampleJobs(user.id, user.name);
 
-    setTimeout(() => {
-      // Get jobs assigned to this user OR unassigned jobs (from Map Audit auto-publish)
-      const userJobs = jobStorage.getByLineman(user.id);
-      const unassignedJobs = jobStorage.getAll().filter(j =>
-        j.assignedToId === 'lineman-default' || j.assignedToName === 'Unassigned'
-      );
-
-      // Merge and deduplicate
-      const allJobs = [...userJobs];
-      unassignedJobs.forEach(job => {
-        if (!allJobs.find(j => j.id === job.id)) {
-          allJobs.push(job);
-        }
-      });
-
+    try {
+      // Get all jobs from Supabase (RLS will filter appropriately)
+      const allJobs = await jobStorageSupabase.getAll();
       setJobs(allJobs);
 
       // Load unread counts for all jobs
@@ -138,10 +124,12 @@ const MyJobs: React.FC<MyJobsProps> = ({ user, lang, onSelectJob }) => {
         }
       });
       setUnreadCounts(countMap);
-
+    } catch (error) {
+      console.error('Error loading jobs:', error);
+    } finally {
       setIsLoading(false);
-    }, 300);
-  }, [user.id, user.name]);
+    }
+  }, [user.id]);
 
   useEffect(() => {
     loadJobs();

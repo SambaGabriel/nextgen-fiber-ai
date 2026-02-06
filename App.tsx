@@ -104,10 +104,15 @@ const App: React.FC = () => {
         } catch (err) {
             console.error('Logout error:', err);
         }
+        // Clear all local state
         storage.saveUser(null);
+        localStorage.removeItem('fs_jobs');
+        localStorage.removeItem('fs_registered_users');
         setUser(null);
         setSelectedJob(null);
         setCurrentView(ViewState.DASHBOARD);
+        // Force page reload to clear any cached session
+        window.location.reload();
     }, []);
 
     // Job navigation handlers

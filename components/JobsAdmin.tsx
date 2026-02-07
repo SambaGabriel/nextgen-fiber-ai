@@ -1530,10 +1530,20 @@ Return ONLY valid JSON:
                   <p className="text-xs font-bold uppercase mb-2" style={{ color: 'var(--text-tertiary)' }}>
                     Map / Document
                   </p>
-                  <div className="p-4 rounded-xl" style={{ background: 'var(--elevated)' }}>
+                  <div
+                    className={`p-4 rounded-xl transition-all ${selectedJob.mapFile.url ? 'cursor-pointer hover:scale-[1.01]' : ''}`}
+                    style={{ background: 'var(--elevated)' }}
+                    onClick={() => {
+                      if (selectedJob.mapFile?.url) {
+                        window.open(selectedJob.mapFile.url, '_blank');
+                      }
+                    }}
+                  >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <FileText className="w-8 h-8" style={{ color: 'var(--neural-core)' }} />
+                        <div className="p-2 rounded-lg" style={{ background: 'var(--neural-dim)' }}>
+                          <FileText className="w-6 h-6" style={{ color: 'var(--neural-core)' }} />
+                        </div>
                         <div>
                           <p className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>
                             {selectedJob.mapFile.filename}
@@ -1544,47 +1554,46 @@ Return ONLY valid JSON:
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        {selectedJob.mapFile.url && (
+                        {selectedJob.mapFile.url ? (
                           <>
                             <button
-                              onClick={() => window.open(selectedJob.mapFile!.url, '_blank')}
-                              className="flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold transition-colors"
-                              style={{ background: 'var(--neural-dim)', color: 'var(--neural-core)' }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                window.open(selectedJob.mapFile!.url, '_blank');
+                              }}
+                              className="flex items-center gap-1 px-4 py-2 rounded-lg text-xs font-bold transition-all hover:scale-105"
+                              style={{ background: 'var(--neural-dim)', color: 'var(--neural-core)', border: '1px solid var(--border-neural)' }}
                             >
                               <Eye className="w-4 h-4" />
-                              View
+                              View Map
                             </button>
                             <a
                               href={selectedJob.mapFile.url}
                               download={selectedJob.mapFile.filename}
-                              className="flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold transition-colors"
+                              onClick={(e) => e.stopPropagation()}
+                              className="flex items-center gap-1 px-4 py-2 rounded-lg text-xs font-bold transition-all hover:scale-105"
                               style={{ background: 'var(--surface)', color: 'var(--text-secondary)', border: '1px solid var(--border-default)' }}
                             >
                               <Download className="w-4 h-4" />
                               Download
                             </a>
                           </>
+                        ) : (
+                          <span className="text-xs px-3 py-1 rounded-lg" style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#EF4444' }}>
+                            URL not available
+                          </span>
                         )}
                       </div>
                     </div>
-                    {/* PDF Preview (if URL is a data URL or public URL) */}
+                    {/* PDF Preview */}
                     {selectedJob.mapFile.url && (
-                      <div className="mt-4">
-                        {selectedJob.mapFile.url.startsWith('data:') ? (
-                          <iframe
-                            src={selectedJob.mapFile.url}
-                            className="w-full h-64 rounded-lg border"
-                            style={{ borderColor: 'var(--border-default)' }}
-                            title="Map Preview"
-                          />
-                        ) : (
-                          <iframe
-                            src={`${selectedJob.mapFile.url}#toolbar=0`}
-                            className="w-full h-64 rounded-lg border"
-                            style={{ borderColor: 'var(--border-default)' }}
-                            title="Map Preview"
-                          />
-                        )}
+                      <div className="mt-4 rounded-lg overflow-hidden" style={{ border: '1px solid var(--border-default)' }}>
+                        <iframe
+                          src={selectedJob.mapFile.url.startsWith('data:') ? selectedJob.mapFile.url : `${selectedJob.mapFile.url}#toolbar=0`}
+                          className="w-full h-64"
+                          title="Map Preview"
+                          onClick={(e) => e.stopPropagation()}
+                        />
                       </div>
                     )}
                   </div>

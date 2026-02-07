@@ -84,11 +84,7 @@ export class RateCardError extends Error {
 export async function getGroups(clientId?: string): Promise<RateCardGroup[]> {
   let query = supabase
     .from('rate_card_groups')
-    .select(`
-      *,
-      clients:client_id (name),
-      customers:customer_id (name)
-    `)
+    .select('*')
     .eq('is_active', true)
     .order('customer_name', { ascending: true });
 
@@ -105,16 +101,9 @@ export async function getGroups(clientId?: string): Promise<RateCardGroup[]> {
     return cached ? JSON.parse(cached) : [];
   }
 
-  // Map joined data to flat structure
-  const groups = (data || []).map(g => ({
-    ...g,
-    client_name: g.clients?.name || null,
-    customer_name: g.customers?.name || g.customer_name,
-  }));
-
   // Cache for offline
-  localStorage.setItem('rateCardGroups', JSON.stringify(groups));
-  return groups;
+  localStorage.setItem('rateCardGroups', JSON.stringify(data || []));
+  return data || [];
 }
 
 export async function createGroup(
@@ -507,11 +496,7 @@ export async function getGroupsFiltered(
 ): Promise<RateCardGroup[]> {
   let query = supabase
     .from('rate_card_groups')
-    .select(`
-      *,
-      clients:client_id (name),
-      customers:customer_id (name)
-    `)
+    .select('*')
     .eq('is_active', true);
 
   if (clientId) {
@@ -526,15 +511,11 @@ export async function getGroupsFiltered(
 
   if (error) {
     console.error('[RateCardService] Error fetching filtered groups:', error);
-    return [];
+    // Fallback: return all groups without filter
+    return getGroups();
   }
 
-  // Map joined data to flat structure
-  return (data || []).map(g => ({
-    ...g,
-    client_name: g.clients?.name || null,
-    customer_name: g.customers?.name || g.customer_name,
-  }));
+  return data || [];
 }
 
 // ===== LOOKUP (for calculations) =====

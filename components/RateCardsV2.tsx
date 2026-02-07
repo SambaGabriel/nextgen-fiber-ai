@@ -86,12 +86,7 @@ const RateCardsV2: React.FC<RateCardsV2Props> = ({ user, lang }) => {
 
   // Load groups when client or customer changes
   useEffect(() => {
-    if (selectedClient) {
-      loadGroups(selectedClient.id, selectedCustomer?.id);
-    } else {
-      setGroups([]);
-      setSelectedGroup(null);
-    }
+    loadGroups(selectedClient?.id, selectedCustomer?.id);
   }, [selectedClient, selectedCustomer]);
 
   const loadMasterData = async () => {
@@ -514,13 +509,6 @@ const RateCardsV2: React.FC<RateCardsV2Props> = ({ user, lang }) => {
         {isLoading ? (
           <div className="flex items-center justify-center h-64">
             <Loader2 className="w-8 h-8 animate-spin" style={{ color: 'var(--neural-core)' }} />
-          </div>
-        ) : !selectedClient ? (
-          <div className="flex flex-col items-center justify-center h-64 gap-4">
-            <Building2 className="w-16 h-16" style={{ color: 'var(--text-tertiary)' }} />
-            <p className="text-lg font-medium" style={{ color: 'var(--text-secondary)' }}>
-              Select a Client to view rate cards
-            </p>
           </div>
         ) : !selectedGroup || !selectedProfile ? (
           <div className="flex flex-col items-center justify-center h-64 gap-4">

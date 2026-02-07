@@ -881,30 +881,59 @@ Be thorough - extract hundreds of items if they exist in the document.`
               </div>
             </div>
             {/* Show rates in this set */}
-            <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--surface)', border: '1px solid var(--border-default)' }}>
-              <table className="w-full">
-                <thead>
-                  <tr style={{ background: 'var(--elevated)' }}>
-                    <th className="px-4 py-3 text-left text-xs font-black uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>Code</th>
-                    <th className="px-4 py-3 text-left text-xs font-black uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>Description</th>
-                    <th className="px-4 py-3 text-left text-xs font-black uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>Unit</th>
-                    <th className="px-4 py-3 text-right text-xs font-black uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>Rate</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rateCards.filter(r => r.set_id === selectedSet.id).map((rate) => (
-                    <tr key={rate.id} className="border-t" style={{ borderColor: 'var(--border-subtle)' }}>
-                      <td className="px-4 py-3">
-                        <span className="font-bold" style={{ color: 'var(--neural-core)' }}>{rate.code}</span>
-                      </td>
-                      <td className="px-4 py-3 text-sm" style={{ color: 'var(--text-secondary)' }}>{rate.description}</td>
-                      <td className="px-4 py-3 text-sm" style={{ color: 'var(--text-tertiary)' }}>{rate.unit === 'FT' ? 'Per Foot' : rate.unit === 'EA' ? 'Each' : rate.unit === 'HR' ? 'Per Hour' : 'Per Day'}</td>
-                      <td className="px-4 py-3 text-right font-bold" style={{ color: 'var(--neural-core)' }}>${rate.rate.toFixed(2)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            {(() => {
+              const setRates = rateCards
+                .filter(r => r.set_id === selectedSet.id)
+                .filter(rate => {
+                  if (!searchQuery) return true;
+                  const query = searchQuery.toLowerCase();
+                  return rate.code.toLowerCase().includes(query) ||
+                         rate.description.toLowerCase().includes(query);
+                });
+
+              if (setRates.length === 0 && searchQuery) {
+                return (
+                  <div className="flex flex-col items-center justify-center h-40 gap-3 rounded-2xl" style={{ background: 'var(--surface)', border: '1px solid var(--border-default)' }}>
+                    <Search className="w-10 h-10" style={{ color: 'var(--text-tertiary)' }} />
+                    <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                      No results for "{searchQuery}"
+                    </p>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--surface)', border: '1px solid var(--border-default)' }}>
+                  {searchQuery && (
+                    <div className="px-4 py-2 text-xs" style={{ background: 'var(--elevated)', color: 'var(--text-tertiary)' }}>
+                      Showing {setRates.length} of {rateCards.filter(r => r.set_id === selectedSet.id).length} items
+                    </div>
+                  )}
+                  <table className="w-full">
+                    <thead>
+                      <tr style={{ background: 'var(--elevated)' }}>
+                        <th className="px-4 py-3 text-left text-xs font-black uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>Code</th>
+                        <th className="px-4 py-3 text-left text-xs font-black uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>Description</th>
+                        <th className="px-4 py-3 text-left text-xs font-black uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>Unit</th>
+                        <th className="px-4 py-3 text-right text-xs font-black uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>Rate</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {setRates.map((rate) => (
+                        <tr key={rate.id} className="border-t" style={{ borderColor: 'var(--border-subtle)' }}>
+                          <td className="px-4 py-3">
+                            <span className="font-bold" style={{ color: 'var(--neural-core)' }}>{rate.code}</span>
+                          </td>
+                          <td className="px-4 py-3 text-sm" style={{ color: 'var(--text-secondary)' }}>{rate.description}</td>
+                          <td className="px-4 py-3 text-sm" style={{ color: 'var(--text-tertiary)' }}>{rate.unit === 'FT' ? 'Per Foot' : rate.unit === 'EA' ? 'Each' : rate.unit === 'HR' ? 'Per Hour' : 'Per Day'}</td>
+                          <td className="px-4 py-3 text-right font-bold" style={{ color: 'var(--neural-core)' }}>${rate.rate.toFixed(2)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              );
+            })()}
           </div>
         ) : filteredRateCards.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 gap-4">

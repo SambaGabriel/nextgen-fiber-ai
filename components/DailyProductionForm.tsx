@@ -13,7 +13,7 @@ import {
 import { Language, User } from '../types';
 import { Project, ProjectStatus, WorkType, LineItem, Job, JobStatus } from '../types/project';
 import { projectStorage, clientStorage } from '../services/projectStorage';
-import { jobStorage } from '../services/jobStorage';
+import { jobStorageSupabase } from '../services/jobStorageSupabase';
 
 interface DailyProductionFormProps {
     user: User;
@@ -204,7 +204,7 @@ const DailyProductionForm: React.FC<DailyProductionFormProps> = ({ user, lang, j
                 };
 
                 // Update job with production data
-                jobStorage.submitProduction(job.id, productionData);
+                await jobStorageSupabase.submitProduction(job.id, productionData);
 
                 // Save to local reports
                 const report = {

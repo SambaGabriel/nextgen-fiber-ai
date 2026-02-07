@@ -9,8 +9,13 @@ import { supabase } from './supabase';
 
 export interface RateCardGroup {
   id: string;
+  // Client (Prime contractor - who pays us)
+  client_id?: string;
+  client_name?: string;
+  // Customer (End operator - final project)
   customer_id: string;
   customer_name: string;
+  // Region
   region: string;
   is_active: boolean;
   created_at: string;
@@ -76,12 +81,22 @@ export class RateCardError extends Error {
 
 // ===== GROUPS =====
 
-export async function getGroups(): Promise<RateCardGroup[]> {
-  const { data, error } = await supabase
+export async function getGroups(clientId?: string): Promise<RateCardGroup[]> {
+  let query = supabase
     .from('rate_card_groups')
-    .select('*')
+    .select(`
+      *,
+      clients:client_id (name),
+      customers:customer_id (name)
+    `)
     .eq('is_active', true)
     .order('customer_name', { ascending: true });
+
+  if (clientId) {
+    query = query.eq('client_id', clientId);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     console.error('[RateCardService] Error fetching groups:', error);
@@ -90,19 +105,44 @@ export async function getGroups(): Promise<RateCardGroup[]> {
     return cached ? JSON.parse(cached) : [];
   }
 
+  // Map joined data to flat structure
+  const groups = (data || []).map(g => ({
+    ...g,
+    client_name: g.clients?.name || null,
+    customer_name: g.customers?.name || g.customer_name,
+  }));
+
   // Cache for offline
-  localStorage.setItem('rateCardGroups', JSON.stringify(data));
-  return data || [];
+  localStorage.setItem('rateCardGroups', JSON.stringify(groups));
+  return groups;
 }
 
-export async function createGroup(customerName: string, region: string): Promise<RateCardGroup> {
+export async function createGroup(
+  customerName: string,
+  region: string,
+  clientId?: string,
+  customerId?: string
+): Promise<RateCardGroup> {
+  const insertData: any = {
+    customer_name: customerName,
+    region: region,
+  };
+
+  // If client_id is provided, use it
+  if (clientId) {
+    insertData.client_id = clientId;
+  }
+
+  // If customer_id (UUID) is provided, use it. Otherwise generate a slug
+  if (customerId) {
+    insertData.customer_id = customerId;
+  } else {
+    insertData.customer_id = customerName.toLowerCase().replace(/\s+/g, '-');
+  }
+
   const { data, error } = await supabase
     .from('rate_card_groups')
-    .insert({
-      customer_id: customerName.toLowerCase().replace(/\s+/g, '-'),
-      customer_name: customerName,
-      region: region,
-    })
+    .insert(insertData)
     .select()
     .single();
 
@@ -428,6 +468,73 @@ export async function getAuditLog(entityId?: string, limit: number = 50): Promis
   }
 
   return data || [];
+}
+
+// ===== RATE CARD RESOLUTION =====
+
+/**
+ * Resolve rate card group by Client + Customer + Region
+ * Returns null if no match found (explicit failure, no fallback)
+ */
+export async function resolveRateCardGroup(
+  clientId: string,
+  customerId: string,
+  region: string
+): Promise<RateCardGroup | null> {
+  const { data, error } = await supabase
+    .from('rate_card_groups')
+    .select('*')
+    .eq('client_id', clientId)
+    .eq('customer_id', customerId)
+    .eq('region', region)
+    .eq('is_active', true)
+    .single();
+
+  if (error) {
+    console.error('[RateCardService] Rate card not found for:', { clientId, customerId, region });
+    return null;
+  }
+
+  return data;
+}
+
+/**
+ * Get groups filtered by client and/or customer
+ */
+export async function getGroupsFiltered(
+  clientId?: string,
+  customerId?: string
+): Promise<RateCardGroup[]> {
+  let query = supabase
+    .from('rate_card_groups')
+    .select(`
+      *,
+      clients:client_id (name),
+      customers:customer_id (name)
+    `)
+    .eq('is_active', true);
+
+  if (clientId) {
+    query = query.eq('client_id', clientId);
+  }
+
+  if (customerId) {
+    query = query.eq('customer_id', customerId);
+  }
+
+  const { data, error } = await query.order('region', { ascending: true });
+
+  if (error) {
+    console.error('[RateCardService] Error fetching filtered groups:', error);
+    return [];
+  }
+
+  // Map joined data to flat structure
+  return (data || []).map(g => ({
+    ...g,
+    client_name: g.clients?.name || null,
+    customer_name: g.customers?.name || g.customer_name,
+  }));
 }
 
 // ===== LOOKUP (for calculations) =====

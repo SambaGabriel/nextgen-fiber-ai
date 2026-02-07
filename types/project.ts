@@ -38,6 +38,10 @@ export enum ViolationSeverity {
 // INTERFACES
 // ============================================
 
+/**
+ * Legacy Client interface - for internal billing client
+ * @deprecated Use PrimeClient for prime contractors
+ */
 export interface Client {
   id: string;
   name: string;
@@ -46,6 +50,32 @@ export interface Client {
   address?: string;
   rateCardId: string;
   createdAt: string;
+}
+
+/**
+ * Prime Client - Who pays us (Prime Contractors)
+ * Examples: MasTec, Henkels, Direct
+ */
+export interface PrimeClient {
+  id: string;
+  name: string;
+  code: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * End Customer - Final project operator
+ * Examples: Brightspeed, All Points Broadband, AT&T
+ */
+export interface EndCustomer {
+  id: string;
+  name: string;
+  code: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface RateCard {
@@ -274,9 +304,13 @@ export interface Job {
   assignedByName: string;          // Supervisor name
   assignedAt: string;
 
-  // Client
+  // Client (Prime Contractor - who pays us)
   clientId: string;
   clientName: string;
+
+  // Customer (End Operator - final project)
+  customerId?: string;
+  customerName?: string;
 
   // Job details
   workType: WorkType;

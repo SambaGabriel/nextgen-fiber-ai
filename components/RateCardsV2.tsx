@@ -7,24 +7,21 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   DollarSign, Plus, Search, Edit2, Save, X, Check, AlertCircle,
   Loader2, Building2, MapPin, Upload, FileText, FolderOpen,
-  ArrowLeft, Download, Copy, ChevronDown, FileSpreadsheet
+  ArrowLeft, Download, Copy, ChevronDown, FileSpreadsheet, Users
 } from 'lucide-react';
 import { Language, User } from '../types';
 import {
-  getGroups, getProfiles, getItems, updateItem, createProfile, importItems,
+  getGroups, getGroupsFiltered, getProfiles, getItems, updateItem, createProfile, importItems, createGroup,
   RateCardGroup, RateCardProfile, RateCardItem
 } from '../services/rateCardService';
+import { getClients, PrimeClient } from '../services/clientService';
+import { getCustomers, EndCustomer } from '../services/customerService';
 import { parseExcelFile, createTemplateExcel, ParseResult } from '../services/excelParser';
 
 interface RateCardsV2Props {
   user: User;
   lang: Language;
 }
-
-// Customers list
-const CUSTOMERS = [
-  'Brightspeed', 'AT&T', 'Spectrum', 'Verizon', 'Lumen', 'Frontier', 'Other'
-];
 
 // Regions (US States)
 const REGIONS = [
@@ -36,12 +33,18 @@ const REGIONS = [
 ];
 
 const RateCardsV2: React.FC<RateCardsV2Props> = ({ user, lang }) => {
+  // Master data (from database)
+  const [clients, setClients] = useState<PrimeClient[]>([]);
+  const [customers, setCustomers] = useState<EndCustomer[]>([]);
+
   // Data state
   const [groups, setGroups] = useState<RateCardGroup[]>([]);
   const [profiles, setProfiles] = useState<RateCardProfile[]>([]);
   const [items, setItems] = useState<RateCardItem[]>([]);
 
-  // Selection state
+  // Selection state - hierarchical: Client → Customer → Region (Group) → Profile
+  const [selectedClient, setSelectedClient] = useState<PrimeClient | null>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<EndCustomer | null>(null);
   const [selectedGroup, setSelectedGroup] = useState<RateCardGroup | null>(null);
   const [selectedProfile, setSelectedProfile] = useState<RateCardProfile | null>(null);
 
@@ -72,13 +75,42 @@ const RateCardsV2: React.FC<RateCardsV2Props> = ({ user, lang }) => {
   const [duplicateFromProfile, setDuplicateFromProfile] = useState<string>('');
 
   // Create group state
-  const [newGroupCustomer, setNewGroupCustomer] = useState('');
+  const [newGroupClientId, setNewGroupClientId] = useState('');
+  const [newGroupCustomerId, setNewGroupCustomerId] = useState('');
   const [newGroupRegion, setNewGroupRegion] = useState('');
 
-  // Load groups on mount
+  // Load clients and customers on mount
   useEffect(() => {
-    loadGroups();
+    loadMasterData();
   }, []);
+
+  // Load groups when client or customer changes
+  useEffect(() => {
+    if (selectedClient) {
+      loadGroups(selectedClient.id, selectedCustomer?.id);
+    } else {
+      setGroups([]);
+      setSelectedGroup(null);
+    }
+  }, [selectedClient, selectedCustomer]);
+
+  const loadMasterData = async () => {
+    try {
+      const [clientsData, customersData] = await Promise.all([
+        getClients(),
+        getCustomers()
+      ]);
+      setClients(clientsData);
+      setCustomers(customersData);
+
+      // Auto-select first client if exists
+      if (clientsData.length > 0) {
+        setSelectedClient(clientsData[0]);
+      }
+    } catch (error) {
+      console.error('Error loading master data:', error);
+    }
+  };
 
   // Load profiles when group changes
   useEffect(() => {
@@ -99,15 +131,17 @@ const RateCardsV2: React.FC<RateCardsV2Props> = ({ user, lang }) => {
     }
   }, [selectedGroup, selectedProfile]);
 
-  const loadGroups = async () => {
+  const loadGroups = async (clientId?: string, customerId?: string) => {
     setIsLoading(true);
     try {
-      const data = await getGroups();
+      const data = await getGroupsFiltered(clientId, customerId);
       setGroups(data);
 
       // Auto-select first group if exists
-      if (data.length > 0 && !selectedGroup) {
+      if (data.length > 0) {
         setSelectedGroup(data[0]);
+      } else {
+        setSelectedGroup(null);
       }
     } catch (error) {
       console.error('Error loading groups:', error);
@@ -302,7 +336,9 @@ const RateCardsV2: React.FC<RateCardsV2Props> = ({ user, lang }) => {
                 Rate Cards
               </h1>
               <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                {selectedGroup ? `${selectedGroup.customer_name} - ${selectedGroup.region}` : 'Select a customer/region'}
+                {selectedClient && selectedGroup
+                  ? `${selectedClient.name} → ${selectedGroup.customer_name} → ${selectedGroup.region}`
+                  : 'Select Client → Customer → Region'}
                 {selectedProfile && ` • ${selectedProfile.name}`}
               </p>
             </div>
@@ -328,16 +364,17 @@ const RateCardsV2: React.FC<RateCardsV2Props> = ({ user, lang }) => {
           </div>
         </div>
 
-        {/* Filters: Customer → Region → Profile */}
-        <div className="flex items-center gap-4">
-          {/* Customer/Region Selector */}
+        {/* Filters: Client → Customer → Region → Profile */}
+        <div className="flex items-center gap-4 flex-wrap">
+          {/* Client Selector (Prime Contractor) */}
           <div className="flex items-center gap-2">
             <Building2 className="w-4 h-4" style={{ color: 'var(--text-tertiary)' }} />
             <select
-              value={selectedGroup?.id || ''}
+              value={selectedClient?.id || ''}
               onChange={(e) => {
-                const group = groups.find(g => g.id === e.target.value);
-                setSelectedGroup(group || null);
+                const client = clients.find(c => c.id === e.target.value);
+                setSelectedClient(client || null);
+                setSelectedCustomer(null); // Reset customer when client changes
               }}
               className="px-4 py-2.5 rounded-xl text-sm font-medium outline-none cursor-pointer"
               style={{
@@ -346,21 +383,77 @@ const RateCardsV2: React.FC<RateCardsV2Props> = ({ user, lang }) => {
                 border: '1px solid var(--border-default)'
               }}
             >
-              <option value="">Select Customer/Region</option>
-              {groups.map(g => (
-                <option key={g.id} value={g.id}>
-                  {g.customer_name} - {g.region}
+              <option value="">Select Client</option>
+              {clients.map(c => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
                 </option>
               ))}
             </select>
-            <button
-              onClick={() => setShowCreateGroupModal(true)}
-              className="p-2 rounded-lg hover:bg-white/10"
-              title="Add Customer/Region"
-            >
-              <Plus className="w-4 h-4" style={{ color: 'var(--neural-core)' }} />
-            </button>
           </div>
+
+          {/* Customer Selector (End Operator) */}
+          {selectedClient && (
+            <div className="flex items-center gap-2">
+              <span style={{ color: 'var(--text-tertiary)' }}>→</span>
+              <Users className="w-4 h-4" style={{ color: 'var(--text-tertiary)' }} />
+              <select
+                value={selectedCustomer?.id || ''}
+                onChange={(e) => {
+                  const customer = customers.find(c => c.id === e.target.value);
+                  setSelectedCustomer(customer || null);
+                }}
+                className="px-4 py-2.5 rounded-xl text-sm font-medium outline-none cursor-pointer"
+                style={{
+                  background: 'var(--surface)',
+                  color: 'var(--text-primary)',
+                  border: '1px solid var(--border-default)'
+                }}
+              >
+                <option value="">All Customers</option>
+                {customers.map(c => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Region Selector (from groups) */}
+          {selectedClient && groups.length > 0 && (
+            <div className="flex items-center gap-2">
+              <span style={{ color: 'var(--text-tertiary)' }}>→</span>
+              <MapPin className="w-4 h-4" style={{ color: 'var(--text-tertiary)' }} />
+              <select
+                value={selectedGroup?.id || ''}
+                onChange={(e) => {
+                  const group = groups.find(g => g.id === e.target.value);
+                  setSelectedGroup(group || null);
+                }}
+                className="px-4 py-2.5 rounded-xl text-sm font-medium outline-none cursor-pointer"
+                style={{
+                  background: 'var(--surface)',
+                  color: 'var(--text-primary)',
+                  border: '1px solid var(--border-default)'
+                }}
+              >
+                <option value="">Select Region</option>
+                {groups.map(g => (
+                  <option key={g.id} value={g.id}>
+                    {g.customer_name} - {g.region}
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={() => setShowCreateGroupModal(true)}
+                className="p-2 rounded-lg hover:bg-white/10"
+                title="Add Rate Card Group"
+              >
+                <Plus className="w-4 h-4" style={{ color: 'var(--neural-core)' }} />
+              </button>
+            </div>
+          )}
 
           {/* Profile Selector */}
           {selectedGroup && (
@@ -422,12 +515,29 @@ const RateCardsV2: React.FC<RateCardsV2Props> = ({ user, lang }) => {
           <div className="flex items-center justify-center h-64">
             <Loader2 className="w-8 h-8 animate-spin" style={{ color: 'var(--neural-core)' }} />
           </div>
-        ) : !selectedGroup || !selectedProfile ? (
+        ) : !selectedClient ? (
           <div className="flex flex-col items-center justify-center h-64 gap-4">
             <Building2 className="w-16 h-16" style={{ color: 'var(--text-tertiary)' }} />
             <p className="text-lg font-medium" style={{ color: 'var(--text-secondary)' }}>
-              Select a customer and region to view rates
+              Select a Client to view rate cards
             </p>
+          </div>
+        ) : !selectedGroup || !selectedProfile ? (
+          <div className="flex flex-col items-center justify-center h-64 gap-4">
+            <MapPin className="w-16 h-16" style={{ color: 'var(--text-tertiary)' }} />
+            <p className="text-lg font-medium" style={{ color: 'var(--text-secondary)' }}>
+              {groups.length === 0 ? 'No rate cards found for this client' : 'Select a region to view rates'}
+            </p>
+            {groups.length === 0 && (
+              <button
+                onClick={() => setShowCreateGroupModal(true)}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold"
+                style={{ background: 'var(--neural-dim)', color: 'var(--neural-core)' }}
+              >
+                <Plus className="w-4 h-4" />
+                Create Rate Card Group
+              </button>
+            )}
           </div>
         ) : filteredItems.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 gap-4">
@@ -878,7 +988,7 @@ const RateCardsV2: React.FC<RateCardsV2Props> = ({ user, lang }) => {
           >
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-black uppercase" style={{ color: 'var(--text-primary)' }}>
-                Add Customer/Region
+                Create Rate Card Group
               </h2>
               <button
                 onClick={() => setShowCreateGroupModal(false)}
@@ -889,26 +999,46 @@ const RateCardsV2: React.FC<RateCardsV2Props> = ({ user, lang }) => {
             </div>
 
             <div className="space-y-4">
+              {/* Client (Prime Contractor) */}
               <div>
                 <label className="block text-xs font-bold uppercase mb-2" style={{ color: 'var(--text-tertiary)' }}>
-                  Customer
+                  Client (Prime Contractor)
                 </label>
                 <select
-                  value={newGroupCustomer}
-                  onChange={(e) => setNewGroupCustomer(e.target.value)}
+                  value={newGroupClientId}
+                  onChange={(e) => setNewGroupClientId(e.target.value)}
                   className="w-full px-4 py-3 rounded-xl text-sm outline-none cursor-pointer"
                   style={{ background: 'var(--elevated)', color: 'var(--text-primary)', border: '1px solid var(--border-default)' }}
                 >
-                  <option value="">Select Customer</option>
-                  {CUSTOMERS.map(c => (
-                    <option key={c} value={c}>{c}</option>
+                  <option value="">Select Client</option>
+                  {clients.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
                   ))}
                 </select>
               </div>
 
+              {/* Customer (End Operator) */}
               <div>
                 <label className="block text-xs font-bold uppercase mb-2" style={{ color: 'var(--text-tertiary)' }}>
-                  Region
+                  Customer (End Operator)
+                </label>
+                <select
+                  value={newGroupCustomerId}
+                  onChange={(e) => setNewGroupCustomerId(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl text-sm outline-none cursor-pointer"
+                  style={{ background: 'var(--elevated)', color: 'var(--text-primary)', border: '1px solid var(--border-default)' }}
+                >
+                  <option value="">Select Customer</option>
+                  {customers.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Region */}
+              <div>
+                <label className="block text-xs font-bold uppercase mb-2" style={{ color: 'var(--text-tertiary)' }}>
+                  Region (State)
                 </label>
                 <select
                   value={newGroupRegion}
@@ -933,25 +1063,34 @@ const RateCardsV2: React.FC<RateCardsV2Props> = ({ user, lang }) => {
                 </button>
                 <button
                   onClick={async () => {
-                    if (!newGroupCustomer || !newGroupRegion) return;
+                    if (!newGroupClientId || !newGroupCustomerId || !newGroupRegion) return;
                     try {
-                      const { createGroup } = await import('../services/rateCardService');
-                      const group = await createGroup(newGroupCustomer, newGroupRegion);
-                      await loadGroups();
+                      const customer = customers.find(c => c.id === newGroupCustomerId);
+                      const group = await createGroup(
+                        customer?.name || '',
+                        newGroupRegion,
+                        newGroupClientId,
+                        newGroupCustomerId
+                      );
+                      // Reload groups with current filters
+                      if (selectedClient) {
+                        await loadGroups(selectedClient.id, selectedCustomer?.id);
+                      }
                       setSelectedGroup(group);
                       setShowCreateGroupModal(false);
-                      setNewGroupCustomer('');
+                      setNewGroupClientId('');
+                      setNewGroupCustomerId('');
                       setNewGroupRegion('');
                     } catch (error: any) {
                       alert('Error: ' + error.message);
                     }
                   }}
-                  disabled={!newGroupCustomer || !newGroupRegion}
+                  disabled={!newGroupClientId || !newGroupCustomerId || !newGroupRegion}
                   className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold uppercase transition-all hover:scale-105 disabled:opacity-50"
                   style={{ background: 'var(--gradient-neural)', color: '#000' }}
                 >
                   <Plus className="w-4 h-4" />
-                  Add
+                  Create
                 </button>
               </div>
             </div>

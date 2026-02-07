@@ -257,14 +257,24 @@ Return ONLY valid JSON:
       console.log('[EXTRACT] Raw extracted data:', extracted);
 
       // Also try to extract feeder ID from filename as backup
-      // Pattern: BSPD001.04h, MGNV002.01a, etc.
+      // Filename format: "FLVLALXA - BSPD001.04h - (Map for Linemen) 2.pdf"
       const fileName = file.name;
-      const feederFromFileName = fileName.match(/([A-Z]{3,4}\d{3}\.\d{2}[a-z])/i)?.[1] || '';
-      console.log('[EXTRACT] Feeder ID from filename:', feederFromFileName);
+      console.log('[EXTRACT] Parsing filename:', fileName);
 
-      // Also extract OLT from filename (e.g., FLVLALXA from "FLVLALXA - BSPD001.04h")
-      const oltFromFileName = fileName.match(/^([A-Z]{6,10})\s*-/i)?.[1] || '';
+      // Split by " - " to get parts: [OLT, FEEDER_ID, rest]
+      const fileNameParts = fileName.split(/\s*-\s*/);
+      console.log('[EXTRACT] Filename parts:', fileNameParts);
+
+      // OLT is first part (e.g., "FLVLALXA")
+      const oltFromFileName = fileNameParts[0]?.trim() || '';
+
+      // Feeder ID is second part (e.g., "BSPD001.04h")
+      // Use regex to extract just the feeder pattern from the second part
+      const secondPart = fileNameParts[1] || '';
+      const feederFromFileName = secondPart.match(/([A-Z]+\d+\.\d+[a-zA-Z])/i)?.[1] || secondPart.trim();
+
       console.log('[EXTRACT] OLT from filename:', oltFromFileName);
+      console.log('[EXTRACT] Feeder ID from filename:', feederFromFileName);
 
       // Use filename extraction if Claude didn't get trailing letter
       let finalFeederId = extracted.feederId || '';

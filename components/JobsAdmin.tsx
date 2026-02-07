@@ -278,11 +278,9 @@ Return ONLY valid JSON:
         finalFeederId = feederFromFileName;
       }
 
-      // Generate title from extracted fields: "BSPD001.04h - 96ct - 117-122"
-      // Format: FeederId - FiberCount - MapPages
+      // Generate title from Feeder ID + Map Pages: "BSPD001.04h - 117-122"
       const titleParts = [];
       if (finalFeederId) titleParts.push(finalFeederId);
-      if (extracted.fiberCount) titleParts.push(`${extracted.fiberCount}ct`);
       if (extracted.runNumber) titleParts.push(extracted.runNumber);
 
       let finalTitle = titleParts.length > 0 ? titleParts.join(' - ') : '';

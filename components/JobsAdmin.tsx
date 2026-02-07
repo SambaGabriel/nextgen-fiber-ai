@@ -256,39 +256,6 @@ Return ONLY valid JSON:
       const extracted = JSON.parse(jsonMatch[0]);
       console.log('[EXTRACT] Raw extracted data:', extracted);
 
-      // Also try to extract feeder ID from filename as backup
-      // Filename format: "FLVLALXA - BSPD001.04h - (Map for Linemen) 2.pdf"
-      const fileName = file.name;
-      console.log('[EXTRACT] Parsing filename:', fileName);
-
-      // Split by " - " to get parts: [OLT, FEEDER_ID, rest]
-      const fileNameParts = fileName.split(/\s*-\s*/);
-      console.log('[EXTRACT] Filename parts:', fileNameParts);
-
-      // OLT is first part (e.g., "FLVLALXA")
-      const oltFromFileName = fileNameParts[0]?.trim() || '';
-
-      // Feeder ID is second part (e.g., "BSPD001.04h")
-      // Use regex to extract just the feeder pattern from the second part
-      const secondPart = fileNameParts[1] || '';
-      const feederFromFileName = secondPart.match(/([A-Z]+\d+\.\d+[a-zA-Z])/i)?.[1] || secondPart.trim();
-
-      console.log('[EXTRACT] OLT from filename:', oltFromFileName);
-      console.log('[EXTRACT] Feeder ID from filename:', feederFromFileName);
-
-      // Use filename extraction if Claude didn't get trailing letter
-      let finalFeederId = extracted.feederId || '';
-      if (feederFromFileName && (!finalFeederId || !finalFeederId.match(/[a-z]$/i))) {
-        console.log('[EXTRACT] Using feeder ID from filename instead:', feederFromFileName);
-        finalFeederId = feederFromFileName;
-      }
-
-      let finalOlt = extracted.olt || '';
-      if (oltFromFileName && !finalOlt) {
-        console.log('[EXTRACT] Using OLT from filename instead:', oltFromFileName);
-        finalOlt = oltFromFileName;
-      }
-
       // Parse estimatedFootage - handle both number and string
       let footage = '';
       if (extracted.estimatedFootage) {
@@ -298,21 +265,25 @@ Return ONLY valid JSON:
         footage = isNaN(footageNum) || footageNum === 0 ? '' : String(footageNum);
       }
 
-      // Fix title to use corrected feeder ID with trailing letter
+      // Get feeder ID from filename to ensure trailing letter is included
+      // Filename format: "FLVLALXA - BSPD001.04h - (Map for Linemen) 2.pdf"
+      const fileName = file.name;
+      const fileNameParts = fileName.split(/\s*-\s*/);
+      const feederFromFileName = fileNameParts[1]?.trim() || '';
+
+      // Use feeder from filename if it has trailing letter and Claude's doesn't
+      let finalFeederId = extracted.feederId || '';
+      if (feederFromFileName && feederFromFileName.match(/[a-z]$/i)) {
+        // Filename has trailing letter, use it
+        finalFeederId = feederFromFileName;
+      }
+
+      // Fix title to include trailing letter if needed
       let finalTitle = extracted.title || '';
-      console.log('[EXTRACT] Original title:', finalTitle);
-      console.log('[EXTRACT] Final feeder ID:', finalFeederId);
-
-      // Always try to fix the feeder ID in the title if we have a complete one
-      if (finalFeederId && finalTitle) {
-        // Get the feeder ID without trailing letter (e.g., "BSPD001.04" from "BSPD001.04h")
+      if (finalFeederId && finalTitle && finalFeederId.match(/[a-z]$/i)) {
         const feederWithoutLetter = finalFeederId.slice(0, -1);
-        console.log('[EXTRACT] Feeder without letter:', feederWithoutLetter);
-
-        // If title contains the incomplete feeder (without letter), replace it
         if (finalTitle.includes(feederWithoutLetter) && !finalTitle.includes(finalFeederId)) {
           finalTitle = finalTitle.replace(feederWithoutLetter, finalFeederId);
-          console.log('[EXTRACT] Fixed title:', finalTitle);
         }
       }
 
@@ -322,7 +293,7 @@ Return ONLY valid JSON:
         client: extracted.client,
         city: extracted.city,
         state: extracted.state,
-        olt: finalOlt,
+        olt: extracted.olt,
         feederId: finalFeederId,
         runNumber: extracted.runNumber,
         workType: extracted.workType,
@@ -336,7 +307,7 @@ Return ONLY valid JSON:
         city: extracted.city || prev.city,
         state: extracted.state || prev.state,
         address: extracted.address || prev.address,
-        olt: finalOlt || prev.olt,
+        olt: extracted.olt || prev.olt,
         feederId: finalFeederId || prev.feederId,
         runNumber: extracted.runNumber || prev.runNumber,
         workType: extracted.workType === 'underground' ? 'underground' : 'aerial',

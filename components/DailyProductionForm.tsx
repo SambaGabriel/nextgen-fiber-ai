@@ -447,10 +447,14 @@ const DailyProductionForm: React.FC<DailyProductionFormProps> = ({ user, lang, j
                     </div>
 
                     {/* Job Details Grid - Read-only */}
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 pt-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mt-4 pt-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>
                         <div>
                             <p className="text-[9px] font-bold uppercase tracking-wider mb-1" style={{ color: 'var(--text-ghost)' }}>Client</p>
                             <p className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{job.clientName || 'N/A'}</p>
+                        </div>
+                        <div>
+                            <p className="text-[9px] font-bold uppercase tracking-wider mb-1" style={{ color: 'var(--text-ghost)' }}>Customer</p>
+                            <p className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{job.customerName || 'N/A'}</p>
                         </div>
                         <div>
                             <p className="text-[9px] font-bold uppercase tracking-wider mb-1" style={{ color: 'var(--text-ghost)' }}>Location</p>
@@ -459,6 +463,10 @@ const DailyProductionForm: React.FC<DailyProductionFormProps> = ({ user, lang, j
                         <div>
                             <p className="text-[9px] font-bold uppercase tracking-wider mb-1" style={{ color: 'var(--text-ghost)' }}>Work Type</p>
                             <p className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{job.workType || 'N/A'}</p>
+                        </div>
+                        <div>
+                            <p className="text-[9px] font-bold uppercase tracking-wider mb-1" style={{ color: 'var(--text-ghost)' }}>Strand Type</p>
+                            <p className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{job.strandType || 'N/A'}</p>
                         </div>
                         <div>
                             <p className="text-[9px] font-bold uppercase tracking-wider mb-1" style={{ color: 'var(--text-ghost)' }}>Fiber</p>

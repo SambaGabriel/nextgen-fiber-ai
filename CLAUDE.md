@@ -44,12 +44,23 @@ services/
 Tables principais:
 ├── profiles             # Usuários
 ├── jobs                 # Jobs/runs
+├── job_assignments      # Atribuições de lineman
 ├── rate_card_groups     # Customer + Region
 ├── rate_card_profiles   # Profiles (NEXTGEN/LINEMAN/INVESTOR)
 ├── rate_card_items      # Rate items multi-coluna
+├── rate_card_snapshots  # Snapshots imutáveis
 ├── production_submissions
 ├── calculated_totals    # Cálculos IMUTÁVEIS
+├── job_assignment_audit # Audit de atribuições
 └── rate_card_audit_log  # Auditoria
+```
+
+### Migrations
+```
+database/migrations/
+├── 001_client_customer.sql
+├── 003_settings.sql
+└── 004_job_visibility_flow.sql
 ```
 
 ---
@@ -95,11 +106,13 @@ git log --oneline -5          # Últimos commits
 
 ### 2. Mudança no Banco
 ```
-1. Criar SQL em database/*.sql
-2. Rodar no Supabase SQL Editor
+1. Criar SQL em database/migrations/*.sql
+2. SEMPRE enviar o SQL COMPLETO para o usuário colar no Supabase
 3. Atualizar types se necessário
 4. Atualizar services
 ```
+
+**REGRA**: Sempre que criar ou modificar arquivos SQL, enviar o conteúdo COMPLETO para o usuário copiar e colar no Supabase SQL Editor. Nunca resumir ou omitir partes do SQL.
 
 ### 3. Bug Fix
 ```

@@ -325,13 +325,37 @@ Extract every single line item you can find. Be thorough.`
       const data = await response.json();
       const content = data.content?.[0]?.text || '';
 
-      // Parse JSON from response
-      const jsonMatch = content.match(/\[[\s\S]*\]/);
+      console.log('[RATE EXTRACT] Raw response:', content.substring(0, 500));
+
+      // Parse JSON array from response - try multiple patterns
+      let jsonMatch = content.match(/\[[\s\S]*?\]/);
+
+      // If no array found, try to find JSON objects and wrap them
       if (!jsonMatch) {
-        throw new Error('Could not parse rate card data from PDF');
+        const objectMatches = content.match(/\{[^{}]*\}/g);
+        if (objectMatches && objectMatches.length > 0) {
+          jsonMatch = [`[${objectMatches.join(',')}]`];
+        }
       }
 
-      const rates = JSON.parse(jsonMatch[0]);
+      if (!jsonMatch) {
+        console.error('[RATE EXTRACT] No JSON found:', content);
+        throw new Error('Could not find rates in PDF. Try a clearer document.');
+      }
+
+      let rates;
+      try {
+        rates = JSON.parse(jsonMatch[0]);
+      } catch (parseError) {
+        console.error('[RATE EXTRACT] Parse error:', parseError);
+        throw new Error('Invalid data format. Try again.');
+      }
+
+      if (!Array.isArray(rates) || rates.length === 0) {
+        throw new Error('No rates found in document.');
+      }
+
+      console.log('[RATE EXTRACT] Found', rates.length, 'rates');
 
       // Add customer and region to each rate
       const ratesWithCustomer = rates.map((r: any) => ({

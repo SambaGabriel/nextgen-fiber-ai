@@ -111,9 +111,11 @@ const MyJobs: React.FC<MyJobsProps> = ({ user, lang, onSelectJob }) => {
     setIsLoading(true);
 
     try {
-      // Get all jobs from Supabase (RLS will filter appropriately)
-      const allJobs = await jobStorageSupabase.getAll();
-      setJobs(allJobs);
+      // Get jobs assigned to THIS lineman only
+      const allJobs = await jobStorageSupabase.getByLineman(user.id);
+      // Double-check filter: only show jobs where this user is assigned
+      const myJobs = allJobs.filter(job => job.assignedToId === user.id);
+      setJobs(myJobs);
 
       // Load unread counts for all jobs
       const counts = chatStorage.getUnreadCounts(user.id);

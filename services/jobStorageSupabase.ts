@@ -83,12 +83,12 @@ const getAll = async (): Promise<Job[]> => {
   return (data || []).map(rowToJob);
 };
 
-// Get jobs by user (assigned to them or unassigned)
+// Get jobs assigned to this lineman ONLY (not unassigned jobs)
 const getByLineman = async (userId: string): Promise<Job[]> => {
   const { data, error } = await supabase
     .from('jobs')
     .select('*')
-    .or(`assigned_to_id.eq.${userId},assigned_to_id.is.null`)
+    .eq('assigned_to_id', userId)
     .order('created_at', { ascending: false });
 
   if (error) {

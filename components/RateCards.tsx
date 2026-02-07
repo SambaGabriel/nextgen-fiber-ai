@@ -7,7 +7,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   DollarSign, Plus, Search, Filter, Edit2, Trash2, Archive,
   X, Check, AlertCircle, Loader2, ChevronDown, Building2, MapPin,
-  Upload, FileText, Sparkles
+  Upload, FileText, Sparkles, FolderOpen, ArrowLeft, Calendar, Hash
 } from 'lucide-react';
 import { Language, User } from '../types';
 import { supabase } from '../services/supabase';
@@ -18,9 +18,23 @@ interface RateCardsProps {
   lang: Language;
 }
 
+// Rate Card Set interface (folder/master)
+interface RateCardSet {
+  id: string;
+  name: string;
+  customer_name: string;
+  region: string;
+  source_file: string;
+  total_items: number;
+  is_archived: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 // Rate Card Item interface
 interface RateCardItem {
   id: string;
+  set_id?: string;
   customer_id: string;
   customer_name: string;
   region: string;
@@ -93,7 +107,12 @@ const initialFormState: CreateRateForm = {
 };
 
 const RateCards: React.FC<RateCardsProps> = ({ user, lang }) => {
+  // View mode: 'sets' shows folders, 'rates' shows all rates, 'set-detail' shows rates in a set
+  const [viewMode, setViewMode] = useState<'sets' | 'rates' | 'set-detail'>('sets');
+  const [selectedSet, setSelectedSet] = useState<RateCardSet | null>(null);
+
   // State
+  const [rateSets, setRateSets] = useState<RateCardSet[]>([]);
   const [rateCards, setRateCards] = useState<RateCardItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -389,16 +408,46 @@ Be thorough - extract hundreds of items if they exist in the document.`
     }
   };
 
-  // Import extracted rates to database
+  // Import extracted rates to database with Set organization
   const importExtractedRates = async () => {
     if (extractedRates.length === 0) return;
 
     setIsSubmitting(true);
     try {
+      const now = new Date().toISOString();
+      const setId = `set-${Date.now()}`;
+
+      // Create the Rate Card Set (folder)
+      const newSet: RateCardSet = {
+        id: setId,
+        name: `${uploadCustomer} - ${uploadRegion} - ${new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}`,
+        customer_name: uploadCustomer,
+        region: uploadRegion,
+        source_file: uploadFile?.name || 'Manual Upload',
+        total_items: extractedRates.length,
+        is_archived: false,
+        created_at: now,
+        updated_at: now
+      };
+
+      // Try to save set to Supabase
+      const { error: setError } = await supabase
+        .from('rate_card_sets')
+        .insert(newSet);
+
+      if (setError) {
+        console.log('[RATE CARDS] Set table may not exist, using local storage');
+      }
+
+      // Add set to local state
+      setRateSets(prev => [newSet, ...prev]);
+
+      // Create rates with set_id
       const ratesToInsert = extractedRates.map(r => ({
         ...r,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        set_id: setId,
+        created_at: now,
+        updated_at: now
       }));
 
       const { data, error } = await supabase
@@ -417,13 +466,14 @@ Be thorough - extract hundreds of items if they exist in the document.`
         setRateCards(prev => [...prev, ...data]);
       }
 
-      // Reset upload modal
+      // Reset upload modal and show sets view
       setShowUploadModal(false);
       setUploadFile(null);
       setUploadCustomer('');
       setUploadRegion('');
       setExtractedRates([]);
       setExtractionError('');
+      setViewMode('sets');
 
     } catch (error) {
       console.error('Error importing rates:', error);
@@ -598,8 +648,27 @@ Be thorough - extract hundreds of items if they exist in the document.`
                 Rate Cards
               </h1>
               <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                Manage unit rates by client and region
+                {viewMode === 'sets' ? `${rateSets.length} Rate Card Sets` :
+                 viewMode === 'set-detail' && selectedSet ? `${selectedSet.name}` :
+                 `${rateCards.length} rates total`}
               </p>
+            </div>
+            {/* View Toggle */}
+            <div className="flex items-center gap-1 p-1 rounded-xl ml-4" style={{ background: 'var(--surface)' }}>
+              <button
+                onClick={() => { setViewMode('sets'); setSelectedSet(null); }}
+                className={`px-4 py-2 rounded-lg text-xs font-bold uppercase transition-all ${viewMode === 'sets' || viewMode === 'set-detail' ? 'text-black' : ''}`}
+                style={{ background: viewMode === 'sets' || viewMode === 'set-detail' ? 'var(--neural-core)' : 'transparent', color: viewMode === 'sets' || viewMode === 'set-detail' ? '#000' : 'var(--text-tertiary)' }}
+              >
+                <FolderOpen className="w-4 h-4 inline mr-1" /> Sets
+              </button>
+              <button
+                onClick={() => setViewMode('rates')}
+                className={`px-4 py-2 rounded-lg text-xs font-bold uppercase transition-all`}
+                style={{ background: viewMode === 'rates' ? 'var(--neural-core)' : 'transparent', color: viewMode === 'rates' ? '#000' : 'var(--text-tertiary)' }}
+              >
+                <Hash className="w-4 h-4 inline mr-1" /> All Rates
+              </button>
             </div>
           </div>
 
@@ -704,11 +773,138 @@ Be thorough - extract hundreds of items if they exist in the document.`
         </div>
       </div>
 
-      {/* Rate Cards Table */}
+      {/* Content Area */}
       <div className="flex-1 overflow-auto p-6">
         {isLoading ? (
           <div className="flex items-center justify-center h-64">
             <Loader2 className="w-8 h-8 animate-spin" style={{ color: 'var(--neural-core)' }} />
+          </div>
+        ) : viewMode === 'sets' ? (
+          /* SETS VIEW - Card/Folder style */
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {rateSets.length === 0 ? (
+              <div className="col-span-full flex flex-col items-center justify-center h-64 gap-4">
+                <FolderOpen className="w-16 h-16" style={{ color: 'var(--text-tertiary)' }} />
+                <p className="text-lg font-medium" style={{ color: 'var(--text-secondary)' }}>
+                  No rate card sets yet
+                </p>
+                <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
+                  Upload a PDF to create your first rate card set
+                </p>
+                <button
+                  onClick={() => setShowUploadModal(true)}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold"
+                  style={{ background: 'var(--neural-dim)', color: 'var(--neural-core)' }}
+                >
+                  <Upload className="w-4 h-4" />
+                  Upload PDF
+                </button>
+              </div>
+            ) : (
+              rateSets.map((set) => (
+                <div
+                  key={set.id}
+                  onClick={() => {
+                    setSelectedSet(set);
+                    setViewMode('set-detail');
+                  }}
+                  className="p-5 rounded-2xl cursor-pointer transition-all hover:scale-[1.02] hover:shadow-lg"
+                  style={{ background: 'var(--surface)', border: '1px solid var(--border-default)' }}
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="p-3 rounded-xl" style={{ background: 'var(--neural-dim)' }}>
+                      <FolderOpen className="w-6 h-6" style={{ color: 'var(--neural-core)' }} />
+                    </div>
+                    {set.is_archived && (
+                      <span className="px-2 py-1 rounded text-[10px] font-bold uppercase" style={{ background: 'var(--elevated)', color: 'var(--text-tertiary)' }}>
+                        Archived
+                      </span>
+                    )}
+                  </div>
+                  <h3 className="text-lg font-bold mb-1" style={{ color: 'var(--text-primary)' }}>
+                    {set.name}
+                  </h3>
+                  <p className="text-sm mb-3" style={{ color: 'var(--text-tertiary)' }}>
+                    {set.source_file}
+                  </p>
+                  <div className="flex items-center gap-4 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                    <span className="flex items-center gap-1">
+                      <Building2 className="w-3 h-3" />
+                      {set.customer_name}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <MapPin className="w-3 h-3" />
+                      {set.region}
+                    </span>
+                    <span className="flex items-center gap-1 ml-auto font-bold" style={{ color: 'var(--neural-core)' }}>
+                      <Hash className="w-3 h-3" />
+                      {set.total_items} items
+                    </span>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        ) : viewMode === 'set-detail' && selectedSet ? (
+          /* SET DETAIL VIEW */
+          <div>
+            <button
+              onClick={() => { setViewMode('sets'); setSelectedSet(null); }}
+              className="flex items-center gap-2 mb-4 text-sm font-bold"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to Sets
+            </button>
+            <div className="p-4 rounded-xl mb-4" style={{ background: 'var(--surface)', border: '1px solid var(--border-default)' }}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>{selectedSet.name}</h2>
+                  <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
+                    {selectedSet.source_file} • {selectedSet.total_items} items • {new Date(selectedSet.created_at).toLocaleDateString()}
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    if (confirm('Delete this entire rate card set?')) {
+                      setRateSets(prev => prev.filter(s => s.id !== selectedSet.id));
+                      setRateCards(prev => prev.filter(r => r.set_id !== selectedSet.id));
+                      setViewMode('sets');
+                      setSelectedSet(null);
+                    }
+                  }}
+                  className="p-2 rounded-lg transition-colors hover:bg-red-500/20"
+                  title="Delete Set"
+                >
+                  <Trash2 className="w-5 h-5" style={{ color: '#EF4444' }} />
+                </button>
+              </div>
+            </div>
+            {/* Show rates in this set */}
+            <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--surface)', border: '1px solid var(--border-default)' }}>
+              <table className="w-full">
+                <thead>
+                  <tr style={{ background: 'var(--elevated)' }}>
+                    <th className="px-4 py-3 text-left text-xs font-black uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>Code</th>
+                    <th className="px-4 py-3 text-left text-xs font-black uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>Description</th>
+                    <th className="px-4 py-3 text-left text-xs font-black uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>Unit</th>
+                    <th className="px-4 py-3 text-right text-xs font-black uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>Rate</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rateCards.filter(r => r.set_id === selectedSet.id).map((rate) => (
+                    <tr key={rate.id} className="border-t" style={{ borderColor: 'var(--border-subtle)' }}>
+                      <td className="px-4 py-3">
+                        <span className="font-bold" style={{ color: 'var(--neural-core)' }}>{rate.code}</span>
+                      </td>
+                      <td className="px-4 py-3 text-sm" style={{ color: 'var(--text-secondary)' }}>{rate.description}</td>
+                      <td className="px-4 py-3 text-sm" style={{ color: 'var(--text-tertiary)' }}>{rate.unit === 'FT' ? 'Per Foot' : rate.unit === 'EA' ? 'Each' : rate.unit === 'HR' ? 'Per Hour' : 'Per Day'}</td>
+                      <td className="px-4 py-3 text-right font-bold" style={{ color: 'var(--neural-core)' }}>${rate.rate.toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         ) : filteredRateCards.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 gap-4">
@@ -726,6 +922,7 @@ Be thorough - extract hundreds of items if they exist in the document.`
             </button>
           </div>
         ) : (
+          /* ALL RATES TABLE VIEW */
           <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--surface)', border: '1px solid var(--border-default)' }}>
             <table className="w-full">
               <thead>

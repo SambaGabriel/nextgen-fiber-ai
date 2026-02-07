@@ -14,6 +14,8 @@ import { Language, User as UserType } from '../types';
 import { Job, JobStatus, WorkType } from '../types/project';
 import { jobStorageSupabase } from '../services/jobStorageSupabase';
 import { supabase } from '../services/supabase';
+import { getClients, PrimeClient } from '../services/clientService';
+import { getCustomers, EndCustomer } from '../services/customerService';
 
 interface JobsAdminProps {
   user: UserType;
@@ -48,16 +50,16 @@ const US_STATES = [
   'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY'
 ];
 
-// Clients (can be fetched from DB later)
-const CLIENTS = [
-  'MasTec', 'Brightspeed', 'AT&T', 'Spectrum', 'Verizon', 'Lumen', 'Frontier', 'Byers Engineering', 'Other'
-];
+// Note: Clients and Customers are now loaded from database
 
 type TabType = 'assigned' | 'unassigned' | 'all';
 
 interface CreateJobForm {
   title: string;
+  clientId: string;
   clientName: string;
+  customerId: string;
+  customerName: string;
   city: string;
   state: string;
   address: string;
@@ -75,7 +77,10 @@ interface CreateJobForm {
 
 const initialFormState: CreateJobForm = {
   title: '',
+  clientId: '',
   clientName: '',
+  customerId: '',
+  customerName: '',
   city: '',
   state: '',
   address: '',
@@ -95,11 +100,14 @@ const JobsAdmin: React.FC<JobsAdminProps> = ({ user, lang }) => {
   // State
   const [jobs, setJobs] = useState<Job[]>([]);
   const [linemen, setLinemen] = useState<{ id: string; name: string; email: string }[]>([]);
+  const [clients, setClients] = useState<PrimeClient[]>([]);
+  const [customers, setCustomers] = useState<EndCustomer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabType>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('');
   const [selectedClient, setSelectedClient] = useState<string>('');
+  const [selectedCustomer, setSelectedCustomer] = useState<string>('');
 
   // Modal states
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -347,10 +355,25 @@ Return ONLY valid JSON:
     }
   }, []);
 
+  // Load clients and customers from database
+  const loadClientsAndCustomers = useCallback(async () => {
+    try {
+      const [clientsData, customersData] = await Promise.all([
+        getClients(),
+        getCustomers()
+      ]);
+      setClients(clientsData);
+      setCustomers(customersData);
+    } catch (error) {
+      console.error('Error loading clients/customers:', error);
+    }
+  }, []);
+
   useEffect(() => {
     loadJobs();
     loadLinemen();
-  }, [loadJobs, loadLinemen]);
+    loadClientsAndCustomers();
+  }, [loadJobs, loadLinemen, loadClientsAndCustomers]);
 
   // Debug: monitor edit modal state
   useEffect(() => {
@@ -397,7 +420,8 @@ Return ONLY valid JSON:
     const errors: string[] = [];
 
     if (!formData.title.trim()) errors.push('Title is required');
-    if (!formData.clientName) errors.push('Client is required');
+    if (!formData.clientId) errors.push('Client is required');
+    if (!formData.customerId) errors.push('Customer is required');
     if (!formData.city.trim()) errors.push('City is required');
     if (!formData.state) errors.push('State is required');
     if (!formData.olt.trim()) errors.push('OLT is required');
@@ -491,8 +515,10 @@ Return ONLY valid JSON:
         assignedById: user.id,
         assignedByName: user.name,
         assignedAt: new Date().toISOString(),
-        clientId: formData.clientName.toLowerCase().replace(/\s+/g, '-'),
+        clientId: formData.clientId,
         clientName: formData.clientName,
+        customerId: formData.customerId,
+        customerName: formData.customerName,
         workType: formData.workType as WorkType,
         location: {
           address: formData.address,
@@ -563,7 +589,10 @@ Return ONLY valid JSON:
 
     setEditFormData({
       title: job.title || '',
+      clientId: job.clientId || '',
       clientName: job.clientName || '',
+      customerId: job.customerId || '',
+      customerName: job.customerName || '',
       city: job.location?.city || '',
       state: job.location?.state || '',
       address: job.location?.address || '',
@@ -591,7 +620,8 @@ Return ONLY valid JSON:
     // Validate required fields
     const errors: string[] = [];
     if (!editFormData.title.trim()) errors.push('Title is required');
-    if (!editFormData.clientName) errors.push('Client is required');
+    if (!editFormData.clientId) errors.push('Client is required');
+    if (!editFormData.customerId) errors.push('Customer is required');
     if (!editFormData.city.trim()) errors.push('City is required');
     if (!editFormData.state) errors.push('State is required');
     if (!editFormData.status) errors.push('Status is required');
@@ -618,8 +648,10 @@ Return ONLY valid JSON:
 
       const updatePayload = {
         title: editFormData.title.trim(),
+        clientId: editFormData.clientId,
         clientName: editFormData.clientName,
-        clientId: editFormData.clientName.toLowerCase().replace(/\s+/g, '-'),
+        customerId: editFormData.customerId,
+        customerName: editFormData.customerName,
         workType: editFormData.workType as WorkType,
         location: {
           address: editFormData.address.trim(),
@@ -783,8 +815,8 @@ Return ONLY valid JSON:
             }}
           >
             <option value="">All Clients</option>
-            {CLIENTS.map(c => (
-              <option key={c} value={c}>{c}</option>
+            {clients.map(c => (
+              <option key={c.id} value={c.name}>{c.name}</option>
             ))}
           </select>
         </div>
@@ -818,6 +850,7 @@ Return ONLY valid JSON:
                 <tr style={{ background: 'var(--elevated)' }}>
                   <th className="px-4 py-3 text-left text-xs font-black uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>Job</th>
                   <th className="px-4 py-3 text-left text-xs font-black uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>Client</th>
+                  <th className="px-4 py-3 text-left text-xs font-black uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>Customer</th>
                   <th className="px-4 py-3 text-left text-xs font-black uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>Location</th>
                   <th className="px-4 py-3 text-left text-xs font-black uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>Type</th>
                   <th className="px-4 py-3 text-left text-xs font-black uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>Assigned To</th>
@@ -842,6 +875,11 @@ Return ONLY valid JSON:
                     <td className="px-4 py-4">
                       <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
                         {job.clientName || '-'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4">
+                      <span className="text-sm font-medium" style={{ color: 'var(--neural-core)' }}>
+                        {job.customerName || '-'}
                       </span>
                     </td>
                     <td className="px-4 py-4">
@@ -1029,11 +1067,21 @@ Return ONLY valid JSON:
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold uppercase mb-2" style={{ color: 'var(--text-tertiary)' }}>
-                    Client *
+                    Client (Prime Contractor) *
                   </label>
                   <select
-                    value={formData.clientName}
-                    onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
+                    value={formData.clientId}
+                    onChange={(e) => {
+                      const client = clients.find(c => c.id === e.target.value);
+                      setFormData({
+                        ...formData,
+                        clientId: e.target.value,
+                        clientName: client?.name || '',
+                        // Reset customer when client changes
+                        customerId: '',
+                        customerName: ''
+                      });
+                    }}
                     className="w-full px-4 py-3 rounded-xl text-sm font-medium outline-none cursor-pointer"
                     style={{
                       background: 'var(--elevated)',
@@ -1042,11 +1090,42 @@ Return ONLY valid JSON:
                     }}
                   >
                     <option value="">Select Client</option>
-                    {CLIENTS.map(c => (
-                      <option key={c} value={c}>{c}</option>
+                    {clients.map(c => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
                     ))}
                   </select>
                 </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase mb-2" style={{ color: 'var(--text-tertiary)' }}>
+                    Customer (End Operator) *
+                  </label>
+                  <select
+                    value={formData.customerId}
+                    onChange={(e) => {
+                      const customer = customers.find(c => c.id === e.target.value);
+                      setFormData({
+                        ...formData,
+                        customerId: e.target.value,
+                        customerName: customer?.name || ''
+                      });
+                    }}
+                    className="w-full px-4 py-3 rounded-xl text-sm font-medium outline-none cursor-pointer"
+                    style={{
+                      background: 'var(--elevated)',
+                      color: 'var(--text-primary)',
+                      border: '1px solid var(--border-default)'
+                    }}
+                  >
+                    <option value="">Select Customer</option>
+                    {customers.map(c => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Work Type Row */}
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold uppercase mb-2" style={{ color: 'var(--text-tertiary)' }}>
                     Work Type
@@ -1457,6 +1536,10 @@ Return ONLY valid JSON:
                   <p className="font-medium" style={{ color: 'var(--text-primary)' }}>{selectedJob.clientName || '-'}</p>
                 </div>
                 <div className="p-4 rounded-xl" style={{ background: 'var(--elevated)' }}>
+                  <p className="text-xs font-bold uppercase mb-1" style={{ color: 'var(--text-tertiary)' }}>Customer</p>
+                  <p className="font-medium" style={{ color: 'var(--neural-core)' }}>{selectedJob.customerName || '-'}</p>
+                </div>
+                <div className="p-4 rounded-xl" style={{ background: 'var(--elevated)' }}>
                   <p className="text-xs font-bold uppercase mb-1" style={{ color: 'var(--text-tertiary)' }}>Work Type</p>
                   <p className="font-medium" style={{ color: 'var(--text-primary)' }}>{selectedJob.workType || '-'}</p>
                 </div>
@@ -1705,15 +1788,24 @@ Return ONLY valid JSON:
                 />
               </div>
 
-              {/* Client & Work Type */}
+              {/* Client & Customer */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold uppercase mb-2" style={{ color: 'var(--text-tertiary)' }}>
-                    Client *
+                    Client (Prime Contractor) *
                   </label>
                   <select
-                    value={editFormData.clientName}
-                    onChange={(e) => setEditFormData({ ...editFormData, clientName: e.target.value })}
+                    value={editFormData.clientId}
+                    onChange={(e) => {
+                      const client = clients.find(c => c.id === e.target.value);
+                      setEditFormData({
+                        ...editFormData,
+                        clientId: e.target.value,
+                        clientName: client?.name || '',
+                        customerId: '',
+                        customerName: ''
+                      });
+                    }}
                     className="w-full px-4 py-3 rounded-xl text-sm font-medium outline-none cursor-pointer"
                     style={{
                       background: 'var(--elevated)',
@@ -1722,11 +1814,42 @@ Return ONLY valid JSON:
                     }}
                   >
                     <option value="">Select Client</option>
-                    {CLIENTS.map(c => (
-                      <option key={c} value={c}>{c}</option>
+                    {clients.map(c => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
                     ))}
                   </select>
                 </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase mb-2" style={{ color: 'var(--text-tertiary)' }}>
+                    Customer (End Operator) *
+                  </label>
+                  <select
+                    value={editFormData.customerId}
+                    onChange={(e) => {
+                      const customer = customers.find(c => c.id === e.target.value);
+                      setEditFormData({
+                        ...editFormData,
+                        customerId: e.target.value,
+                        customerName: customer?.name || ''
+                      });
+                    }}
+                    className="w-full px-4 py-3 rounded-xl text-sm font-medium outline-none cursor-pointer"
+                    style={{
+                      background: 'var(--elevated)',
+                      color: 'var(--text-primary)',
+                      border: '1px solid var(--border-default)'
+                    }}
+                  >
+                    <option value="">Select Customer</option>
+                    {customers.map(c => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Work Type */}
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold uppercase mb-2" style={{ color: 'var(--text-tertiary)' }}>
                     Work Type

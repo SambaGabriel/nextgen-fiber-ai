@@ -25,6 +25,8 @@ const rowToJob = (row: any): Job => ({
   assignedAt: row.assigned_at,
   clientId: row.client_id || '',
   clientName: row.client_name || '',
+  customerId: row.customer_id || '',
+  customerName: row.customer_name || '',
   workType: row.work_type as WorkType,
   location: row.location || {},
   scheduledDate: row.scheduled_date,
@@ -50,6 +52,8 @@ const jobToRow = (job: Partial<Job>) => ({
   assigned_at: job.assignedAt,
   client_id: job.clientId,
   client_name: job.clientName,
+  customer_id: job.customerId || null,
+  customer_name: job.customerName || null,
   work_type: job.workType,
   location: job.location,
   scheduled_date: job.scheduledDate,
@@ -160,6 +164,8 @@ const update = async (id: string, updates: Partial<Job>): Promise<Job | undefine
   if (updates.title !== undefined) updateData.title = updates.title;
   if (updates.clientId !== undefined) updateData.client_id = updates.clientId;
   if (updates.clientName !== undefined) updateData.client_name = updates.clientName;
+  if (updates.customerId !== undefined) updateData.customer_id = updates.customerId || null;
+  if (updates.customerName !== undefined) updateData.customer_name = updates.customerName || null;
   if (updates.workType !== undefined) updateData.work_type = updates.workType;
   if (updates.supervisorNotes !== undefined) updateData.supervisor_notes = updates.supervisorNotes;
 

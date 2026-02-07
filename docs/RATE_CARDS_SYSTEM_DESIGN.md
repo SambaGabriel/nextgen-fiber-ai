@@ -1,5 +1,28 @@
 # Rate Cards System Design - NextGen Fiber
 
+> **Status**: MVP Implementado ✅
+> **Última atualização**: 2025-02-07
+> **Versão**: 2.0
+
+## Status de Implementação
+
+| Feature | Status | Arquivo |
+|---------|--------|---------|
+| Rate Card Groups | ✅ Done | `rate_card_groups` table |
+| Rate Card Profiles | ✅ Done | `rate_card_profiles` table |
+| Rate Card Items (multi-column) | ✅ Done | `rate_card_items` table |
+| UI Filtros (Customer/Region/Profile) | ✅ Done | `RateCardsV2.tsx` |
+| Tabela Multi-Coluna | ✅ Done | `RateCardsV2.tsx` |
+| Edição Inline | ✅ Done | `RateCardsV2.tsx` |
+| Import Excel | ✅ Done | `excelParser.ts` |
+| Audit Log | ✅ Done | `rate_card_audit_log` table |
+| Job Rate Profile Assignment | 🔄 Phase 2 | - |
+| Production Submission | 🔄 Phase 2 | - |
+| Calculation Pipeline | 🔄 Phase 2 | - |
+| Dashboard Metrics | 🔄 Phase 2 | - |
+
+---
+
 ## Overview
 
 Sistema completo de Rate Cards com múltiplas colunas de rate (NextGen, Lineman, Truck Investor) e múltiplos profiles por cliente/região.

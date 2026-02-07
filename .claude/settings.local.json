@@ -12,7 +12,12 @@
       "Bash(export PATH=\"/opt/homebrew/Cellar/node/25.5.0/bin:$PATH\")",
       "Bash(npx tsc:*)",
       "Bash(PATH=\"/opt/homebrew/bin:$PATH\" npm run dev:*)",
-      "Bash(PATH=\"/opt/homebrew/bin:$PATH\" npm install:*)"
+      "Bash(PATH=\"/opt/homebrew/bin:$PATH\" npm install:*)",
+      "Bash(npm install:*)",
+      "Bash(/usr/local/bin/npm install xlsx --save)",
+      "Bash(/opt/homebrew/bin/npm install xlsx --save)",
+      "Bash(npx npm install:*)",
+      "Bash(chmod:*)"
     ]
   }
 }

@@ -1,97 +1,264 @@
-# Fiber Optic Construction AI Agent
+# NextGen Fiber AI - Sistema Operacional
 
-## Contexto
-AI Agent para gestão operacional de empresa de construção de fibra óptica nos EUA.
+## Quick Reference
+```
+DEV:     http://localhost:5174
+PROD:    https://legendary-crumble-fdecee.netlify.app
+GITHUB:  https://github.com/SambaGabriel/nextgen-fiber-ai
+SUPA:    https://supabase.com/dashboard
+```
 
-## Escopo Funcional
-- Integração com SmartSheets
-- Leitura/escrita de planilhas: SmartSheets, Excel, Google Sheets
-- Gestão de produção de campo
-- Quality Control (QC)
-- Fluxos de aprovação técnica e operacional
-- Geração, validação e controle de invoices
-- Auditoria de dados e histórico operacional
-- Automação de processos internos
+## Contexto do Projeto
+Sistema de gestão operacional para empresa de construção de fibra óptica nos EUA.
+- **Cliente principal**: Brightspeed (Alabama)
+- **Usuários**: Admin, Supervisor, Lineman
+- **Core**: Jobs, Rate Cards, Production, Dashboard
 
-## Ambiente
-- macOS
-- Python
-- Backend orientado a serviços
-- Integrações externas críticas
-- Sistema data-driven
-- Operação sensível a erros
+---
 
-## Princípios Obrigatórios
-- Exatidão absoluta — nunca estimar, assumir ou aproximar
-- Objetividade extrema — comunicação curta, clara e técnica
-- Código sempre pronto para produção
-- Nenhuma solução experimental sem justificativa técnica
-- Escala, confiabilidade e auditoria sempre
+## Arquitetura Atual
 
-## Regras Técnicas Inegociáveis
-- Nunca inventar APIs, endpoints, schemas ou comportamentos
-- Requisito ambíguo → perguntar antes de implementar
-- Soluções simples, previsíveis e testáveis
-- Zero overengineering
-- Priorizar clareza, manutenção e determinismo
+### Frontend (React + Vite + TypeScript)
+```
+components/
+├── Dashboard.tsx        # Métricas e overview
+├── JobsAdmin.tsx        # Gestão de jobs (admin)
+├── RateCardsV2.tsx      # Rate cards multi-coluna
+├── MyJobs.tsx           # Jobs do lineman
+├── JobDetails.tsx       # Detalhes + produção
+└── AuthPage.tsx         # Login/registro
+```
 
-## Qualidade, Dados e Segurança
-- Validar rigorosamente todos os dados de entrada
-- Nunca confiar em dados externos
-- Tratar erros explicitamente
-- Idempotência sempre
-- Consistência de dados entre sistemas
-- Logs estruturados e auditáveis
-- Rastreabilidade total de decisões automatizadas
+### Services
+```
+services/
+├── supabase.ts          # Cliente Supabase + auth
+├── rateCardService.ts   # CRUD rate cards
+├── excelParser.ts       # Parser Excel (xlsx)
+├── jobStorage.ts        # Jobs localStorage
+└── claudeService.ts     # Claude AI integration
+```
 
-## Mentalidade de Negócio (EUA)
-- Pensar como empresa americana de infraestrutura
-- Compliance, responsabilidade legal e auditoria
-- Decisões técnicas devem reduzir risco operacional
-- Clareza > "inteligência"
+### Database (Supabase)
+```
+Tables principais:
+├── profiles             # Usuários
+├── jobs                 # Jobs/runs
+├── rate_card_groups     # Customer + Region
+├── rate_card_profiles   # Profiles (NEXTGEN/LINEMAN/INVESTOR)
+├── rate_card_items      # Rate items multi-coluna
+├── production_submissions
+├── calculated_totals    # Cálculos IMUTÁVEIS
+└── rate_card_audit_log  # Auditoria
+```
 
-## Estilo de Colaboração
-- Dev Sênior ↔ Dev Sênior
-- Não simplificar conceitos
-- Questionar decisões ruins
-- Sugerir melhorias apenas quando tecnicamente relevantes
-- Analisar, não elogiar
+---
 
-## Comandos - SEMPRE COMPLETOS
-- SEMPRE incluir o caminho completo nos comandos
-- SEMPRE usar `cd /Users/gabrielarevalo/teste-claude && comando`
-- NUNCA assumir que o usuário está no diretório correto
-- Exemplos obrigatórios:
-  - Build: `cd /Users/gabrielarevalo/teste-claude && npm run build`
-  - Dev: `cd /Users/gabrielarevalo/teste-claude && npm run dev`
-  - Install: `cd /Users/gabrielarevalo/teste-claude && npm install`
-  - Git: `cd /Users/gabrielarevalo/teste-claude && git status`
+## Comandos Rápidos
 
-## Deploy - Netlify (Automático via GitHub)
-- **URL Produção**: https://legendary-crumble-fdecee.netlify.app
-- **Repositório**: https://github.com/SambaGabriel/nextgen-fiber-ai
-- **Branch**: main
-- **Deploy automático**: Push para main → Netlify faz build e deploy
-
-### Processo de Deploy
-1. Fazer as mudanças no código
-2. Commitar: `git add . && git commit -m "mensagem"`
-3. Push: `git push origin main`
-4. Netlify detecta automaticamente e faz deploy (~1-2 min)
-
-### Comandos de Deploy
+### Development
 ```bash
-# Build local (testar antes de push)
-PATH=/opt/homebrew/Cellar/node/25.5.0/bin:$PATH npm run build
+# Servidor dev (já rodando em background)
+PATH=/opt/homebrew/Cellar/node/25.5.0/bin:$PATH npm run dev
 
-# Commit e Push (deploy automático)
+# Instalar pacote
+PATH=/opt/homebrew/Cellar/node/25.5.0/bin:$PATH npm install <pacote>
+
+# Build local
+PATH=/opt/homebrew/Cellar/node/25.5.0/bin:$PATH npm run build
+```
+
+### Deploy (Automático)
+```bash
+# Commit + Push = Deploy automático no Netlify
 git add . && git commit -m "descrição" && git push origin main
 ```
 
-## Supabase
-- **Dashboard**: https://supabase.com/dashboard
-- **Projeto**: NextGen Fiber AI
-- **Variáveis de ambiente necessárias no Netlify**:
-  - VITE_SUPABASE_URL
-  - VITE_SUPABASE_ANON_KEY
-  - VITE_ANTHROPIC_API_KEY
+### Git
+```bash
+git status                    # Ver mudanças
+git diff                      # Ver diferenças
+git log --oneline -5          # Últimos commits
+```
+
+---
+
+## Workflows Automatizados
+
+### 1. Nova Feature
+```
+1. Criar/editar componente
+2. Testar em localhost:5174
+3. git add + commit + push
+4. Netlify faz deploy automático (~2min)
+```
+
+### 2. Mudança no Banco
+```
+1. Criar SQL em database/*.sql
+2. Rodar no Supabase SQL Editor
+3. Atualizar types se necessário
+4. Atualizar services
+```
+
+### 3. Bug Fix
+```
+1. Identificar arquivo
+2. Corrigir
+3. Testar local
+4. Deploy
+```
+
+---
+
+## Padrões de Código
+
+### Componentes React
+```typescript
+// Sempre usar interfaces tipadas
+interface Props {
+  user: User;
+  lang: Language;
+}
+
+// Sempre usar useCallback para funções passadas como props
+const handleAction = useCallback(async () => {
+  // ...
+}, [dependencies]);
+
+// Sempre tratar erros explicitamente
+try {
+  await action();
+} catch (error) {
+  console.error('[CONTEXT] Error:', error);
+  // Mostrar erro ao usuário
+}
+```
+
+### Services
+```typescript
+// Sempre retornar tipos explícitos
+export async function getData(): Promise<DataType[]> {
+  // ...
+}
+
+// Sempre ter fallback para localStorage
+const cached = localStorage.getItem('key');
+if (cached) return JSON.parse(cached);
+```
+
+### CSS (Tailwind + CSS Variables)
+```css
+/* Usar variáveis do tema */
+style={{
+  background: 'var(--surface)',
+  color: 'var(--text-primary)',
+  border: '1px solid var(--border-default)'
+}}
+```
+
+---
+
+## Variáveis de Ambiente
+
+### Netlify (Produção)
+```
+VITE_SUPABASE_URL=https://xxx.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJ...
+VITE_ANTHROPIC_API_KEY=sk-ant-...
+```
+
+### Local (.env)
+```
+VITE_SUPABASE_URL=...
+VITE_SUPABASE_ANON_KEY=...
+VITE_ANTHROPIC_API_KEY=...
+```
+
+---
+
+## Rate Cards - Modelo de Dados
+
+### Hierarquia
+```
+RateCardGroup (Customer + Region)
+  └── RateCardProfile (Default, Crew A, Investor X)
+       └── RateCardItem (Code + 3 rates)
+            ├── nextgen_rate (company revenue)
+            ├── lineman_rate (lineman payout)
+            └── truck_investor_rate (investor payout)
+```
+
+### Cálculo de Produção
+```
+Job → profiles atribuídos
+  └── Lineman submete produção
+       └── Sistema calcula:
+            ├── nextgen_total = Σ(qty × nextgen_rate)
+            ├── lineman_total = Σ(qty × lineman_rate)
+            ├── investor_total = Σ(qty × investor_rate)
+            └── gross_margin = nextgen - lineman - investor
+```
+
+### Regras Críticas
+1. **Determinismo**: Rate card NUNCA adivinhado
+2. **Imutabilidade**: CalculationResult é IMUTÁVEL
+3. **Falha Explícita**: Rate não existe = ERRO
+4. **Histórico Sagrado**: NUNCA recalcular retroativamente
+
+---
+
+## Troubleshooting
+
+### Build falha
+```bash
+# Limpar cache
+rm -rf node_modules/.vite
+PATH=/opt/homebrew/Cellar/node/25.5.0/bin:$PATH npm run build
+```
+
+### Supabase erro 404/400
+- Tabela não existe → Rodar SQL no Supabase
+- RLS bloqueando → Verificar policies
+
+### Netlify não atualiza
+- Verificar se push foi feito: `git log --oneline -1`
+- Ver status no Netlify dashboard
+
+### npm não encontrado
+```bash
+# Usar PATH completo
+PATH=/opt/homebrew/Cellar/node/25.5.0/bin:$PATH npm <comando>
+```
+
+---
+
+## Próximos Passos (Roadmap)
+
+### MVP Atual ✅
+- [x] Rate Cards multi-coluna
+- [x] Import Excel
+- [x] Profiles (NEXTGEN/LINEMAN/INVESTOR)
+- [x] Edição inline
+- [x] Deploy automático
+
+### Phase 2 (Em andamento)
+- [ ] Atribuição de profiles no Job
+- [ ] Submissão de produção pelo lineman
+- [ ] Pipeline de cálculo
+- [ ] Dashboard com métricas financeiras
+
+### Phase 3 (Futuro)
+- [ ] Effective dates / versionamento
+- [ ] Aprovação de rate changes
+- [ ] Geração de invoices
+- [ ] Relatórios avançados
+
+---
+
+## Contatos & Links
+
+- **Repo**: https://github.com/SambaGabriel/nextgen-fiber-ai
+- **Prod**: https://legendary-crumble-fdecee.netlify.app
+- **Supabase**: Dashboard do projeto
+- **Netlify**: Dashboard do site

@@ -581,74 +581,23 @@ const DailyProductionForm: React.FC<DailyProductionFormProps> = ({ user, lang, j
                         ))}
                     </div>
 
-                    {/* Header Form - B&O Premium Style */}
+                    {/* Header Form - ALWAYS show Client/Customer from Job if available */}
                     <div className="surface-premium rounded-xl sm:rounded-2xl p-4 sm:p-8 relative" style={{ background: 'var(--surface)' }}>
                         <h3 className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.2em] mb-4 sm:mb-6 flex items-center gap-2" style={{ color: 'var(--text-ghost)' }}>
-                            <Building2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> {hasJobContext ? 'Production Details' : 'Project Information'}
+                            <Building2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Production Details
                         </h3>
 
-                        {/* When job is linked: Only show date fields (lineman only fills dates + production data) */}
-                        {hasJobContext ? (
-                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-6">
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-bold uppercase tracking-wider flex items-center gap-2" style={{ color: 'var(--text-ghost)' }}>
-                                        <UserIcon className="w-3 h-3" /> Lineman
-                                    </label>
-                                    <div className="input-neural w-full flex items-center" style={{ background: 'var(--elevated)', cursor: 'not-allowed' }}>
-                                        <span style={{ color: 'var(--text-secondary)' }}>{header.lineman}</span>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
+                            {/* Row 1: Client & Customer - LOCKED if from Job, dropdown if not */}
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-bold uppercase tracking-wider flex items-center gap-2" style={{ color: 'var(--text-ghost)' }}>
+                                    <Building2 className="w-3 h-3" /> Client {job?.clientName && <span className="text-[8px] px-1 rounded" style={{ background: 'var(--online-glow)', color: 'var(--online-core)' }}>FROM JOB</span>}
+                                </label>
+                                {job?.clientName ? (
+                                    <div className="input-neural w-full flex items-center font-bold" style={{ background: 'var(--neural-dim)', cursor: 'not-allowed', borderColor: 'var(--neural-core)' }}>
+                                        <span style={{ color: 'var(--neural-core)' }}>{job.clientName}</span>
                                     </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-bold uppercase tracking-wider flex items-center gap-2" style={{ color: 'var(--text-ghost)' }}>
-                                        <Calendar className="w-3 h-3" /> Completed Date *
-                                    </label>
-                                    <input
-                                        type="date"
-                                        value={header.endDate || header.startDate}
-                                        onChange={(e) => handleHeaderChange('endDate', e.target.value)}
-                                        className="input-neural w-full"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-bold uppercase tracking-wider flex items-center gap-2" style={{ color: 'var(--text-ghost)' }}>
-                                        <Hash className="w-3 h-3" /> Comments
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={header.prints}
-                                        onChange={(e) => handleHeaderChange('prints', e.target.value)}
-                                        className="input-neural w-full"
-                                        placeholder="Optional notes..."
-                                    />
-                                </div>
-                            </div>
-                        ) : (
-                            /* When no job linked: Show full form for standalone production entry */
-                            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-                                {[
-                                    { label: 'Lineman', icon: UserIcon, value: header.lineman, field: 'lineman', placeholder: 'Enter name...' },
-                                    { label: 'Start Date', icon: Calendar, value: header.startDate, field: 'startDate', type: 'date' },
-                                    { label: 'End Date', icon: Clock, value: header.endDate, field: 'endDate', type: 'date' },
-                                    { label: 'City', icon: MapPin, value: header.city, field: 'city', placeholder: 'City name...' },
-                                    { label: 'Project OLT', value: header.projectOLT, field: 'projectOLT', placeholder: 'OLT identifier...' },
-                                    { label: 'Map Code', value: header.bspd, field: 'bspd', placeholder: 'MAP-001...' },
-                                    { label: 'Fibra CT', value: header.fibraCT, field: 'fibraCT', placeholder: 'Fiber CT...' },
-                                ].map((input, i) => (
-                                    <div key={i} className="space-y-2">
-                                        <label className="text-[10px] font-bold uppercase tracking-wider flex items-center gap-2" style={{ color: 'var(--text-ghost)' }}>
-                                            {input.icon && <input.icon className="w-3 h-3" />} {input.label}
-                                        </label>
-                                        <input
-                                            type={input.type || 'text'}
-                                            value={input.value}
-                                            onChange={(e) => handleHeaderChange(input.field as keyof ProductionHeader, e.target.value)}
-                                            className="input-neural w-full"
-                                            placeholder={input.placeholder}
-                                        />
-                                    </div>
-                                ))}
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-ghost)' }}>Client *</label>
+                                ) : (
                                     <select
                                         value={header.clientId}
                                         onChange={(e) => handleHeaderChange('clientId', e.target.value)}
@@ -659,9 +608,57 @@ const DailyProductionForm: React.FC<DailyProductionFormProps> = ({ user, lang, j
                                             <option key={client.id} value={client.id}>{client.name}</option>
                                         ))}
                                     </select>
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-ghost)' }}>Strand Type</label>
+                                )}
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-bold uppercase tracking-wider flex items-center gap-2" style={{ color: 'var(--text-ghost)' }}>
+                                    <UserIcon className="w-3 h-3" /> Customer {job?.customerName && <span className="text-[8px] px-1 rounded" style={{ background: 'var(--online-glow)', color: 'var(--online-core)' }}>FROM JOB</span>}
+                                </label>
+                                {job?.customerName ? (
+                                    <div className="input-neural w-full flex items-center font-bold" style={{ background: 'var(--neural-dim)', cursor: 'not-allowed', borderColor: 'var(--neural-core)' }}>
+                                        <span style={{ color: 'var(--neural-core)' }}>{job.customerName}</span>
+                                    </div>
+                                ) : (
+                                    <input
+                                        type="text"
+                                        value=""
+                                        placeholder="Customer name..."
+                                        className="input-neural w-full"
+                                        disabled
+                                    />
+                                )}
+                            </div>
+
+                            {/* Row 2: Location & Work Type - LOCKED if from Job */}
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-bold uppercase tracking-wider flex items-center gap-2" style={{ color: 'var(--text-ghost)' }}>
+                                    <MapPin className="w-3 h-3" /> City {job?.location?.city && <span className="text-[8px] px-1 rounded" style={{ background: 'var(--online-glow)', color: 'var(--online-core)' }}>FROM JOB</span>}
+                                </label>
+                                {job?.location?.city ? (
+                                    <div className="input-neural w-full flex items-center" style={{ background: 'var(--elevated)', cursor: 'not-allowed' }}>
+                                        <span style={{ color: 'var(--text-secondary)' }}>{job.location.city}</span>
+                                    </div>
+                                ) : (
+                                    <input
+                                        type="text"
+                                        value={header.city}
+                                        onChange={(e) => handleHeaderChange('city', e.target.value)}
+                                        className="input-neural w-full"
+                                        placeholder="City name..."
+                                    />
+                                )}
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-bold uppercase tracking-wider flex items-center gap-2" style={{ color: 'var(--text-ghost)' }}>
+                                    Work Type {job?.workType && <span className="text-[8px] px-1 rounded" style={{ background: 'var(--online-glow)', color: 'var(--online-core)' }}>FROM JOB</span>}
+                                </label>
+                                {job?.workType ? (
+                                    <div className="input-neural w-full flex items-center" style={{ background: 'var(--elevated)', cursor: 'not-allowed' }}>
+                                        <span style={{ color: 'var(--text-secondary)' }}>{job.workType}</span>
+                                    </div>
+                                ) : (
                                     <select
                                         value={header.strandType}
                                         onChange={(e) => handleHeaderChange('strandType', e.target.value)}
@@ -671,9 +668,54 @@ const DailyProductionForm: React.FC<DailyProductionFormProps> = ({ user, lang, j
                                         <option value="FIBER">Fiber</option>
                                         <option value="OVERLASH">Overlash</option>
                                     </select>
+                                )}
+                            </div>
+
+                            {/* Row 3: Lineman & Dates - Lineman locked, dates editable */}
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-bold uppercase tracking-wider flex items-center gap-2" style={{ color: 'var(--text-ghost)' }}>
+                                    <UserIcon className="w-3 h-3" /> Lineman
+                                </label>
+                                <div className="input-neural w-full flex items-center" style={{ background: 'var(--elevated)', cursor: 'not-allowed' }}>
+                                    <span style={{ color: 'var(--text-secondary)' }}>{header.lineman}</span>
                                 </div>
                             </div>
-                        )}
+
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-bold uppercase tracking-wider flex items-center gap-2" style={{ color: 'var(--text-ghost)' }}>
+                                    <Calendar className="w-3 h-3" /> Completed Date *
+                                </label>
+                                <input
+                                    type="date"
+                                    value={header.endDate || header.startDate}
+                                    onChange={(e) => handleHeaderChange('endDate', e.target.value)}
+                                    className="input-neural w-full"
+                                />
+                            </div>
+
+                            {/* Row 4: Job Info - LOCKED if from Job */}
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-ghost)' }}>
+                                    Job Code {job?.jobCode && <span className="text-[8px] px-1 rounded" style={{ background: 'var(--online-glow)', color: 'var(--online-core)' }}>FROM JOB</span>}
+                                </label>
+                                <div className="input-neural w-full flex items-center" style={{ background: 'var(--elevated)', cursor: 'not-allowed' }}>
+                                    <span style={{ color: 'var(--text-secondary)' }}>{job?.jobCode || header.bspd || '-'}</span>
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-bold uppercase tracking-wider flex items-center gap-2" style={{ color: 'var(--text-ghost)' }}>
+                                    <Hash className="w-3 h-3" /> Comments
+                                </label>
+                                <input
+                                    type="text"
+                                    value={header.prints}
+                                    onChange={(e) => handleHeaderChange('prints', e.target.value)}
+                                    className="input-neural w-full"
+                                    placeholder="Optional notes..."
+                                />
+                            </div>
+                        </div>
                     </div>
 
                     {/* Entries Table - Tesla Data Grid Style */}

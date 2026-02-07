@@ -312,6 +312,9 @@ export interface Job {
   customerId?: string;
   customerName?: string;
 
+  // Truck assignment
+  truckId?: string;
+
   // Job details
   workType: WorkType;
   location: {

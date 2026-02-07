@@ -16,6 +16,7 @@ import { jobStorageSupabase } from '../services/jobStorageSupabase';
 import { supabase } from '../services/supabase';
 import { getClients, PrimeClient } from '../services/clientService';
 import { getCustomers, EndCustomer } from '../services/customerService';
+import { getTrucks, Truck } from '../services/truckService';
 
 interface JobsAdminProps {
   user: UserType;
@@ -60,6 +61,7 @@ interface CreateJobForm {
   clientName: string;
   customerId: string;
   customerName: string;
+  truckId: string;
   city: string;
   state: string;
   address: string;
@@ -81,6 +83,7 @@ const initialFormState: CreateJobForm = {
   clientName: '',
   customerId: '',
   customerName: '',
+  truckId: '',
   city: '',
   state: '',
   address: '',
@@ -102,6 +105,7 @@ const JobsAdmin: React.FC<JobsAdminProps> = ({ user, lang }) => {
   const [linemen, setLinemen] = useState<{ id: string; name: string; email: string }[]>([]);
   const [clients, setClients] = useState<PrimeClient[]>([]);
   const [customers, setCustomers] = useState<EndCustomer[]>([]);
+  const [trucks, setTrucks] = useState<Truck[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabType>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -355,17 +359,19 @@ Return ONLY valid JSON:
     }
   }, []);
 
-  // Load clients and customers from database
+  // Load clients, customers, and trucks from database
   const loadClientsAndCustomers = useCallback(async () => {
     try {
-      const [clientsData, customersData] = await Promise.all([
+      const [clientsData, customersData, trucksData] = await Promise.all([
         getClients(),
-        getCustomers()
+        getCustomers(),
+        getTrucks()
       ]);
       setClients(clientsData);
       setCustomers(customersData);
+      setTrucks(trucksData);
     } catch (error) {
-      console.error('Error loading clients/customers:', error);
+      console.error('Error loading clients/customers/trucks:', error);
     }
   }, []);
 
@@ -519,6 +525,7 @@ Return ONLY valid JSON:
         clientName: formData.clientName,
         customerId: formData.customerId,
         customerName: formData.customerName,
+        truckId: formData.truckId || undefined,
         workType: formData.workType as WorkType,
         location: {
           address: formData.address,
@@ -593,6 +600,7 @@ Return ONLY valid JSON:
       clientName: job.clientName || '',
       customerId: job.customerId || '',
       customerName: job.customerName || '',
+      truckId: job.truckId || '',
       city: job.location?.city || '',
       state: job.location?.state || '',
       address: job.location?.address || '',
@@ -652,6 +660,7 @@ Return ONLY valid JSON:
         clientName: editFormData.clientName,
         customerId: editFormData.customerId,
         customerName: editFormData.customerName,
+        truckId: editFormData.truckId || undefined,
         workType: editFormData.workType as WorkType,
         location: {
           address: editFormData.address.trim(),
@@ -1122,6 +1131,30 @@ Return ONLY valid JSON:
                     ))}
                   </select>
                 </div>
+              </div>
+
+              {/* Truck Row */}
+              <div>
+                <label className="block text-xs font-bold uppercase mb-2" style={{ color: 'var(--text-tertiary)' }}>
+                  Truck (Optional)
+                </label>
+                <select
+                  value={formData.truckId}
+                  onChange={(e) => setFormData({ ...formData, truckId: e.target.value })}
+                  className="w-full px-4 py-3 rounded-xl text-sm font-medium outline-none cursor-pointer"
+                  style={{
+                    background: 'var(--elevated)',
+                    color: 'var(--text-primary)',
+                    border: '1px solid var(--border-default)'
+                  }}
+                >
+                  <option value="">No Truck Assigned</option>
+                  {trucks.map(t => (
+                    <option key={t.id} value={t.id}>
+                      {t.truck_number}{t.investor_name ? ` (${t.investor_name})` : ''}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               {/* Work Type Row */}
@@ -1846,6 +1879,30 @@ Return ONLY valid JSON:
                     ))}
                   </select>
                 </div>
+              </div>
+
+              {/* Truck */}
+              <div>
+                <label className="block text-xs font-bold uppercase mb-2" style={{ color: 'var(--text-tertiary)' }}>
+                  Truck (Optional)
+                </label>
+                <select
+                  value={editFormData.truckId}
+                  onChange={(e) => setEditFormData({ ...editFormData, truckId: e.target.value })}
+                  className="w-full px-4 py-3 rounded-xl text-sm font-medium outline-none cursor-pointer"
+                  style={{
+                    background: 'var(--elevated)',
+                    color: 'var(--text-primary)',
+                    border: '1px solid var(--border-default)'
+                  }}
+                >
+                  <option value="">No Truck Assigned</option>
+                  {trucks.map(t => (
+                    <option key={t.id} value={t.id}>
+                      {t.truck_number}{t.investor_name ? ` (${t.investor_name})` : ''}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               {/* Work Type */}

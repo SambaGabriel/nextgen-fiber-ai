@@ -71,16 +71,44 @@ const createEmptyEntry = (): SpanEntry => ({
 });
 
 const DailyProductionForm: React.FC<DailyProductionFormProps> = ({ user, lang, job, onBack }) => {
-    // Initialize header with job data if linked
+    // Debug: Log job prop to verify it's being passed
+    useEffect(() => {
+        console.log('[ProductionSheet] Job prop received:', job ? {
+            id: job.id,
+            jobCode: job.jobCode,
+            clientName: job.clientName,
+            customerName: job.customerName,
+            title: job.title
+        } : 'NULL/UNDEFINED');
+    }, [job]);
+
+    // Determine if we have a valid job context
+    const hasJobContext = Boolean(job && job.id);
+
+    // Initialize header - will be updated by useEffect when job changes
     const [header, setHeader] = useState<ProductionHeader>(() => ({
         ...INITIAL_HEADER,
-        lineman: user.name,
-        city: job?.location?.city || '',
-        projectOLT: job?.title || '',
-        bspd: job?.jobCode || '',
-        strandType: job?.workType === WorkType.OVERLASH ? 'OVERLASH' : job?.workType === WorkType.AERIAL ? 'STRAND' : 'FIBER',
-        clientId: job?.clientId || ''
+        lineman: user.name
     }));
+
+    // Sync header with job data when job prop changes
+    useEffect(() => {
+        if (job) {
+            console.log('[ProductionSheet] Syncing header with job data');
+            setHeader(prev => ({
+                ...prev,
+                lineman: user.name,
+                city: job.location?.city || prev.city,
+                projectOLT: job.title || prev.projectOLT,
+                bspd: job.jobCode || prev.bspd,
+                strandType: job.workType === WorkType.OVERLASH ? 'OVERLASH' :
+                           job.workType === WorkType.AERIAL ? 'STRAND' :
+                           job.strandType || 'FIBER',
+                clientId: job.clientId || prev.clientId
+            }));
+        }
+    }, [job, user.name]);
+
     const [entries, setEntries] = useState<SpanEntry[]>([
         createEmptyEntry(),
         createEmptyEntry(),
@@ -404,8 +432,15 @@ const DailyProductionForm: React.FC<DailyProductionFormProps> = ({ user, lang, j
 
     return (
         <div className="max-w-7xl mx-auto space-y-4 sm:space-y-8 pb-10">
+            {/* Debug indicator - remove in production */}
+            {process.env.NODE_ENV === 'development' && (
+                <div className="text-xs p-2 rounded" style={{ background: hasJobContext ? 'var(--online-glow)' : 'var(--alert-glow)', color: hasJobContext ? 'var(--online-core)' : 'var(--alert-core)' }}>
+                    Job Context: {hasJobContext ? `YES - ${job?.jobCode}` : 'NO - Standalone Mode'}
+                </div>
+            )}
+
             {/* Back button for job-linked form */}
-            {job && onBack && (
+            {hasJobContext && onBack && (
                 <button
                     onClick={onBack}
                     className="flex items-center gap-2 text-sm font-bold transition-colors"
@@ -416,8 +451,8 @@ const DailyProductionForm: React.FC<DailyProductionFormProps> = ({ user, lang, j
                 </button>
             )}
 
-            {/* Job Info Banner - Read-only job information */}
-            {job && (
+            {/* Job Info Banner - Read-only job information (AUTO-POPULATED FROM JOB) */}
+            {hasJobContext && job && (
                 <div
                     className="p-4 sm:p-6 rounded-xl sm:rounded-2xl"
                     style={{ background: 'var(--surface)', border: '1px solid var(--border-neural)' }}
@@ -484,12 +519,12 @@ const DailyProductionForm: React.FC<DailyProductionFormProps> = ({ user, lang, j
                             Production Sheet
                         </h1>
                         <p className="text-xs sm:text-sm font-medium" style={{ color: 'var(--text-tertiary)' }}>
-                            {job ? `Submit production data for ${job.jobCode}` : 'Fill in your daily production data directly in the app'}
+                            {hasJobContext ? `Submit production data for ${job?.jobCode}` : 'Fill in your daily production data directly in the app'}
                         </p>
                     </div>
 
                     {/* Tab Switcher - Only show when not job-linked */}
-                    {!job && (
+                    {!hasJobContext && (
                         <div className="flex items-center gap-1 p-1 rounded-xl w-full sm:w-auto" style={{ background: 'var(--surface)', border: '1px solid var(--border-default)' }}>
                             <button
                                 onClick={() => setActiveTab('form')}
@@ -521,7 +556,7 @@ const DailyProductionForm: React.FC<DailyProductionFormProps> = ({ user, lang, j
                 </div>
             </div>
 
-            {(activeTab === 'form' || job) ? (
+            {(activeTab === 'form' || hasJobContext) ? (
                 <>
                     {/* Quick Stats - SpaceX Mission Control Style */}
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-4">
@@ -549,11 +584,11 @@ const DailyProductionForm: React.FC<DailyProductionFormProps> = ({ user, lang, j
                     {/* Header Form - B&O Premium Style */}
                     <div className="surface-premium rounded-xl sm:rounded-2xl p-4 sm:p-8 relative" style={{ background: 'var(--surface)' }}>
                         <h3 className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.2em] mb-4 sm:mb-6 flex items-center gap-2" style={{ color: 'var(--text-ghost)' }}>
-                            <Building2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> {job ? 'Production Details' : 'Project Information'}
+                            <Building2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> {hasJobContext ? 'Production Details' : 'Project Information'}
                         </h3>
 
                         {/* When job is linked: Only show date fields (lineman only fills dates + production data) */}
-                        {job ? (
+                        {hasJobContext ? (
                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-6">
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-bold uppercase tracking-wider flex items-center gap-2" style={{ color: 'var(--text-ghost)' }}>

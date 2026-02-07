@@ -1,8 +1,10 @@
-import React, { useMemo, useCallback, memo, lazy, Suspense } from 'react';
+import React, { useMemo, useCallback, memo, lazy, Suspense, useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { DollarSign, Activity, AlertTriangle, ChevronDown, CheckCircle2, Calendar, FileText, Download, Zap, Mic } from 'lucide-react';
+import { DollarSign, Activity, AlertTriangle, ChevronDown, CheckCircle2, Calendar, FileText, Download, Zap, Mic, Briefcase, Send, Clock } from 'lucide-react';
 import { ViewState, Invoice, Transaction, User, Language } from '../types';
 import { translations } from '../services/translations';
+import { jobStorageSupabase } from '../services/jobStorageSupabase';
+import { Job, JobStatus } from '../types/project';
 
 // [bundle-dynamic-imports] - Lazy load LiveSupervisor (heavy audio component)
 const LiveSupervisor = lazy(() => import('./LiveSupervisor'));
@@ -31,6 +33,48 @@ const Dashboard = memo<DashboardProps>(({ invoices, user, lang }) => {
     const t = translations[lang];
     const [showLiveAgent, setShowLiveAgent] = React.useState(false);
     const [showReportMenu, setShowReportMenu] = React.useState(false);
+    const [jobs, setJobs] = useState<Job[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    const isLineman = user?.role === 'LINEMAN';
+
+    // Load jobs for metrics
+    useEffect(() => {
+        const loadJobs = async () => {
+            if (!user?.id) return;
+            setIsLoading(true);
+            try {
+                const userJobs = isLineman
+                    ? await jobStorageSupabase.getByLineman(user.id)
+                    : await jobStorageSupabase.getAll();
+                setJobs(userJobs);
+            } catch (error) {
+                console.error('[Dashboard] Error loading jobs:', error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        loadJobs();
+    }, [user?.id, isLineman]);
+
+    // Calculate metrics from jobs
+    const metrics = useMemo(() => {
+        const totalJobs = jobs.length;
+        const newJobs = jobs.filter(j => j.status === JobStatus.ASSIGNED).length;
+        const inProgress = jobs.filter(j => j.status === JobStatus.IN_PROGRESS).length;
+        const submitted = jobs.filter(j => j.status === JobStatus.SUBMITTED).length;
+        const completed = jobs.filter(j => j.status === JobStatus.COMPLETED).length;
+
+        // Calculate total footage from production data
+        const totalFootage = jobs.reduce((sum, job) => {
+            if (job.productionData?.totalFootage) {
+                return sum + job.productionData.totalFootage;
+            }
+            return sum;
+        }, 0);
+
+        return { totalJobs, newJobs, inProgress, submitted, completed, totalFootage };
+    }, [jobs]);
 
     // [rerender-functional-setstate] - Stable callbacks
     const openLiveAgent = useCallback(() => setShowLiveAgent(true), []);
@@ -48,7 +92,7 @@ const Dashboard = memo<DashboardProps>(({ invoices, user, lang }) => {
             )}
 
             {/* SUPERVISOR ONLINE - Hero Banner for Linemen ONLY */}
-            {user.role === 'LINEMAN' && (
+            {isLineman && (
             <button
                 onClick={openLiveAgent}
                 className="w-full p-6 lg:p-8 rounded-3xl relative overflow-hidden group active:scale-[0.98] transition-all duration-300"
@@ -162,64 +206,78 @@ const Dashboard = memo<DashboardProps>(({ invoices, user, lang }) => {
             {/* Metrics Cards Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
 
-                {/* 1. Neural Highlight Card */}
+                {/* 1. Total Jobs - Neural Highlight Card */}
                 <div className="p-4 sm:p-8 rounded-[1.5rem] sm:rounded-[2rem] relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300 neural-border" style={{ background: 'var(--gradient-neural)', boxShadow: 'var(--shadow-neural)' }}>
                      <div className="flex justify-between items-start mb-6 sm:mb-10">
                         <div className="p-3 rounded-2xl backdrop-blur-sm" style={{ background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.1)' }}>
-                            <DollarSign className="w-6 h-6" style={{ color: 'var(--void)' }} />
+                            <Briefcase className="w-6 h-6" style={{ color: 'var(--void)' }} />
                         </div>
-                        <span className="px-2.5 py-1 rounded-lg backdrop-blur-md text-[10px] font-black" style={{ background: 'rgba(0,0,0,0.3)', color: 'white' }}>0%</span>
+                        <span className="px-2.5 py-1 rounded-lg backdrop-blur-md text-[10px] font-black" style={{ background: 'rgba(0,0,0,0.3)', color: 'white' }}>
+                            {metrics.newJobs > 0 ? `+${metrics.newJobs}` : '0'}
+                        </span>
                      </div>
                      <div>
-                        <h3 className="text-2xl sm:text-4xl font-black tracking-tighter mb-2" style={{ color: 'var(--void)' }}>$0.00</h3>
-                        <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest mb-1" style={{ color: 'rgba(0,0,0,0.7)' }}>{t.billing_month}</p>
-                        <p className="text-[9px] sm:text-[10px] font-medium" style={{ color: 'rgba(0,0,0,0.5)' }}>{t.no_billing}</p>
+                        <h3 className="text-2xl sm:text-4xl font-black tracking-tighter mb-2" style={{ color: 'var(--void)' }}>{metrics.totalJobs}</h3>
+                        <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest mb-1" style={{ color: 'rgba(0,0,0,0.7)' }}>
+                            {isLineman ? 'MEUS JOBS' : 'TOTAL JOBS'}
+                        </p>
+                        <p className="text-[9px] sm:text-[10px] font-medium" style={{ color: 'rgba(0,0,0,0.5)' }}>
+                            {metrics.newJobs > 0 ? `${metrics.newJobs} novo(s)` : 'Nenhum novo'}
+                        </p>
                      </div>
-                     <DollarSign className="absolute -bottom-8 -right-8 w-24 sm:w-40 h-24 sm:h-40 opacity-20 transform rotate-12" style={{ color: 'var(--void)' }} />
+                     <Briefcase className="absolute -bottom-8 -right-8 w-24 sm:w-40 h-24 sm:h-40 opacity-20 transform rotate-12" style={{ color: 'var(--void)' }} />
                 </div>
 
-                {/* 2. Surface Card */}
+                {/* 2. In Progress */}
                 <div className="p-4 sm:p-8 rounded-[1.5rem] sm:rounded-[2rem] relative overflow-hidden group hover:scale-[1.02] transition-all card-neural" style={{ background: 'var(--surface)' }}>
                      <div className="flex justify-between items-start mb-6 sm:mb-10">
                         <div className="p-3 rounded-2xl" style={{ background: 'var(--energy-pulse)', border: '1px solid rgba(168, 85, 247, 0.2)' }}>
-                            <Activity className="w-6 h-6" style={{ color: 'var(--energy-core)' }} />
+                            <Clock className="w-6 h-6" style={{ color: 'var(--energy-core)' }} />
                         </div>
-                        <span className="px-2.5 py-1 rounded-lg text-[10px] font-black" style={{ background: 'var(--elevated)', color: 'var(--text-secondary)' }}>0%</span>
+                        <span className="px-2.5 py-1 rounded-lg text-[10px] font-black" style={{ background: 'var(--elevated)', color: 'var(--text-secondary)' }}>
+                            {metrics.totalJobs > 0 ? Math.round((metrics.inProgress / metrics.totalJobs) * 100) : 0}%
+                        </span>
                      </div>
                      <div>
-                        <h3 className="text-2xl sm:text-4xl font-black tracking-tighter mb-2" style={{ color: 'var(--text-primary)' }}>0 <span className="text-lg sm:text-xl font-bold" style={{ color: 'var(--text-ghost)' }}>ft</span></h3>
-                        <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest mb-1" style={{ color: 'var(--text-tertiary)' }}>{t.total_footage}</p>
-                        <p className="text-[9px] sm:text-[10px] font-medium" style={{ color: 'var(--text-ghost)' }}>{t.linear_construction}</p>
+                        <h3 className="text-2xl sm:text-4xl font-black tracking-tighter mb-2" style={{ color: 'var(--text-primary)' }}>{metrics.inProgress}</h3>
+                        <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest mb-1" style={{ color: 'var(--text-tertiary)' }}>EM PROGRESSO</p>
+                        <p className="text-[9px] sm:text-[10px] font-medium" style={{ color: 'var(--text-ghost)' }}>Jobs em andamento</p>
                      </div>
                 </div>
 
-                {/* 3. Surface Card */}
+                {/* 3. Submitted */}
                 <div className="p-4 sm:p-8 rounded-[1.5rem] sm:rounded-[2rem] relative overflow-hidden group hover:scale-[1.02] transition-all card-neural" style={{ background: 'var(--surface)' }}>
                      <div className="flex justify-between items-start mb-6 sm:mb-10">
                         <div className="p-3 rounded-2xl" style={{ background: 'var(--online-glow)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
-                            <CheckCircle2 className="w-6 h-6" style={{ color: 'var(--online-core)' }} />
+                            <Send className="w-6 h-6" style={{ color: 'var(--online-core)' }} />
                         </div>
-                        <span className="px-2.5 py-1 rounded-lg text-[10px] font-black" style={{ background: 'var(--elevated)', color: 'var(--text-secondary)' }}>0%</span>
+                        <span className="px-2.5 py-1 rounded-lg text-[10px] font-black" style={{ background: 'var(--elevated)', color: 'var(--text-secondary)' }}>
+                            {metrics.totalJobs > 0 ? Math.round((metrics.submitted / metrics.totalJobs) * 100) : 0}%
+                        </span>
                      </div>
                      <div>
-                        <h3 className="text-2xl sm:text-4xl font-black tracking-tighter mb-2" style={{ color: 'var(--text-primary)' }}>100%</h3>
-                        <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest mb-1" style={{ color: 'var(--text-tertiary)' }}>{t.qc_compliance}</p>
-                        <p className="text-[9px] sm:text-[10px] font-medium" style={{ color: 'var(--text-ghost)' }}>{t.avg_quality}</p>
+                        <h3 className="text-2xl sm:text-4xl font-black tracking-tighter mb-2" style={{ color: 'var(--text-primary)' }}>{metrics.submitted}</h3>
+                        <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest mb-1" style={{ color: 'var(--text-tertiary)' }}>ENVIADOS</p>
+                        <p className="text-[9px] sm:text-[10px] font-medium" style={{ color: 'var(--text-ghost)' }}>Aguardando aprovação</p>
                      </div>
                 </div>
 
-                {/* 4. Surface Card */}
+                {/* 4. Total Footage */}
                 <div className="p-4 sm:p-8 rounded-[1.5rem] sm:rounded-[2rem] relative overflow-hidden group hover:scale-[1.02] transition-all card-neural" style={{ background: 'var(--surface)' }}>
                      <div className="flex justify-between items-start mb-6 sm:mb-10">
                         <div className="p-3 rounded-2xl" style={{ background: 'var(--elevated)', border: '1px solid var(--border-default)' }}>
-                            <AlertTriangle className="w-6 h-6" style={{ color: 'var(--text-tertiary)' }} />
+                            <Activity className="w-6 h-6" style={{ color: 'var(--text-tertiary)' }} />
                         </div>
-                        <span className="px-2.5 py-1 rounded-lg text-[10px] font-black" style={{ background: 'var(--elevated)', color: 'var(--text-secondary)' }}>0%</span>
+                        <span className="px-2.5 py-1 rounded-lg text-[10px] font-black" style={{ background: 'var(--elevated)', color: 'var(--text-secondary)' }}>
+                            {metrics.completed} done
+                        </span>
                      </div>
                      <div>
-                        <h3 className="text-2xl sm:text-4xl font-black tracking-tighter mb-2" style={{ color: 'var(--text-primary)' }}>0</h3>
-                        <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest mb-1" style={{ color: 'var(--text-tertiary)' }}>{t.divergences}</p>
-                        <p className="text-[9px] sm:text-[10px] font-medium" style={{ color: 'var(--text-ghost)' }}>{t.no_issues}</p>
+                        <h3 className="text-2xl sm:text-4xl font-black tracking-tighter mb-2" style={{ color: 'var(--text-primary)' }}>
+                            {metrics.totalFootage.toLocaleString()} <span className="text-lg sm:text-xl font-bold" style={{ color: 'var(--text-ghost)' }}>ft</span>
+                        </h3>
+                        <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest mb-1" style={{ color: 'var(--text-tertiary)' }}>{t.total_footage}</p>
+                        <p className="text-[9px] sm:text-[10px] font-medium" style={{ color: 'var(--text-ghost)' }}>{t.linear_construction}</p>
                      </div>
                 </div>
             </div>

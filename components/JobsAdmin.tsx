@@ -300,18 +300,19 @@ Return ONLY valid JSON:
 
       // Fix title to use corrected feeder ID with trailing letter
       let finalTitle = extracted.title || '';
-      if (finalFeederId && extracted.feederId && finalFeederId !== extracted.feederId) {
-        // Replace the incomplete feeder ID in title with the complete one
-        finalTitle = finalTitle.replace(extracted.feederId, finalFeederId);
-        console.log('[EXTRACT] Fixed title feeder ID:', extracted.feederId, '->', finalFeederId);
-      }
-      // If title doesn't have feeder ID but we have one, prepend it
-      if (finalFeederId && finalTitle && !finalTitle.includes(finalFeederId)) {
-        // Check if title starts with a feeder-like pattern without trailing letter
-        const feederPattern = finalFeederId.slice(0, -1); // Remove last letter
-        if (finalTitle.startsWith(feederPattern)) {
-          finalTitle = finalTitle.replace(feederPattern, finalFeederId);
-          console.log('[EXTRACT] Replaced partial feeder in title');
+      console.log('[EXTRACT] Original title:', finalTitle);
+      console.log('[EXTRACT] Final feeder ID:', finalFeederId);
+
+      // Always try to fix the feeder ID in the title if we have a complete one
+      if (finalFeederId && finalTitle) {
+        // Get the feeder ID without trailing letter (e.g., "BSPD001.04" from "BSPD001.04h")
+        const feederWithoutLetter = finalFeederId.slice(0, -1);
+        console.log('[EXTRACT] Feeder without letter:', feederWithoutLetter);
+
+        // If title contains the incomplete feeder (without letter), replace it
+        if (finalTitle.includes(feederWithoutLetter) && !finalTitle.includes(finalFeederId)) {
+          finalTitle = finalTitle.replace(feederWithoutLetter, finalFeederId);
+          console.log('[EXTRACT] Fixed title:', finalTitle);
         }
       }
 

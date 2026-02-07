@@ -283,7 +283,7 @@ const RateCards: React.FC<RateCardsProps> = ({ user, lang }) => {
         },
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514',
-          max_tokens: 4096,
+          max_tokens: 16000,
           messages: [{
             role: 'user',
             content: [
@@ -297,21 +297,31 @@ const RateCards: React.FC<RateCardsProps> = ({ user, lang }) => {
               },
               {
                 type: 'text',
-                text: `You are a fiber optic construction rate card expert. Extract ALL rate items from this rate card document.
+                text: `You are a fiber optic construction rate card expert.
+
+IMPORTANT: Read ALL PAGES of this PDF document from start to finish. Do not stop at the first page.
+
+Extract EVERY rate item from ALL pages. This is a rate card with pricing for construction work items.
 
 For each item found, extract:
-- code: The item code/number (e.g., "BSPDLASH", "SP001", etc.)
-- description: What the item is for
-- unit: The unit of measurement - must be one of: "FT" (per foot), "EA" (each), "HR" (per hour), "DAY" (per day)
-- rate: The dollar amount (number only, no $ sign)
+- code: The item code/number (e.g., "BSPDLASH", "SP001", "1.1", etc.)
+- description: What the item is for (the work description)
+- unit: The unit - must be one of: "FT" (per foot/linear foot/LF), "EA" (each/unit), "HR" (per hour), "DAY" (per day)
+- rate: The dollar amount as a number (no $ sign)
 
-Return ONLY a valid JSON array, no other text. Example format:
+CRITICAL INSTRUCTIONS:
+1. Go through EVERY page of the document
+2. Extract EVERY line item with a price
+3. Include items from all sections and categories
+4. Do not skip any items
+
+Return ONLY a valid JSON array with ALL items found. Example:
 [
   {"code": "BSPDLASH", "description": "Lashing", "unit": "FT", "rate": 0.90},
   {"code": "ANCHOR", "description": "Anchor Installation", "unit": "EA", "rate": 45.00}
 ]
 
-Extract every single line item you can find. Be thorough.`
+Be thorough - extract hundreds of items if they exist in the document.`
               }
             ]
           }]

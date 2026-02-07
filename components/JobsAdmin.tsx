@@ -222,13 +222,13 @@ RULES:
 
 Return ONLY valid JSON:
 {
-  "title": "FeederID -FiberCountct – SpanNumbers",
   "client": "company name from logo",
   "city": "city if visible or empty string",
   "state": "state abbrev if visible or empty string",
   "address": "main road/street names",
   "olt": "project code from header",
   "feederId": "feeder ID with period AND trailing letter like BSPD001.04h - MUST include final letter (a,b,c,d,e,f,g,h)",
+  "fiberCount": "fiber count number like 96 (just the number, from '96ct' or '96 count')",
   "runNumber": "map page numbers like 117-122",
   "workType": "aerial or underground",
   "estimatedFootage": 0
@@ -278,14 +278,14 @@ Return ONLY valid JSON:
         finalFeederId = feederFromFileName;
       }
 
-      // Fix title to include trailing letter if needed
-      let finalTitle = extracted.title || '';
-      if (finalFeederId && finalTitle && finalFeederId.match(/[a-z]$/i)) {
-        const feederWithoutLetter = finalFeederId.slice(0, -1);
-        if (finalTitle.includes(feederWithoutLetter) && !finalTitle.includes(finalFeederId)) {
-          finalTitle = finalTitle.replace(feederWithoutLetter, finalFeederId);
-        }
-      }
+      // Generate title from extracted fields: "BSPD001.04h - 96ct - 117-122"
+      // Format: FeederId - FiberCount - MapPages
+      const titleParts = [];
+      if (finalFeederId) titleParts.push(finalFeederId);
+      if (extracted.fiberCount) titleParts.push(`${extracted.fiberCount}ct`);
+      if (extracted.runNumber) titleParts.push(extracted.runNumber);
+
+      let finalTitle = titleParts.length > 0 ? titleParts.join(' - ') : '';
 
       // Update form with extracted data
       console.log('[EXTRACT] Filling form with:', {

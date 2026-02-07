@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { ViewState, Notification, User, Language } from '../types';
 import { translations } from '../services/translations';
 import {
@@ -6,6 +6,8 @@ import {
     Upload, History, FolderOpen, Mic, Briefcase, DollarSign, Loader2
 } from 'lucide-react';
 import Logo from './Logo';
+import { jobStorageSupabase } from '../services/jobStorageSupabase';
+import { jobNotificationService } from '../services/jobNotificationService';
 
 interface LayoutProps {
     currentView: ViewState;
@@ -24,9 +26,45 @@ const Layout: React.FC<LayoutProps> = ({ currentView, onChangeView, children, no
     const [isLangOpen, setIsLangOpen] = useState(false);
     const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
     const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+    const [newJobCount, setNewJobCount] = useState(0);
+    const [assignedJobIds, setAssignedJobIds] = useState<string[]>([]);
 
     // Check if user is admin
     const isAdmin = user?.role === 'ADMIN';
+    const isLineman = !isAdmin;
+
+    // Load new job notifications for lineman
+    useEffect(() => {
+        if (!user?.id || isAdmin) {
+            setNewJobCount(0);
+            return;
+        }
+
+        const checkNewJobs = async () => {
+            try {
+                const jobs = await jobStorageSupabase.getByLineman(user.id);
+                const jobIds = jobs.map(j => j.id);
+                setAssignedJobIds(jobIds);
+                const unseenCount = jobNotificationService.getUnseenCount(user.id, jobIds);
+                setNewJobCount(unseenCount);
+            } catch (error) {
+                console.error('[Layout] Error checking new jobs:', error);
+            }
+        };
+
+        checkNewJobs();
+        // Poll every 30 seconds for new jobs
+        const interval = setInterval(checkNewJobs, 30000);
+        return () => clearInterval(interval);
+    }, [user?.id, isAdmin]);
+
+    // Mark jobs as seen when clicking My Jobs or bell
+    const handleMarkJobsAsSeen = useCallback(() => {
+        if (user?.id && assignedJobIds.length > 0) {
+            jobNotificationService.markAllJobsAsSeen(user.id, assignedJobIds);
+            setNewJobCount(0);
+        }
+    }, [user?.id, assignedJobIds]);
 
     // Navigation items based on role
     const navItems = isAdmin ? [
@@ -46,6 +84,10 @@ const Layout: React.FC<LayoutProps> = ({ currentView, onChangeView, children, no
     ];
 
     const handleNavClick = (id: ViewState) => {
+        // Mark jobs as seen when clicking My Jobs
+        if (id === ViewState.MY_JOBS && isLineman) {
+            handleMarkJobsAsSeen();
+        }
         onChangeView(id);
     };
 
@@ -83,41 +125,55 @@ const Layout: React.FC<LayoutProps> = ({ currentView, onChangeView, children, no
 
                 {/* Navigation - Clean, no divisions */}
                 <div className="flex-1 py-6 px-3 space-y-2 overflow-y-auto scrollbar-hide">
-                    {navItems.map(item => (
-                        <button
-                            key={item.id}
-                            onClick={() => handleNavClick(item.id)}
-                            className="w-full flex items-center gap-3 px-3 py-3 rounded-2xl transition-all duration-200 group relative"
-                            style={{
-                                background: currentView === item.id ? 'var(--neural-dim)' : 'transparent',
-                            }}
-                        >
-                            <div
-                                className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-200"
+                    {navItems.map(item => {
+                        const showBadge = item.id === ViewState.MY_JOBS && isLineman && newJobCount > 0;
+                        return (
+                            <button
+                                key={item.id}
+                                onClick={() => handleNavClick(item.id)}
+                                className="w-full flex items-center gap-3 px-3 py-3 rounded-2xl transition-all duration-200 group relative"
                                 style={{
-                                    background: currentView === item.id ? 'var(--neural-core)' : 'var(--elevated)',
-                                    boxShadow: currentView === item.id ? 'var(--shadow-neural)' : 'none'
+                                    background: currentView === item.id ? 'var(--neural-dim)' : 'transparent',
                                 }}
                             >
-                                <item.icon
-                                    className="w-5 h-5 transition-colors"
-                                    style={{ color: currentView === item.id ? '#ffffff' : 'var(--text-tertiary)' }}
-                                />
-                            </div>
-                            <span
-                                className="text-sm font-semibold whitespace-nowrap transition-all duration-200"
-                                style={{
-                                    opacity: isSidebarExpanded ? 1 : 0,
-                                    color: currentView === item.id ? 'var(--neural-core)' : 'var(--text-secondary)'
-                                }}
-                            >
-                                {item.label}
-                            </span>
-                            {currentView === item.id && isSidebarExpanded && (
-                                <ChevronRight className="w-4 h-4 ml-auto" style={{ color: 'var(--neural-core)' }} />
-                            )}
-                        </button>
-                    ))}
+                                <div className="relative">
+                                    <div
+                                        className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-200"
+                                        style={{
+                                            background: currentView === item.id ? 'var(--neural-core)' : 'var(--elevated)',
+                                            boxShadow: currentView === item.id ? 'var(--shadow-neural)' : 'none'
+                                        }}
+                                    >
+                                        <item.icon
+                                            className="w-5 h-5 transition-colors"
+                                            style={{ color: currentView === item.id ? '#ffffff' : 'var(--text-tertiary)' }}
+                                        />
+                                    </div>
+                                    {/* New job badge */}
+                                    {showBadge && (
+                                        <span
+                                            className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white animate-pulse"
+                                            style={{ background: 'var(--neural-core)', boxShadow: 'var(--shadow-neural)' }}
+                                        >
+                                            {newJobCount > 9 ? '9+' : newJobCount}
+                                        </span>
+                                    )}
+                                </div>
+                                <span
+                                    className="text-sm font-semibold whitespace-nowrap transition-all duration-200"
+                                    style={{
+                                        opacity: isSidebarExpanded ? 1 : 0,
+                                        color: currentView === item.id ? 'var(--neural-core)' : 'var(--text-secondary)'
+                                    }}
+                                >
+                                    {item.label}
+                                </span>
+                                {currentView === item.id && isSidebarExpanded && (
+                                    <ChevronRight className="w-4 h-4 ml-auto" style={{ color: 'var(--neural-core)' }} />
+                                )}
+                            </button>
+                        );
+                    })}
                 </div>
 
                 {/* Bottom Actions - Minimal */}
@@ -296,16 +352,25 @@ const Layout: React.FC<LayoutProps> = ({ currentView, onChangeView, children, no
                         </div>
                         {/* Notification Bell */}
                         <button
+                            onClick={() => {
+                                if (isLineman && newJobCount > 0) {
+                                    handleMarkJobsAsSeen();
+                                    onChangeView(ViewState.MY_JOBS);
+                                }
+                            }}
                             className="relative p-2.5 lg:p-3 rounded-xl transition-all"
                             style={{ background: 'var(--elevated)', border: '1px solid var(--border-subtle)' }}
                         >
                             <Bell className="w-5 h-5" style={{ color: 'var(--text-tertiary)' }} />
-                            <span
-                                className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
-                                style={{ background: 'var(--neural-core)', boxShadow: 'var(--shadow-neural)' }}
-                            >
-                                1
-                            </span>
+                            {/* Show badge only for linemen with new jobs */}
+                            {isLineman && newJobCount > 0 && (
+                                <span
+                                    className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white animate-pulse"
+                                    style={{ background: 'var(--neural-core)', boxShadow: 'var(--shadow-neural)' }}
+                                >
+                                    {newJobCount > 9 ? '9+' : newJobCount}
+                                </span>
+                            )}
                         </button>
                     </div>
                 </header>
@@ -330,35 +395,49 @@ const Layout: React.FC<LayoutProps> = ({ currentView, onChangeView, children, no
                             boxShadow: '0 -4px 30px rgba(0, 0, 0, 0.08)'
                         }}
                     >
-                        {navItems.slice(0, 4).map(item => (
-                            <button
-                                key={item.id}
-                                onClick={() => handleNavClick(item.id)}
-                                className="flex flex-col items-center gap-1 p-2 rounded-xl transition-all min-w-[60px]"
-                                style={{
-                                    background: currentView === item.id ? 'var(--neural-dim)' : 'transparent',
-                                }}
-                            >
-                                <div
-                                    className="w-10 h-10 rounded-xl flex items-center justify-center transition-all"
+                        {navItems.slice(0, 4).map(item => {
+                            const showBadge = item.id === ViewState.MY_JOBS && isLineman && newJobCount > 0;
+                            return (
+                                <button
+                                    key={item.id}
+                                    onClick={() => handleNavClick(item.id)}
+                                    className="flex flex-col items-center gap-1 p-2 rounded-xl transition-all min-w-[60px]"
                                     style={{
-                                        background: currentView === item.id ? 'var(--neural-core)' : 'transparent',
-                                        boxShadow: currentView === item.id ? 'var(--shadow-neural)' : 'none'
+                                        background: currentView === item.id ? 'var(--neural-dim)' : 'transparent',
                                     }}
                                 >
-                                    <item.icon
-                                        className="w-5 h-5"
-                                        style={{ color: currentView === item.id ? '#ffffff' : 'var(--text-tertiary)' }}
-                                    />
-                                </div>
-                                <span
-                                    className="text-[9px] font-bold uppercase tracking-wider"
-                                    style={{ color: currentView === item.id ? 'var(--neural-core)' : 'var(--text-ghost)' }}
-                                >
-                                    {item.label}
-                                </span>
-                            </button>
-                        ))}
+                                    <div className="relative">
+                                        <div
+                                            className="w-10 h-10 rounded-xl flex items-center justify-center transition-all"
+                                            style={{
+                                                background: currentView === item.id ? 'var(--neural-core)' : 'transparent',
+                                                boxShadow: currentView === item.id ? 'var(--shadow-neural)' : 'none'
+                                            }}
+                                        >
+                                            <item.icon
+                                                className="w-5 h-5"
+                                                style={{ color: currentView === item.id ? '#ffffff' : 'var(--text-tertiary)' }}
+                                            />
+                                        </div>
+                                        {/* New job badge mobile */}
+                                        {showBadge && (
+                                            <span
+                                                className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold text-white animate-pulse"
+                                                style={{ background: 'var(--neural-core)', boxShadow: 'var(--shadow-neural)' }}
+                                            >
+                                                {newJobCount > 9 ? '9+' : newJobCount}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <span
+                                        className="text-[9px] font-bold uppercase tracking-wider"
+                                        style={{ color: currentView === item.id ? 'var(--neural-core)' : 'var(--text-ghost)' }}
+                                    >
+                                        {item.label}
+                                    </span>
+                                </button>
+                            );
+                        })}
 
                         {/* More menu for additional items on mobile */}
                         {navItems.length > 4 && (

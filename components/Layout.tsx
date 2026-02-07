@@ -36,12 +36,13 @@ const Layout: React.FC<LayoutProps> = ({ currentView, onChangeView, children, no
         { id: ViewState.FINANCE_HUB, label: 'Invoices', icon: Wallet },         // Billing & invoices
         { id: ViewState.MAP_ANALYZER, label: 'Maps', icon: ScanLine },          // Map analyzer tool
         { id: ViewState.RATE_CARDS, label: 'Rate Cards', icon: DollarSign },    // Rate cards management
-        { id: ViewState.ADMIN, label: 'Settings', icon: Settings },             // Configuration
+        { id: ViewState.SETTINGS, label: 'Settings', icon: Settings },          // Settings (CRM enterprise)
     ] : [
         // Lineman Navigation - Simple & Mobile-first
         { id: ViewState.DASHBOARD, label: 'Home', icon: LayoutDashboard }, // Overview
         { id: ViewState.MY_JOBS, label: 'My Jobs', icon: Briefcase },      // Jobs assigned to lineman
         { id: ViewState.MY_SUBMISSIONS, label: 'History', icon: History }, // Past submissions
+        { id: ViewState.SETTINGS, label: 'Settings', icon: Settings },     // Settings for all users
     ];
 
     const handleNavClick = (id: ViewState) => {
@@ -270,17 +271,15 @@ const Layout: React.FC<LayoutProps> = ({ currentView, onChangeView, children, no
 
                                         <div className="my-2 border-t" style={{ borderColor: 'var(--border-subtle)' }}></div>
 
-                                        {/* Settings - Only for Admin */}
-                                        {isAdmin && (
-                                            <button
-                                                onClick={() => { onChangeView(ViewState.ADMIN); setIsProfileMenuOpen(false); }}
-                                                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors"
-                                                style={{ background: 'transparent' }}
-                                            >
-                                                <Settings className="w-5 h-5" style={{ color: 'var(--text-tertiary)' }} />
-                                                <span className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>Settings</span>
-                                            </button>
-                                        )}
+                                        {/* Settings - Available for all users */}
+                                        <button
+                                            onClick={() => { onChangeView(ViewState.SETTINGS); setIsProfileMenuOpen(false); }}
+                                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors"
+                                            style={{ background: 'transparent' }}
+                                        >
+                                            <Settings className="w-5 h-5" style={{ color: 'var(--text-tertiary)' }} />
+                                            <span className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>Settings</span>
+                                        </button>
 
                                         {/* Logout */}
                                         <button

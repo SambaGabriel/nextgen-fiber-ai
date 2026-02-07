@@ -32,6 +32,8 @@ const JobDetails = lazy(() => import('./components/JobDetails'));
 const JobsAdmin = lazy(() => import('./components/JobsAdmin'));
 // Admin rate cards management (V2 with multi-column rates)
 const RateCards = lazy(() => import('./components/RateCardsV2'));
+// Settings (CRM enterprise)
+const SettingsPage = lazy(() => import('./components/settings/Settings'));
 
 const INITIAL_RATES: UnitRates = { fiber: 0.35, anchor: 18.00 };
 
@@ -250,6 +252,8 @@ const App: React.FC = () => {
                 return <FiberMapTester />;
             case ViewState.ADMIN:
                 return <AdminPortal invoices={invoices} rates={rates} onUpdateRates={handleUpdateRates} user={user} onUpdateUser={setUser} onPayInvoice={() => {}} lang={currentLang} />;
+            case ViewState.SETTINGS:
+                return <SettingsPage user={user} lang={currentLang} onUpdateUser={setUser} onLogout={handleLogout} />;
             default:
                 // Default view based on role
                 return <Dashboard onNavigate={setCurrentView} invoices={invoices} transactions={transactions} user={user} lang={currentLang} />;

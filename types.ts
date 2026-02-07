@@ -166,7 +166,9 @@ export enum ViewState {
     BY_PROJECT = 'BY_PROJECT',         // View by project
     // Admin Jobs Management
     JOBS_ADMIN = 'JOBS_ADMIN',         // Admin jobs management
-    RATE_CARDS = 'RATE_CARDS'          // Rate cards management
+    RATE_CARDS = 'RATE_CARDS',         // Rate cards management
+    // Settings
+    SETTINGS = 'SETTINGS'              // Settings page (CRM enterprise)
 }
 
 export interface Invoice {

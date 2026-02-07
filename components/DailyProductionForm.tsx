@@ -71,17 +71,6 @@ const createEmptyEntry = (): SpanEntry => ({
 });
 
 const DailyProductionForm: React.FC<DailyProductionFormProps> = ({ user, lang, job, onBack }) => {
-    // Debug: Log job prop to verify it's being passed
-    useEffect(() => {
-        console.log('[ProductionSheet] Job prop received:', job ? {
-            id: job.id,
-            jobCode: job.jobCode,
-            clientName: job.clientName,
-            customerName: job.customerName,
-            title: job.title
-        } : 'NULL/UNDEFINED');
-    }, [job]);
-
     // Determine if we have a valid job context
     const hasJobContext = Boolean(job && job.id);
 
@@ -94,7 +83,6 @@ const DailyProductionForm: React.FC<DailyProductionFormProps> = ({ user, lang, j
     // Sync header with job data when job prop changes
     useEffect(() => {
         if (job) {
-            console.log('[ProductionSheet] Syncing header with job data');
             setHeader(prev => ({
                 ...prev,
                 lineman: user.name,
@@ -432,18 +420,6 @@ const DailyProductionForm: React.FC<DailyProductionFormProps> = ({ user, lang, j
 
     return (
         <div className="max-w-7xl mx-auto space-y-4 sm:space-y-8 pb-10">
-            {/* DEBUG: Show job data - TEMPORARY */}
-            <div className="text-xs p-3 rounded-lg space-y-1" style={{ background: 'var(--alert-glow)', border: '1px solid var(--alert-core)' }}>
-                <p className="font-bold" style={{ color: 'var(--alert-core)' }}>DEBUG - Job Data Received:</p>
-                <p>job exists: <strong>{job ? 'YES' : 'NO'}</strong></p>
-                <p>job.id: <strong>{job?.id || 'EMPTY'}</strong></p>
-                <p>job.jobCode: <strong>{job?.jobCode || 'EMPTY'}</strong></p>
-                <p>job.clientName: <strong>{job?.clientName || 'EMPTY'}</strong></p>
-                <p>job.customerName: <strong>{job?.customerName || 'EMPTY'}</strong></p>
-                <p>job.clientId: <strong>{job?.clientId || 'EMPTY'}</strong></p>
-                <p>hasJobContext: <strong>{hasJobContext ? 'TRUE' : 'FALSE'}</strong></p>
-            </div>
-
             {/* Back button for job-linked form */}
             {hasJobContext && onBack && (
                 <button

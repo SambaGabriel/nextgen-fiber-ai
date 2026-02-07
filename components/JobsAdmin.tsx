@@ -298,10 +298,28 @@ Return ONLY valid JSON:
         estimatedFootage: footage
       });
 
+      // Look up clientId from extracted clientName
+      const matchedClient = extracted.client ? clients.find(c =>
+        c.name.toLowerCase().includes(extracted.client!.toLowerCase()) ||
+        extracted.client!.toLowerCase().includes(c.name.toLowerCase())
+      ) : null;
+
+      // Look up customerId from extracted customer (if present)
+      const matchedCustomer = extracted.customer ? customers.find(c =>
+        c.name.toLowerCase().includes(extracted.customer!.toLowerCase()) ||
+        extracted.customer!.toLowerCase().includes(c.name.toLowerCase())
+      ) : null;
+
+      console.log('[EXTRACT] Matched client:', matchedClient?.name, 'ID:', matchedClient?.id);
+      console.log('[EXTRACT] Matched customer:', matchedCustomer?.name, 'ID:', matchedCustomer?.id);
+
       setFormData(prev => ({
         ...prev,
         title: finalTitle || prev.title,
-        clientName: extracted.client || prev.clientName,
+        clientId: matchedClient?.id || prev.clientId,
+        clientName: matchedClient?.name || extracted.client || prev.clientName,
+        customerId: matchedCustomer?.id || prev.customerId,
+        customerName: matchedCustomer?.name || extracted.customer || prev.customerName,
         city: extracted.city || prev.city,
         state: extracted.state || prev.state,
         address: extracted.address || prev.address,

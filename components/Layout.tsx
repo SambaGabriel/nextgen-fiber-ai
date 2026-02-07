@@ -29,13 +29,20 @@ const Layout: React.FC<LayoutProps> = ({ currentView, onChangeView, children, no
     const [newJobCount, setNewJobCount] = useState(0);
     const [assignedJobIds, setAssignedJobIds] = useState<string[]>([]);
 
-    // Check if user is admin
-    const isAdmin = user?.role === 'ADMIN';
-    const isLineman = !isAdmin;
+    // Role-based access helpers
+    const userRole = user?.role || 'LINEMAN';
+    const isAdmin = userRole === 'ADMIN';
+    const isSupervisor = userRole === 'SUPERVISOR';
+    const isLineman = userRole === 'LINEMAN';
+    const isRedlineSpecialist = userRole === 'REDLINE_SPECIALIST';
+    const isClientReviewer = userRole === 'CLIENT_REVIEWER';
+    const isBilling = userRole === 'BILLING';
+    const isViewer = userRole === 'VIEWER';
+    const hasAdminAccess = isAdmin || isSupervisor;
 
     // Load new job notifications for lineman
     useEffect(() => {
-        if (!user?.id || isAdmin) {
+        if (!user?.id || hasAdminAccess) {
             setNewJobCount(0);
             return;
         }
@@ -56,7 +63,7 @@ const Layout: React.FC<LayoutProps> = ({ currentView, onChangeView, children, no
         // Poll every 30 seconds for new jobs
         const interval = setInterval(checkNewJobs, 30000);
         return () => clearInterval(interval);
-    }, [user?.id, isAdmin]);
+    }, [user?.id, hasAdminAccess]);
 
     // Mark jobs as seen when clicking My Jobs or bell
     const handleMarkJobsAsSeen = useCallback(() => {
@@ -67,21 +74,77 @@ const Layout: React.FC<LayoutProps> = ({ currentView, onChangeView, children, no
     }, [user?.id, assignedJobIds]);
 
     // Navigation items based on role
-    const navItems = isAdmin ? [
-        // Owner/Admin Navigation - Workflow Optimized
-        { id: ViewState.DASHBOARD, label: 'Dashboard', icon: LayoutDashboard }, // Main dashboard
-        { id: ViewState.JOBS_ADMIN, label: 'Jobs', icon: Briefcase },           // Jobs management
-        { id: ViewState.FINANCE_HUB, label: 'Invoices', icon: Wallet },         // Billing & invoices
-        { id: ViewState.MAP_ANALYZER, label: 'Maps', icon: ScanLine },          // Map analyzer tool
-        { id: ViewState.RATE_CARDS, label: 'Rate Cards', icon: DollarSign },    // Rate cards management
-        { id: ViewState.SETTINGS, label: 'Settings', icon: Settings },          // Settings (CRM enterprise)
-    ] : [
-        // Lineman Navigation - Simple & Mobile-first
-        { id: ViewState.DASHBOARD, label: 'Home', icon: LayoutDashboard }, // Overview
-        { id: ViewState.MY_JOBS, label: 'My Jobs', icon: Briefcase },      // Jobs assigned to lineman
-        { id: ViewState.MY_SUBMISSIONS, label: 'History', icon: History }, // Past submissions
-        { id: ViewState.SETTINGS, label: 'Settings', icon: Settings },     // Settings for all users
-    ];
+    const getNavItems = () => {
+        // Admin/Supervisor - Full access
+        if (isAdmin || isSupervisor) {
+            return [
+                { id: ViewState.DASHBOARD, label: 'Dashboard', icon: LayoutDashboard },
+                { id: ViewState.JOBS_ADMIN, label: 'Jobs', icon: Briefcase },
+                { id: ViewState.FINANCE_HUB, label: 'Invoices', icon: Wallet },
+                { id: ViewState.MAP_ANALYZER, label: 'Maps', icon: ScanLine },
+                { id: ViewState.RATE_CARDS, label: 'Rate Cards', icon: DollarSign },
+                { id: ViewState.REDLINES, label: 'Redlines', icon: ClipboardList },
+                { id: ViewState.SETTINGS, label: 'Settings', icon: Settings },
+            ];
+        }
+
+        // Lineman - Field work focused
+        if (isLineman) {
+            return [
+                { id: ViewState.DASHBOARD, label: 'Home', icon: LayoutDashboard },
+                { id: ViewState.MY_JOBS, label: 'My Jobs', icon: Briefcase },
+                { id: ViewState.MY_SUBMISSIONS, label: 'History', icon: History },
+                { id: ViewState.SETTINGS, label: 'Settings', icon: Settings },
+            ];
+        }
+
+        // Redline Specialist - Rate card versioning
+        if (isRedlineSpecialist) {
+            return [
+                { id: ViewState.DASHBOARD, label: 'Dashboard', icon: LayoutDashboard },
+                { id: ViewState.RATE_CARDS, label: 'Rate Cards', icon: DollarSign },
+                { id: ViewState.REDLINES, label: 'Redlines', icon: ClipboardList },
+                { id: ViewState.SETTINGS, label: 'Settings', icon: Settings },
+            ];
+        }
+
+        // Client Reviewer - Portal access
+        if (isClientReviewer) {
+            return [
+                { id: ViewState.CLIENT_PORTAL, label: 'Portal', icon: LayoutDashboard },
+                { id: ViewState.CLIENT_JOBS, label: 'Jobs', icon: Briefcase },
+                { id: ViewState.CLIENT_REDLINES, label: 'Redlines', icon: ClipboardList },
+                { id: ViewState.SETTINGS, label: 'Settings', icon: Settings },
+            ];
+        }
+
+        // Billing - Financial focus
+        if (isBilling) {
+            return [
+                { id: ViewState.DASHBOARD, label: 'Dashboard', icon: LayoutDashboard },
+                { id: ViewState.FINANCE_HUB, label: 'Invoices', icon: Wallet },
+                { id: ViewState.SETTINGS, label: 'Settings', icon: Settings },
+            ];
+        }
+
+        // Viewer - Read-only
+        if (isViewer) {
+            return [
+                { id: ViewState.DASHBOARD, label: 'Dashboard', icon: LayoutDashboard },
+                { id: ViewState.JOBS_ADMIN, label: 'Jobs', icon: Briefcase },
+                { id: ViewState.SETTINGS, label: 'Settings', icon: Settings },
+            ];
+        }
+
+        // Fallback to lineman navigation
+        return [
+            { id: ViewState.DASHBOARD, label: 'Home', icon: LayoutDashboard },
+            { id: ViewState.MY_JOBS, label: 'My Jobs', icon: Briefcase },
+            { id: ViewState.SETTINGS, label: 'Settings', icon: Settings },
+        ];
+    };
+
+    const navItems = getNavItems();
 
     const handleNavClick = (id: ViewState) => {
         // Mark jobs as seen when clicking My Jobs

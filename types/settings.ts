@@ -7,7 +7,7 @@
 // USER PROFILE
 // ============================================
 
-export type UserRole = 'admin' | 'supervisor' | 'billing' | 'viewer' | 'lineman';
+export type UserRole = 'admin' | 'supervisor' | 'billing' | 'viewer' | 'lineman' | 'redline_specialist' | 'client_reviewer';
 
 export interface UserProfile {
     id: string;
@@ -46,6 +46,8 @@ export interface NotificationPreferences {
         newMessage: boolean;
         rateCardImport: boolean;
         productionSubmitted: boolean;
+        redlineCreated: boolean;
+        redlineReviewed: boolean;
     };
     inApp: {
         jobAssigned: boolean;
@@ -53,6 +55,8 @@ export interface NotificationPreferences {
         newMessage: boolean;
         rateCardImport: boolean;
         productionSubmitted: boolean;
+        redlineCreated: boolean;
+        redlineReviewed: boolean;
     };
 }
 
@@ -80,14 +84,18 @@ export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
         jobUpdated: true,
         newMessage: true,
         rateCardImport: true,
-        productionSubmitted: true
+        productionSubmitted: true,
+        redlineCreated: true,
+        redlineReviewed: true
     },
     inApp: {
         jobAssigned: true,
         jobUpdated: true,
         newMessage: true,
         rateCardImport: true,
-        productionSubmitted: true
+        productionSubmitted: true,
+        redlineCreated: true,
+        redlineReviewed: true
     }
 };
 

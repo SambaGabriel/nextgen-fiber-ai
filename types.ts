@@ -12,10 +12,20 @@ export enum AuditStatus {
     CRITICAL = 'CRITICAL'
 }
 
+// User roles for RBAC
+export type UserRole =
+    | 'ADMIN'           // Full system access
+    | 'SUPERVISOR'      // Manages jobs, rate cards, approves production
+    | 'LINEMAN'         // Field technician, sees assigned jobs
+    | 'REDLINE_SPECIALIST' // Creates and validates rate card redlines
+    | 'CLIENT_REVIEWER' // External portal for Prime Contractors
+    | 'BILLING'         // Views financials and invoices
+    | 'VIEWER';         // Read-only access
+
 export interface User {
     id: string;
     email: string;
-    role: 'ADMIN' | 'LINEMAN';
+    role: UserRole;
     name: string;
     companyName: string;
     companyLogo?: string;
@@ -25,6 +35,17 @@ export interface User {
     companyTaxId?: string;
     supervisorName?: string;
     profilePic?: string;
+
+    // Enterprise additions
+    firstName?: string;
+    lastName?: string;
+    phone?: string;
+    avatarUrl?: string;
+    clientScopeIds?: string[];  // For CLIENT_REVIEWER - scoped to specific clients
+    lastLoginAt?: string;
+    isActive?: boolean;
+    organizationId?: string;
+    organizationName?: string;
 }
 
 export interface Notification {
@@ -167,6 +188,16 @@ export enum ViewState {
     // Admin Jobs Management
     JOBS_ADMIN = 'JOBS_ADMIN',         // Admin jobs management
     RATE_CARDS = 'RATE_CARDS',         // Rate cards management
+    // Redline Workflow
+    REDLINES = 'REDLINES',             // Redline management (versioning/approval)
+    REDLINE_REVIEW = 'REDLINE_REVIEW', // Review specific redline
+    // Client Portal
+    CLIENT_PORTAL = 'CLIENT_PORTAL',   // Client viewer portal main
+    CLIENT_JOBS = 'CLIENT_JOBS',       // Client's scoped jobs view
+    CLIENT_PRODUCTION = 'CLIENT_PRODUCTION', // Client's production reports
+    CLIENT_REDLINES = 'CLIENT_REDLINES', // Client's redline review
+    // Team Management
+    TEAM = 'TEAM',                     // User/team management
     // Settings
     SETTINGS = 'SETTINGS'              // Settings page (CRM enterprise)
 }

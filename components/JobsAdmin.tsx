@@ -178,9 +178,12 @@ EXTRACTION LOCATIONS:
    - "CONSTRUCTION DRAWING#" or "DWG#" → run/drawing number
    - Look for span numbers like "22,23,24" or "SPAN 22-24"
 
-2. CABLE LABELS (on the fiber route lines):
-   - "Armored 48F BSPD001.04h" → feeder ID is BSPD001.04h, fiber count is 48
-   - "MGNV 96F BSPD002.01a" → feeder ID is BSPD002.01a, fiber count is 96
+2. FEEDER ID (CRITICAL - look carefully on cable labels):
+   - Feeder ID format: letters + numbers + period + numbers + letter (e.g., BSPD001.04h, BSPD002.01a)
+   - Look for labels like "Armored 48F BSPD001.04h" → feeder ID is BSPD001.04h
+   - Look for labels like "MGNV 96F BSPD002.01a" → feeder ID is BSPD002.01a
+   - The feeder ID is NOT: MST, MasTec, company names, or abbreviations
+   - Feeder ID always has a PERIOD in it (e.g., BSPD001.04h)
    - Cable type: Armored/MGNV = aerial, Conduit/Buried = underground
 
 3. FOOTAGE MEASUREMENTS:
@@ -211,7 +214,7 @@ Return ONLY valid JSON:
   "state": "state abbrev if visible or empty string",
   "address": "main road/street names",
   "olt": "project code from header",
-  "feederId": "full feeder ID like BSPD001.04h",
+  "feederId": "feeder ID with period like BSPD001.04h (NOT company names)",
   "runNumber": "map page numbers like 117-122",
   "workType": "aerial or underground",
   "estimatedFootage": 0

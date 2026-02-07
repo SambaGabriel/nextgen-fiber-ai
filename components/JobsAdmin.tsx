@@ -212,7 +212,7 @@ Return ONLY valid JSON:
   "address": "main road/street names",
   "olt": "project code from header",
   "feederId": "full feeder ID like BSPD001.04h",
-  "runNumber": "drawing number",
+  "runNumber": "map page numbers like 117-122",
   "workType": "aerial or underground",
   "estimatedFootage": 0
 }`
@@ -399,7 +399,7 @@ Return ONLY valid JSON:
     if (!formData.state) errors.push('State is required');
     if (!formData.olt.trim()) errors.push('OLT is required');
     if (!formData.feederId.trim() && !formData.runNumber.trim()) {
-      errors.push('Feeder ID or Run Number is required');
+      errors.push('Feeder ID or Map Pages is required');
     }
 
     setFormErrors(errors);
@@ -498,7 +498,7 @@ Return ONLY valid JSON:
         },
         scheduledDate: formData.scheduledDate || undefined,
         estimatedFootage: formData.estimatedFootage ? parseInt(formData.estimatedFootage) : undefined,
-        supervisorNotes: `OLT: ${formData.olt}\nFeeder ID: ${formData.feederId}\nRun #: ${formData.runNumber}\n\n${formData.supervisorNotes}`,
+        supervisorNotes: `OLT: ${formData.olt}\nFeeder ID: ${formData.feederId}\nMap Pages: ${formData.runNumber}\n\n${formData.supervisorNotes}`,
         status: JobStatus.ASSIGNED,
         mapFile: mapFile ? (() => {
           const mapData = {
@@ -546,15 +546,15 @@ Return ONLY valid JSON:
   // Open edit modal with job data
   const openEditModal = (job: Job) => {
     console.log('[DEBUG] openEditModal called with job:', job.id, job.title);
-    // Parse supervisor notes to extract OLT, Feeder ID, Run Number
+    // Parse supervisor notes to extract OLT, Feeder ID, Map Pages
     const notes = job.supervisorNotes || '';
     const oltMatch = notes.match(/OLT:\s*([^\n]*)/);
     const feederMatch = notes.match(/Feeder ID:\s*([^\n]*)/);
-    const runMatch = notes.match(/Run #:\s*([^\n]*)/);
+    const runMatch = notes.match(/Map Pages:\s*([^\n]*)/);
     const cleanNotes = notes
       .replace(/OLT:\s*[^\n]*\n?/, '')
       .replace(/Feeder ID:\s*[^\n]*\n?/, '')
-      .replace(/Run #:\s*[^\n]*\n?/, '')
+      .replace(/Map Pages:\s*[^\n]*\n?/, '')
       .replace(/^\n+/, '')
       .trim();
 
@@ -628,7 +628,7 @@ Return ONLY valid JSON:
         supervisorNotes: [
           editFormData.olt ? `OLT: ${editFormData.olt}` : '',
           editFormData.feederId ? `Feeder ID: ${editFormData.feederId}` : '',
-          editFormData.runNumber ? `Run #: ${editFormData.runNumber}` : '',
+          editFormData.runNumber ? `Map Pages: ${editFormData.runNumber}` : '',
           editFormData.supervisorNotes
         ].filter(Boolean).join('\n').trim(),
         assignedToId: isUnassigned ? '' : editFormData.assignedToId,
@@ -1125,7 +1125,7 @@ Return ONLY valid JSON:
                 />
               </div>
 
-              {/* OLT, Feeder ID, Run Number */}
+              {/* OLT, Feeder ID, Map Pages */}
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="block text-xs font-bold uppercase mb-2" style={{ color: 'var(--text-tertiary)' }}>
@@ -1163,13 +1163,13 @@ Return ONLY valid JSON:
                 </div>
                 <div>
                   <label className="block text-xs font-bold uppercase mb-2" style={{ color: 'var(--text-tertiary)' }}>
-                    Run Number
+                    Map Pages
                   </label>
                   <input
                     type="text"
                     value={formData.runNumber}
                     onChange={(e) => setFormData({ ...formData, runNumber: e.target.value })}
-                    placeholder="Run #"
+                    placeholder="e.g. 117-122"
                     className="w-full px-4 py-3 rounded-xl text-sm font-medium outline-none"
                     style={{
                       background: 'var(--elevated)',
@@ -1805,7 +1805,7 @@ Return ONLY valid JSON:
                 />
               </div>
 
-              {/* OLT, Feeder ID, Run Number */}
+              {/* OLT, Feeder ID, Map Pages */}
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="block text-xs font-bold uppercase mb-2" style={{ color: 'var(--text-tertiary)' }}>
@@ -1843,13 +1843,13 @@ Return ONLY valid JSON:
                 </div>
                 <div>
                   <label className="block text-xs font-bold uppercase mb-2" style={{ color: 'var(--text-tertiary)' }}>
-                    Run Number
+                    Map Pages
                   </label>
                   <input
                     type="text"
                     value={editFormData.runNumber}
                     onChange={(e) => setEditFormData({ ...editFormData, runNumber: e.target.value })}
-                    placeholder="Run #"
+                    placeholder="e.g. 117-122"
                     className="w-full px-4 py-3 rounded-xl text-sm font-medium outline-none"
                     style={{
                       background: 'var(--elevated)',

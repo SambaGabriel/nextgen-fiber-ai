@@ -210,31 +210,31 @@ const ChatSection: React.FC<ChatSectionProps> = ({
   };
 
   return (
-    <div className="flex flex-col bg-slate-900/50 rounded-xl sm:rounded-2xl border border-white/10 overflow-hidden">
+    <div className="flex flex-col rounded-xl sm:rounded-2xl overflow-hidden" style={{ background: 'var(--surface)', border: '1px solid var(--border-default)' }}>
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-gradient-to-r from-blue-600/20 to-purple-600/20">
+      <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid var(--border-subtle)', background: 'var(--neural-dim)' }}>
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-            <Bot className="w-5 h-5 text-white" />
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'var(--gradient-neural)' }}>
+            <Bot className="w-5 h-5" style={{ color: 'var(--void)' }} />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+            <h3 className="text-sm font-bold flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
               {t.title}
-              <Sparkles className="w-4 h-4 text-yellow-400" />
+              <Sparkles className="w-4 h-4" style={{ color: 'var(--neural-core)' }} />
             </h3>
-            <p className="text-[10px] text-slate-400">{t.subtitle}</p>
+            <p className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>{t.subtitle}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           {isOnline ? (
-            <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-emerald-500/20">
-              <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-[10px] font-bold text-emerald-400">Online</span>
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded-full" style={{ background: 'var(--online-glow)' }}>
+              <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: 'var(--online-core)' }} />
+              <span className="text-[10px] font-bold" style={{ color: 'var(--online-core)' }}>Online</span>
             </div>
           ) : (
-            <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-amber-500/20">
-              <WifiOff className="w-3 h-3 text-amber-400" />
-              <span className="text-[10px] font-bold text-amber-400">Offline</span>
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded-full" style={{ background: 'var(--alert-glow)' }}>
+              <WifiOff className="w-3 h-3" style={{ color: 'var(--alert-core)' }} />
+              <span className="text-[10px] font-bold" style={{ color: 'var(--alert-core)' }}>Offline</span>
             </div>
           )}
         </div>
@@ -242,16 +242,16 @@ const ChatSection: React.FC<ChatSectionProps> = ({
 
       {/* Offline banner */}
       {!isOnline && (
-        <div className="px-4 py-2 bg-amber-500/10 border-b border-amber-500/20">
-          <p className="text-xs text-amber-400">{t.offline}</p>
+        <div className="px-4 py-2" style={{ background: 'var(--alert-glow)', borderBottom: '1px solid var(--border-alert)' }}>
+          <p className="text-xs" style={{ color: 'var(--alert-core)' }}>{t.offline}</p>
         </div>
       )}
 
       {/* Messages area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-[300px] max-h-[500px]">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-[300px] max-h-[500px]" style={{ background: 'var(--deep)' }}>
         {isLoading ? (
           <div className="flex items-center justify-center h-full">
-            <RefreshCw className="w-6 h-6 text-slate-500 animate-spin" />
+            <RefreshCw className="w-6 h-6 animate-spin" style={{ color: 'var(--text-ghost)' }} />
           </div>
         ) : (
           messages.map((msg) => (
@@ -261,25 +261,27 @@ const ChatSection: React.FC<ChatSectionProps> = ({
             >
               <div className={`flex gap-2 max-w-[85%] ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
                 {/* Avatar */}
-                <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${
-                  msg.role === 'user'
-                    ? 'bg-blue-600'
-                    : 'bg-gradient-to-br from-blue-500 to-purple-600'
-                }`}>
+                <div
+                  className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center"
+                  style={{
+                    background: msg.role === 'user' ? 'var(--energy-core)' : 'var(--gradient-neural)'
+                  }}
+                >
                   {msg.role === 'user' ? (
-                    <User className="w-4 h-4 text-white" />
+                    <User className="w-4 h-4" style={{ color: 'var(--void)' }} />
                   ) : (
-                    <Bot className="w-4 h-4 text-white" />
+                    <Bot className="w-4 h-4" style={{ color: 'var(--void)' }} />
                   )}
                 </div>
 
                 {/* Message bubble */}
                 <div
-                  className={`rounded-2xl px-4 py-3 ${
-                    msg.role === 'user'
-                      ? 'bg-blue-600 text-white rounded-br-md'
-                      : 'bg-slate-800/80 text-slate-200 rounded-bl-md border border-white/5'
-                  } ${msg.status === 'sending' ? 'opacity-70' : ''}`}
+                  className={`rounded-2xl px-4 py-3 ${msg.role === 'user' ? 'rounded-br-md' : 'rounded-bl-md'} ${msg.status === 'sending' ? 'opacity-70' : ''}`}
+                  style={{
+                    background: msg.role === 'user' ? 'var(--neural-core)' : 'var(--elevated)',
+                    color: msg.role === 'user' ? 'var(--void)' : 'var(--text-secondary)',
+                    border: msg.role === 'user' ? 'none' : '1px solid var(--border-subtle)'
+                  }}
                 >
                   {/* Message content */}
                   <div className={`text-sm whitespace-pre-wrap break-words ${
@@ -293,11 +295,11 @@ const ChatSection: React.FC<ChatSectionProps> = ({
 
                   {/* Time and status */}
                   <div className={`flex items-center gap-2 mt-2 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <span className={`text-[10px] ${msg.role === 'user' ? 'text-blue-200' : 'text-slate-500'}`}>
+                    <span className="text-[10px]" style={{ color: msg.role === 'user' ? 'rgba(0,0,0,0.5)' : 'var(--text-ghost)' }}>
                       {formatTime(msg.timestamp)}
                     </span>
                     {msg.status === 'error' && (
-                      <AlertCircle className="w-3 h-3 text-red-400" />
+                      <AlertCircle className="w-3 h-3" style={{ color: 'var(--critical-core)' }} />
                     )}
                   </div>
                 </div>
@@ -309,15 +311,15 @@ const ChatSection: React.FC<ChatSectionProps> = ({
       </div>
 
       {/* Powered by badge */}
-      <div className="px-4 py-1 border-t border-white/5 bg-slate-900/30">
-        <p className="text-[9px] text-slate-600 text-center flex items-center justify-center gap-1">
+      <div className="px-4 py-1" style={{ borderTop: '1px solid var(--border-subtle)', background: 'var(--surface)' }}>
+        <p className="text-[9px] text-center flex items-center justify-center gap-1" style={{ color: 'var(--text-ghost)' }}>
           <Sparkles className="w-3 h-3" />
           {t.poweredBy}
         </p>
       </div>
 
       {/* Input area */}
-      <div className="p-3 border-t border-white/10 bg-slate-800/30">
+      <div className="p-3" style={{ borderTop: '1px solid var(--border-subtle)', background: 'var(--elevated)' }}>
         <div className="flex items-center gap-2">
           <input
             ref={inputRef}
@@ -327,12 +329,21 @@ const ChatSection: React.FC<ChatSectionProps> = ({
             onKeyPress={handleKeyPress}
             placeholder={t.placeholder}
             disabled={!isOnline || isSending}
-            className="flex-1 px-4 py-2.5 bg-slate-700/50 border border-white/10 rounded-full text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 disabled:opacity-50"
+            className="flex-1 px-4 py-2.5 rounded-full text-sm focus:outline-none disabled:opacity-50"
+            style={{
+              background: 'var(--surface)',
+              border: '1px solid var(--border-default)',
+              color: 'var(--text-primary)'
+            }}
           />
           <button
             onClick={handleSend}
             disabled={!inputText.trim() || !isOnline || isSending}
-            className="p-2.5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 disabled:from-slate-700 disabled:to-slate-700 disabled:text-slate-500 text-white rounded-full transition-all"
+            className="p-2.5 rounded-full transition-all disabled:opacity-50"
+            style={{
+              background: !inputText.trim() || !isOnline || isSending ? 'var(--surface)' : 'var(--gradient-neural)',
+              color: !inputText.trim() || !isOnline || isSending ? 'var(--text-ghost)' : 'var(--void)'
+            }}
           >
             {isSending ? (
               <RefreshCw className="w-5 h-5 animate-spin" />

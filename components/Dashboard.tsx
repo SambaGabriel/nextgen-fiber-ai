@@ -48,7 +48,7 @@ const Dashboard = memo<DashboardProps>(({ invoices, user, lang }) => {
             )}
 
             {/* SUPERVISOR ONLINE - Hero Banner for Linemen ONLY */}
-            {user.role === 'lineman' && (
+            {user.role === 'LINEMAN' && (
             <button
                 onClick={openLiveAgent}
                 className="w-full p-6 lg:p-8 rounded-3xl relative overflow-hidden group active:scale-[0.98] transition-all duration-300"

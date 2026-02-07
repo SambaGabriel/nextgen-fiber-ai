@@ -10,7 +10,9 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(export PATH=\"/opt/homebrew/Cellar/node/25.5.0/bin:$PATH\")",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(PATH=\"/opt/homebrew/bin:$PATH\" npm run dev:*)",
+      "Bash(PATH=\"/opt/homebrew/bin:$PATH\" npm install:*)"
     ]
   }
 }

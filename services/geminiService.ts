@@ -203,7 +203,7 @@ export const createFieldAssistantSession = (lang: Language = Language.PT) => {
 export const editImageWithGemini = async (base64ImageData: string, promptString: string): Promise<string | null> => {
     const ai = getAi();
     const response = await ai.models.generateContent({ model: 'gemini-2.5-flash-image', contents: { parts: [{ inlineData: { mimeType: 'image/png', data: base64ImageData } }, { text: promptString }] } });
-    for (const part of response.candidates[0].content.parts) { if (part.inlineData) return `data:image/png;base64,${part.inlineData.data}`; }
+    for (const part of response.candidates?.[0]?.content?.parts || []) { if (part.inlineData) return `data:image/png;base64,${part.inlineData.data}`; }
     return null;
 };
 

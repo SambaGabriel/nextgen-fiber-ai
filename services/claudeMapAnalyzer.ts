@@ -93,7 +93,8 @@ interface AnalyzeResponse {
   error?: string;
 }
 
-const ANTHROPIC_API_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY;
+const ANTHROPIC_API_KEY = (import.meta as any).env?.VITE_ANTHROPIC_API_KEY || '';
+const API_BASE = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8000/api/v1';
 
 const SYSTEM_PROMPT = `You are an expert fiber optic OSP (Outside Plant) engineer analyzing construction maps. Your job is to extract EVERY piece of data with 100% accuracy.
 
@@ -296,22 +297,22 @@ export function exportToCSV(result: FiberMapAnalysisResult): string {
 
   // Spans
   result.spans.forEach((s, i) => {
-    lines.push(`Span,SPAN_${i},${s.length_ft},FT,${s.confidence},"${s.start_pole || ''} to ${s.end_pole || ''}"`);
+    lines.push(`Span,SPAN_${i},${s.lengthFt},FT,${s.confidence},"${s.startPole || ''} to ${s.endPole || ''}"`);
   });
 
   // Cables
   result.cables.forEach(c => {
-    lines.push(`Cable,${c.id},${c.fiber_count},Fiber,${c.confidence},${c.cable_type}`);
+    lines.push(`Cable,${c.id},${c.fiberCount},Fiber,${c.confidence},${c.cableType}`);
   });
 
   // Equipment
   result.equipment.forEach(e => {
-    lines.push(`Equipment,${e.id},${e.type},,${e.confidence},${e.sub_type || ''}`);
+    lines.push(`Equipment,${e.id},${e.type},,${e.confidence},${e.subType || ''}`);
   });
 
   // Poles
   result.poles.forEach(p => {
-    lines.push(`Pole,${p.pole_id},${p.has_anchor ? 'With Anchor' : 'No Anchor'},,${p.confidence},${p.grid_ref || ''}`);
+    lines.push(`Pole,${p.poleId},${p.hasAnchor ? 'With Anchor' : 'No Anchor'},,${p.confidence},${p.gridRef || ''}`);
   });
 
   return lines.join('\n');

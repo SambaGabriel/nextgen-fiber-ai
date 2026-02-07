@@ -3,14 +3,27 @@
  * Premium minimalist design for enterprise management
  */
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
     DollarSign, CheckCircle, TrendingUp,
     Save, ScrollText, Building2, MapPin, Phone, Hash, Camera, Link as LinkIcon,
-    Map as MapIcon, UploadCloud, FileJson, Trash2
+    Map as MapIcon, UploadCloud, FileJson, Trash2, Users, UserPlus, Shield, AlertCircle,
+    Loader2, X, Check, Edit2
 } from 'lucide-react';
 import { Invoice, Transaction, UnitRates, User, Language } from '../types';
 import { translations } from '../services/translations';
+import { supabase } from '../services/supabase';
+
+interface UserProfile {
+    id: string;
+    email: string;
+    name: string;
+    role: 'ADMIN' | 'LINEMAN' | 'SUPERVISOR';
+    company_name: string;
+    phone?: string;
+    is_active: boolean;
+    created_at: string;
+}
 
 interface AdminPortalProps {
     invoices: Invoice[];
@@ -24,7 +37,7 @@ interface AdminPortalProps {
 
 const AdminPortal: React.FC<AdminPortalProps> = ({ invoices, onPayInvoice, rates, onUpdateRates, user, onUpdateUser, lang = Language.PT }) => {
     const t = translations[lang];
-    const [activeTab, setActiveTab] = useState<'invoices' | 'rates' | 'profile' | 'maps'>('invoices');
+    const [activeTab, setActiveTab] = useState<'invoices' | 'rates' | 'profile' | 'maps' | 'users'>('invoices');
     const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
     const [isProcessingPayment, setIsProcessingPayment] = useState(false);
     const [filterText, setFilterText] = useState('');
@@ -37,6 +50,110 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ invoices, onPayInvoice, rates
     const mapInputRef = useRef<HTMLInputElement>(null);
     const [isSaved, setIsSaved] = useState(false);
     const logoInputRef = useRef<HTMLInputElement>(null);
+
+    // User Management State
+    const [users, setUsers] = useState<UserProfile[]>([]);
+    const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+    const [showAddUserModal, setShowAddUserModal] = useState(false);
+    const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
+    const [userFormData, setUserFormData] = useState({ name: '', email: '', role: 'LINEMAN', phone: '' });
+    const [userFormError, setUserFormError] = useState('');
+    const [isSubmittingUser, setIsSubmittingUser] = useState(false);
+
+    // Load users from Supabase
+    const loadUsers = useCallback(async () => {
+        setIsLoadingUsers(true);
+        try {
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('Error loading users:', error);
+                // Try localStorage fallback
+                const stored = localStorage.getItem('fs_registered_users');
+                if (stored) {
+                    const parsed = JSON.parse(stored);
+                    const userList = Object.values(parsed).map((u: any) => ({
+                        id: u.id || u.email,
+                        email: u.email,
+                        name: u.name || 'Unknown',
+                        role: u.role || 'LINEMAN',
+                        company_name: u.companyName || 'NextGen Fiber',
+                        is_active: true,
+                        created_at: new Date().toISOString()
+                    }));
+                    setUsers(userList as UserProfile[]);
+                }
+            } else {
+                setUsers(data || []);
+            }
+        } catch (error) {
+            console.error('Error loading users:', error);
+        } finally {
+            setIsLoadingUsers(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        if (activeTab === 'users') {
+            loadUsers();
+        }
+    }, [activeTab, loadUsers]);
+
+    // Delete/Deactivate user
+    const handleDeleteUser = async (userId: string) => {
+        if (!confirm('Are you sure you want to deactivate this user?')) return;
+
+        try {
+            const { error } = await supabase
+                .from('profiles')
+                .update({ is_active: false })
+                .eq('id', userId);
+
+            if (error) {
+                // Fallback: update local state
+                setUsers(prev => prev.map(u => u.id === userId ? { ...u, is_active: false } : u));
+            } else {
+                setUsers(prev => prev.map(u => u.id === userId ? { ...u, is_active: false } : u));
+            }
+        } catch (error) {
+            console.error('Error deactivating user:', error);
+        }
+    };
+
+    // Reactivate user
+    const handleReactivateUser = async (userId: string) => {
+        try {
+            const { error } = await supabase
+                .from('profiles')
+                .update({ is_active: true })
+                .eq('id', userId);
+
+            if (!error) {
+                setUsers(prev => prev.map(u => u.id === userId ? { ...u, is_active: true } : u));
+            }
+        } catch (error) {
+            console.error('Error reactivating user:', error);
+        }
+    };
+
+    // Update user role
+    const handleUpdateUserRole = async (userId: string, newRole: string) => {
+        try {
+            const { error } = await supabase
+                .from('profiles')
+                .update({ role: newRole })
+                .eq('id', userId);
+
+            if (!error) {
+                setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: newRole as any } : u));
+            }
+        } catch (error) {
+            console.error('Error updating user role:', error);
+        }
+    };
 
     const handleSaveProfile = () => {
         onUpdateUser(companyInfo);
@@ -96,6 +213,7 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ invoices, onPayInvoice, rates
     const tabs = [
         { id: 'invoices' as const, label: t.tab_invoices },
         { id: 'rates' as const, label: t.tab_rates, icon: ScrollText },
+        { id: 'users' as const, label: 'Users', icon: Users },
         { id: 'profile' as const, label: t.tab_profile, icon: Building2 },
         { id: 'maps' as const, label: t.tab_maps, icon: MapIcon }
     ];
@@ -249,6 +367,265 @@ const AdminPortal: React.FC<AdminPortalProps> = ({ invoices, onPayInvoice, rates
                             </button>
                         </div>
                     </div>
+                </div>
+            ) : activeTab === 'users' ? (
+                <div className="max-w-5xl mx-auto space-y-8 animate-fade-in-up">
+                    <div className="surface-premium p-8 rounded-2xl space-y-8" style={{ background: 'var(--surface)', border: '1px solid var(--border-subtle)' }}>
+                        {/* Header */}
+                        <div className="flex flex-col md:flex-row items-center justify-between gap-6 pb-6" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                            <div className="flex items-center gap-5">
+                                <div className="p-4 rounded-xl" style={{ background: 'var(--neural-dim)', border: '1px solid var(--border-neural)' }}>
+                                    <Users className="w-8 h-8" style={{ color: 'var(--neural-core)' }} />
+                                </div>
+                                <div>
+                                    <h3 className="text-2xl font-black uppercase tracking-tighter" style={{ color: 'var(--text-primary)' }}>User Management</h3>
+                                    <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--text-ghost)' }}>Manage system users and permissions</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setShowAddUserModal(true)}
+                                className="btn-neural px-6 py-3 rounded-xl font-bold uppercase text-xs flex items-center gap-2 active:scale-95"
+                                style={{ boxShadow: 'var(--shadow-neural)' }}
+                            >
+                                <UserPlus className="w-4 h-4" /> Add User
+                            </button>
+                        </div>
+
+                        {/* Users Table */}
+                        {isLoadingUsers ? (
+                            <div className="flex items-center justify-center py-12">
+                                <Loader2 className="w-8 h-8 animate-spin" style={{ color: 'var(--neural-core)' }} />
+                            </div>
+                        ) : users.length === 0 ? (
+                            <div className="text-center py-12 rounded-2xl" style={{ border: '2px dashed var(--border-default)' }}>
+                                <Users className="w-12 h-12 mx-auto mb-4" style={{ color: 'var(--text-ghost)' }} />
+                                <p className="font-bold text-sm" style={{ color: 'var(--text-tertiary)' }}>No users registered</p>
+                                <p className="text-xs mt-2" style={{ color: 'var(--text-ghost)' }}>Users will appear here when they sign up</p>
+                            </div>
+                        ) : (
+                            <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--border-default)' }}>
+                                <table className="w-full">
+                                    <thead>
+                                        <tr style={{ background: 'var(--elevated)' }}>
+                                            <th className="px-4 py-3 text-left text-xs font-black uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>User</th>
+                                            <th className="px-4 py-3 text-left text-xs font-black uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>Role</th>
+                                            <th className="px-4 py-3 text-left text-xs font-black uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>Company</th>
+                                            <th className="px-4 py-3 text-left text-xs font-black uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>Status</th>
+                                            <th className="px-4 py-3 text-right text-xs font-black uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {users.map((u, idx) => (
+                                            <tr key={u.id} className="border-t transition-colors hover:bg-white/5" style={{ borderColor: 'var(--border-subtle)' }}>
+                                                <td className="px-4 py-4">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm uppercase" style={{ background: 'var(--neural-dim)', color: 'var(--neural-core)' }}>
+                                                            {u.name?.substring(0, 2) || 'NA'}
+                                                        </div>
+                                                        <div>
+                                                            <p className="font-bold text-sm" style={{ color: 'var(--text-primary)' }}>{u.name}</p>
+                                                            <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{u.email}</p>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-4 py-4">
+                                                    <select
+                                                        value={u.role}
+                                                        onChange={(e) => handleUpdateUserRole(u.id, e.target.value)}
+                                                        className="px-3 py-1.5 rounded-lg text-xs font-bold uppercase cursor-pointer outline-none"
+                                                        style={{
+                                                            background: u.role === 'ADMIN' ? 'rgba(139, 92, 246, 0.2)' :
+                                                                       u.role === 'SUPERVISOR' ? 'rgba(59, 130, 246, 0.2)' :
+                                                                       'rgba(16, 185, 129, 0.2)',
+                                                            color: u.role === 'ADMIN' ? '#8B5CF6' :
+                                                                   u.role === 'SUPERVISOR' ? '#3B82F6' :
+                                                                   '#10B981',
+                                                            border: '1px solid transparent'
+                                                        }}
+                                                    >
+                                                        <option value="ADMIN">Admin</option>
+                                                        <option value="SUPERVISOR">Supervisor</option>
+                                                        <option value="LINEMAN">Lineman</option>
+                                                    </select>
+                                                </td>
+                                                <td className="px-4 py-4">
+                                                    <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>{u.company_name || 'NextGen Fiber'}</span>
+                                                </td>
+                                                <td className="px-4 py-4">
+                                                    <span
+                                                        className="px-2 py-1 rounded-lg text-xs font-bold uppercase"
+                                                        style={{
+                                                            background: u.is_active !== false ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                                                            color: u.is_active !== false ? '#10B981' : '#EF4444'
+                                                        }}
+                                                    >
+                                                        {u.is_active !== false ? 'Active' : 'Inactive'}
+                                                    </span>
+                                                </td>
+                                                <td className="px-4 py-4">
+                                                    <div className="flex items-center justify-end gap-2">
+                                                        {u.is_active !== false ? (
+                                                            <button
+                                                                onClick={() => handleDeleteUser(u.id)}
+                                                                className="p-2 rounded-lg transition-colors"
+                                                                style={{ color: 'var(--text-tertiary)' }}
+                                                                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'; e.currentTarget.style.color = '#EF4444'; }}
+                                                                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-tertiary)'; }}
+                                                                title="Deactivate User"
+                                                            >
+                                                                <X className="w-4 h-4" />
+                                                            </button>
+                                                        ) : (
+                                                            <button
+                                                                onClick={() => handleReactivateUser(u.id)}
+                                                                className="p-2 rounded-lg transition-colors"
+                                                                style={{ color: 'var(--text-tertiary)' }}
+                                                                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(16, 185, 129, 0.1)'; e.currentTarget.style.color = '#10B981'; }}
+                                                                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-tertiary)'; }}
+                                                                title="Reactivate User"
+                                                            >
+                                                                <Check className="w-4 h-4" />
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+
+                        {/* Role Legend */}
+                        <div className="p-4 rounded-xl flex flex-wrap gap-6" style={{ background: 'var(--elevated)' }}>
+                            <div className="flex items-center gap-2">
+                                <Shield className="w-4 h-4" style={{ color: '#8B5CF6' }} />
+                                <span className="text-xs font-bold" style={{ color: 'var(--text-secondary)' }}>Admin: Full system access</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Shield className="w-4 h-4" style={{ color: '#3B82F6' }} />
+                                <span className="text-xs font-bold" style={{ color: 'var(--text-secondary)' }}>Supervisor: Manage jobs & users</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Shield className="w-4 h-4" style={{ color: '#10B981' }} />
+                                <span className="text-xs font-bold" style={{ color: 'var(--text-secondary)' }}>Lineman: Field operations only</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Add User Modal */}
+                    {showAddUserModal && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.8)' }}>
+                            <div className="w-full max-w-md rounded-2xl p-6" style={{ background: 'var(--surface)', border: '1px solid var(--border-default)' }}>
+                                <div className="flex items-center justify-between mb-6">
+                                    <h3 className="text-lg font-black uppercase" style={{ color: 'var(--text-primary)' }}>Add New User</h3>
+                                    <button onClick={() => { setShowAddUserModal(false); setUserFormError(''); }} className="p-2 rounded-lg hover:bg-white/10">
+                                        <X className="w-5 h-5" style={{ color: 'var(--text-secondary)' }} />
+                                    </button>
+                                </div>
+
+                                {userFormError && (
+                                    <div className="mb-4 p-3 rounded-lg flex items-center gap-2 text-sm" style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#EF4444' }}>
+                                        <AlertCircle className="w-4 h-4" />
+                                        {userFormError}
+                                    </div>
+                                )}
+
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-xs font-bold uppercase mb-2" style={{ color: 'var(--text-tertiary)' }}>Name *</label>
+                                        <input
+                                            type="text"
+                                            value={userFormData.name}
+                                            onChange={(e) => setUserFormData({ ...userFormData, name: e.target.value })}
+                                            className="w-full px-4 py-3 rounded-xl text-sm outline-none"
+                                            style={{ background: 'var(--elevated)', color: 'var(--text-primary)', border: '1px solid var(--border-default)' }}
+                                            placeholder="Full Name"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold uppercase mb-2" style={{ color: 'var(--text-tertiary)' }}>Email *</label>
+                                        <input
+                                            type="email"
+                                            value={userFormData.email}
+                                            onChange={(e) => setUserFormData({ ...userFormData, email: e.target.value })}
+                                            className="w-full px-4 py-3 rounded-xl text-sm outline-none"
+                                            style={{ background: 'var(--elevated)', color: 'var(--text-primary)', border: '1px solid var(--border-default)' }}
+                                            placeholder="email@example.com"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold uppercase mb-2" style={{ color: 'var(--text-tertiary)' }}>Role *</label>
+                                        <select
+                                            value={userFormData.role}
+                                            onChange={(e) => setUserFormData({ ...userFormData, role: e.target.value })}
+                                            className="w-full px-4 py-3 rounded-xl text-sm outline-none cursor-pointer"
+                                            style={{ background: 'var(--elevated)', color: 'var(--text-primary)', border: '1px solid var(--border-default)' }}
+                                        >
+                                            <option value="LINEMAN">Lineman</option>
+                                            <option value="SUPERVISOR">Supervisor</option>
+                                            <option value="ADMIN">Admin</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold uppercase mb-2" style={{ color: 'var(--text-tertiary)' }}>Phone</label>
+                                        <input
+                                            type="tel"
+                                            value={userFormData.phone}
+                                            onChange={(e) => setUserFormData({ ...userFormData, phone: e.target.value })}
+                                            className="w-full px-4 py-3 rounded-xl text-sm outline-none"
+                                            style={{ background: 'var(--elevated)', color: 'var(--text-primary)', border: '1px solid var(--border-default)' }}
+                                            placeholder="+1 (555) 000-0000"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center justify-end gap-3 mt-6 pt-4 border-t" style={{ borderColor: 'var(--border-subtle)' }}>
+                                    <button
+                                        onClick={() => { setShowAddUserModal(false); setUserFormError(''); }}
+                                        className="px-4 py-2 rounded-xl text-sm font-bold"
+                                        style={{ color: 'var(--text-secondary)' }}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={async () => {
+                                            if (!userFormData.name || !userFormData.email) {
+                                                setUserFormError('Name and email are required');
+                                                return;
+                                            }
+                                            setIsSubmittingUser(true);
+                                            try {
+                                                const { error } = await supabase.from('profiles').insert({
+                                                    id: `manual-${Date.now()}`,
+                                                    name: userFormData.name,
+                                                    email: userFormData.email,
+                                                    role: userFormData.role,
+                                                    phone: userFormData.phone,
+                                                    company_name: 'NextGen Fiber',
+                                                    is_active: true
+                                                });
+                                                if (error) throw error;
+                                                setShowAddUserModal(false);
+                                                setUserFormData({ name: '', email: '', role: 'LINEMAN', phone: '' });
+                                                loadUsers();
+                                            } catch (error: any) {
+                                                setUserFormError(error.message || 'Failed to add user');
+                                            } finally {
+                                                setIsSubmittingUser(false);
+                                            }
+                                        }}
+                                        disabled={isSubmittingUser}
+                                        className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all"
+                                        style={{ background: 'var(--gradient-neural)', color: '#000' }}
+                                    >
+                                        {isSubmittingUser ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
+                                        Add User
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             ) : activeTab === 'maps' ? (
                 <div className="max-w-4xl mx-auto space-y-8 animate-fade-in-up">

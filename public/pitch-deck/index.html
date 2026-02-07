@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NextGen Fiber AI - Pitch Deck</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --void: #ffffff;
+            --abyss: #fafafa;
+            --deep: #f5f5f7;
+            --surface: #ffffff;
+            --elevated: #f0f0f2;
+            --neural-core: #0071e3;
+            --neural-glow: #0071e340;
+            --neural-pulse: #0071e320;
+            --neural-dim: #0071e310;
+            --energy-core: #8b5cf6;
+            --energy-glow: #8b5cf640;
+            --online-core: #059669;
+            --online-glow: #05966920;
+            --alert-core: #d97706;
+            --critical-core: #dc2626;
+            --text-primary: #1d1d1f;
+            --text-secondary: #424245;
+            --text-tertiary: #6e6e73;
+            --text-ghost: #86868b;
+            --gradient-neural: linear-gradient(135deg, #0071e3 0%, #8b5cf6 100%);
+            --border-subtle: rgba(0, 0, 0, 0.04);
+            --border-default: rgba(0, 0, 0, 0.08);
+            --shadow-neural: 0 4px 20px rgba(0, 113, 227, 0.25);
+            --shadow-float: 0 20px 40px -12px rgba(0, 0, 0, 0.15);
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--abyss);
+            color: var(--text-primary);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .slide {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 60px 80px;
+            position: relative;
+            background: var(--void);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .slide-number {
+            position: absolute;
+            bottom: 30px;
+            right: 40px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-ghost);
+            letter-spacing: 0.1em;
+        }
+
+        .logo {
+            position: absolute;
+            top: 30px;
+            left: 40px;
+            font-size: 14px;
+            font-weight: 800;
+            letter-spacing: 0.15em;
+            background: var(--gradient-neural);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        h1 {
+            font-size: 64px;
+            font-weight: 900;
+            letter-spacing: -0.03em;
+            margin-bottom: 16px;
+            background: var(--gradient-neural);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+        }
+
+        h2 {
+            font-size: 42px;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            margin-bottom: 32px;
+            color: var(--text-primary);
+            text-align: center;
+        }
+
+        h3 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: var(--neural-core);
+        }
+
+        .subtitle {
+            font-size: 20px;
+            color: var(--text-secondary);
+            font-weight: 500;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        .tagline {
+            font-size: 28px;
+            font-weight: 600;
+            background: var(--gradient-neural);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 48px;
+            text-align: center;
+        }
+
+        .content {
+            max-width: 1100px;
+            width: 100%;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 48px;
+            align-items: center;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+        }
+
+        .grid-4 {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border-default);
+            border-radius: 20px;
+            padding: 32px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .card:hover {
+            border-color: var(--neural-core);
+            box-shadow: var(--shadow-float);
+            transform: translateY(-4px);
+        }
+
+        .card-highlight {
+            background: linear-gradient(135deg, var(--neural-dim) 0%, rgba(139, 92, 246, 0.05) 100%);
+            border-color: var(--neural-core);
+        }
+
+        .stat {
+            text-align: center;
+            padding: 24px;
+        }
+
+        .stat-value {
+            font-size: 48px;
+            font-weight: 900;
+            letter-spacing: -0.03em;
+            background: var(--gradient-neural);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            font-weight: 700;
+            margin-top: 8px;
+        }
+
+        .problem-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .problem-icon {
+            width: 44px;
+            height: 44px;
+            background: rgba(220, 38, 38, 0.1);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            color: #dc2626;
+        }
+
+        .problem-icon svg {
+            width: 22px;
+            height: 22px;
+        }
+
+        .solution-icon {
+            background: rgba(5, 150, 105, 0.1);
+            color: #059669;
+        }
+
+        .problem-text h4 {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            color: var(--text-primary);
+        }
+
+        .problem-text p {
+            color: var(--text-secondary);
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .feature-card {
+            text-align: center;
+            padding: 32px 24px;
+        }
+
+        .feature-icon {
+            width: 64px;
+            height: 64px;
+            background: var(--gradient-neural);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+            box-shadow: var(--shadow-neural);
+            color: white;
+        }
+
+        .feature-icon svg {
+            width: 28px;
+            height: 28px;
+        }
+
+        .feature-card h4 {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        .feature-card p {
+            font-size: 13px;
+            color: var(--text-tertiary);
+        }
+
+        .timeline {
+            display: flex;
+            justify-content: space-between;
+            position: relative;
+            margin-top: 48px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--gradient-neural);
+            border-radius: 2px;
+        }
+
+        .timeline-item {
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .timeline-dot {
+            width: 40px;
+            height: 40px;
+            background: var(--surface);
+            border: 3px solid var(--neural-core);
+            border-radius: 50%;
+            margin: 0 auto 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+            color: var(--neural-core);
+        }
+
+        .timeline-item.active .timeline-dot {
+            background: var(--gradient-neural);
+            border-color: transparent;
+            color: white;
+        }
+
+        .timeline-item p {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .timeline-item p:first-of-type {
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .market-bar {
+            background: var(--deep);
+            border-radius: 8px;
+            height: 36px;
+            margin-bottom: 12px;
+            overflow: hidden;
+        }
+
+        .market-fill {
+            height: 100%;
+            background: var(--gradient-neural);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            padding-left: 16px;
+            font-weight: 700;
+            font-size: 13px;
+            color: white;
+        }
+
+        .team-card {
+            text-align: center;
+            padding: 32px;
+        }
+
+        .team-avatar {
+            width: 100px;
+            height: 100px;
+            background: var(--gradient-neural);
+            border-radius: 50%;
+            margin: 0 auto 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            font-weight: 800;
+            color: white;
+            box-shadow: var(--shadow-neural);
+        }
+
+        .team-card h4 {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            color: var(--text-primary);
+        }
+
+        .team-role {
+            color: var(--neural-core);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .team-card p {
+            font-size: 13px;
+            color: var(--text-tertiary);
+            line-height: 1.5;
+        }
+
+        .ask-card {
+            text-align: center;
+            padding: 48px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .ask-amount {
+            font-size: 72px;
+            font-weight: 900;
+            letter-spacing: -0.03em;
+            background: var(--gradient-neural);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 16px;
+        }
+
+        .use-of-funds {
+            margin-top: 32px;
+            text-align: left;
+        }
+
+        .fund-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border-subtle);
+            font-size: 14px;
+        }
+
+        .fund-item:last-child {
+            border-bottom: none;
+        }
+
+        .fund-item span:last-child {
+            font-weight: 700;
+            color: var(--neural-core);
+        }
+
+        .cta-button {
+            display: inline-block;
+            padding: 16px 48px;
+            background: var(--gradient-neural);
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: white;
+            text-decoration: none;
+            margin-top: 32px;
+            transition: all 0.3s;
+            box-shadow: var(--shadow-neural);
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0, 113, 227, 0.4);
+        }
+
+        .disclaimer {
+            font-size: 11px;
+            color: var(--text-ghost);
+            text-align: center;
+            padding: 32px;
+            background: var(--deep);
+        }
+
+        ul {
+            list-style: none;
+        }
+
+        ul li {
+            padding: 8px 0;
+            padding-left: 24px;
+            position: relative;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        ul li::before {
+            content: '→';
+            position: absolute;
+            left: 0;
+            color: var(--neural-core);
+            font-weight: 700;
+        }
+
+        .highlight {
+            color: var(--neural-core);
+            font-weight: 700;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 16px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        th {
+            font-weight: 700;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.1em;
+            border-bottom: 2px solid var(--border-default);
+        }
+
+        td {
+            border-bottom: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+        }
+
+        tr td:first-child {
+            text-align: left;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .contact-info {
+            text-align: center;
+            margin-top: 32px;
+        }
+
+        .contact-info p {
+            font-size: 18px;
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+        }
+
+        .contact-info a {
+            color: var(--neural-core);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .confidential {
+            display: inline-block;
+            padding: 8px 16px;
+            background: var(--deep);
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-ghost);
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            margin-top: 32px;
+        }
+
+        @media print {
+            .slide {
+                page-break-after: always;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Slide 1: Cover -->
+<section class="slide">
+    <h1>NextGen Fiber AI</h1>
+    <p class="tagline">AI-Powered Operations for Fiber Construction</p>
+    <p class="subtitle">Friends & Family Round · Q1 2026</p>
+    <span class="confidential">Confidential</span>
+    <span class="slide-number">01</span>
+</section>
+
+<!-- Slide 2: Problem -->
+<section class="slide">
+    <span class="logo">NEXTGEN FIBER AI</span>
+    <div class="content">
+        <h2>The Problem</h2>
+        <p class="subtitle">Fiber construction companies lose millions to operational inefficiencies</p>
+
+        <div class="grid-2">
+            <div>
+                <div class="problem-item">
+                    <div class="problem-icon"><i data-lucide="file-search"></i></div>
+                    <div class="problem-text">
+                        <h4>Manual Map Reading</h4>
+                        <p>Engineers spend 4-6 hours per project manually reading construction maps and calculating footage</p>
+                    </div>
+                </div>
+                <div class="problem-item">
+                    <div class="problem-icon"><i data-lucide="receipt"></i></div>
+                    <div class="problem-text">
+                        <h4>Invoice Errors</h4>
+                        <p>15-25% of invoices contain errors, leading to disputes and delayed payments</p>
+                    </div>
+                </div>
+                <div class="problem-item">
+                    <div class="problem-icon"><i data-lucide="message-circle-warning"></i></div>
+                    <div class="problem-text">
+                        <h4>Field Communication Gap</h4>
+                        <p>Linemen use WhatsApp and paper, causing data loss and miscommunication</p>
+                    </div>
+                </div>
+                <div class="problem-item">
+                    <div class="problem-icon"><i data-lucide="clock-alert"></i></div>
+                    <div class="problem-text">
+                        <h4>No Real-Time Visibility</h4>
+                        <p>Supervisors wait days to know actual production vs. estimates</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card card-highlight" style="text-align: center; padding: 48px;">
+                <div class="stat-value">$2.3M</div>
+                <p style="margin-top: 16px; font-size: 16px; color: var(--text-secondary);">Average annual loss per mid-size fiber contractor</p>
+            </div>
+        </div>
+    </div>
+    <span class="slide-number">02</span>
+</section>
+
+<!-- Slide 3: Solution -->
+<section class="slide">
+    <span class="logo">NEXTGEN FIBER AI</span>
+    <div class="content">
+        <h2>Our Solution</h2>
+        <p class="subtitle">End-to-end AI platform that automates the entire fiber construction workflow</p>
+
+        <div class="grid-2" style="margin-top: 32px;">
+            <div>
+                <div class="problem-item">
+                    <div class="problem-icon solution-icon"><i data-lucide="scan-line"></i></div>
+                    <div class="problem-text">
+                        <h4>AI Map Analyzer</h4>
+                        <p>Upload PDF maps → AI extracts spans, footage, GPS coordinates in seconds</p>
+                    </div>
+                </div>
+                <div class="problem-item">
+                    <div class="problem-icon solution-icon"><i data-lucide="smartphone"></i></div>
+                    <div class="problem-text">
+                        <h4>Mobile-First Field App</h4>
+                        <p>Linemen receive jobs, submit production, upload photos - all in one app</p>
+                    </div>
+                </div>
+                <div class="problem-item">
+                    <div class="problem-icon solution-icon"><i data-lucide="check-circle"></i></div>
+                    <div class="problem-text">
+                        <h4>Automated QC & Invoicing</h4>
+                        <p>Auto-validate production against estimates, generate accurate invoices</p>
+                    </div>
+                </div>
+                <div class="problem-item">
+                    <div class="problem-icon solution-icon"><i data-lucide="layout-dashboard"></i></div>
+                    <div class="problem-text">
+                        <h4>Real-Time Dashboard</h4>
+                        <p>Live visibility into all jobs, crews, and financial performance</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card" style="padding: 16px; text-align: center;">
+                <div style="background: var(--deep); border-radius: 12px; padding: 20px;">
+                    <p style="font-size: 14px; color: var(--text-tertiary); margin-bottom: 8px;">LIVE DEMO</p>
+                    <p style="font-size: 16px; font-weight: 700; color: var(--neural-core);">legendary-crumble-fdecee.netlify.app</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <span class="slide-number">03</span>
+</section>
+
+<!-- Slide 4: Product Features -->
+<section class="slide">
+    <span class="logo">NEXTGEN FIBER AI</span>
+    <div class="content">
+        <h2>Platform Features</h2>
+
+        <div class="grid-4" style="margin-top: 32px;">
+            <div class="card feature-card">
+                <div class="feature-icon"><i data-lucide="map"></i></div>
+                <h4>AI Map Analysis</h4>
+                <p>Claude Vision extracts data from PDFs</p>
+            </div>
+            <div class="card feature-card">
+                <div class="feature-icon"><i data-lucide="briefcase"></i></div>
+                <h4>Job Management</h4>
+                <p>Create, assign, track with audit trail</p>
+            </div>
+            <div class="card feature-card">
+                <div class="feature-icon"><i data-lucide="dollar-sign"></i></div>
+                <h4>Rate Cards</h4>
+                <p>AI-powered PDF rate extraction</p>
+            </div>
+            <div class="card feature-card">
+                <div class="feature-icon"><i data-lucide="smartphone"></i></div>
+                <h4>Lineman App</h4>
+                <p>Mobile-optimized for field crews</p>
+            </div>
+            <div class="card feature-card">
+                <div class="feature-icon"><i data-lucide="shield-check"></i></div>
+                <h4>QC Workflow</h4>
+                <p>Multi-level approval process</p>
+            </div>
+            <div class="card feature-card">
+                <div class="feature-icon"><i data-lucide="file-text"></i></div>
+                <h4>Auto Invoicing</h4>
+                <p>Generate from approved production</p>
+            </div>
+            <div class="card feature-card">
+                <div class="feature-icon"><i data-lucide="users"></i></div>
+                <h4>User Management</h4>
+                <p>RBAC: Admin, Supervisor, Lineman</p>
+            </div>
+            <div class="card feature-card">
+                <div class="feature-icon"><i data-lucide="bar-chart-3"></i></div>
+                <h4>Analytics</h4>
+                <p>Real-time dashboards & reports</p>
+            </div>
+        </div>
+    </div>
+    <span class="slide-number">04</span>
+</section>
+
+<!-- Slide 5: Market Size -->
+<section class="slide">
+    <span class="logo">NEXTGEN FIBER AI</span>
+    <div class="content">
+        <h2>Market Opportunity</h2>
+        <p class="subtitle">Fiber infrastructure is the backbone of America's digital future</p>
+
+        <div class="grid-3" style="margin-top: 32px;">
+            <div class="card stat">
+                <div class="stat-value">$15B+</div>
+                <div class="stat-label">US Fiber Construction</div>
+            </div>
+            <div class="card stat">
+                <div class="stat-value">12%</div>
+                <div class="stat-label">Annual Growth</div>
+            </div>
+            <div class="card stat">
+                <div class="stat-value">5,000+</div>
+                <div class="stat-label">Fiber Contractors</div>
+            </div>
+        </div>
+
+        <div style="margin-top: 48px;">
+            <h3>TAM → SAM → SOM</h3>
+            <div style="margin-top: 24px;">
+                <p style="margin-bottom: 8px; font-size: 13px; color: var(--text-tertiary);">Total Addressable Market (TAM)</p>
+                <div class="market-bar">
+                    <div class="market-fill" style="width: 100%;">$2.5B - Construction Software</div>
+                </div>
+
+                <p style="margin-bottom: 8px; font-size: 13px; color: var(--text-tertiary);">Serviceable Addressable Market (SAM)</p>
+                <div class="market-bar">
+                    <div class="market-fill" style="width: 60%;">$500M - Fiber-Specific Tools</div>
+                </div>
+
+                <p style="margin-bottom: 8px; font-size: 13px; color: var(--text-tertiary);">Serviceable Obtainable Market (SOM)</p>
+                <div class="market-bar">
+                    <div class="market-fill" style="width: 25%;">$50M - Year 5 Target</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <span class="slide-number">05</span>
+</section>
+
+<!-- Slide 6: Business Model -->
+<section class="slide">
+    <span class="logo">NEXTGEN FIBER AI</span>
+    <div class="content">
+        <h2>Business Model</h2>
+        <p class="subtitle">SaaS subscription with usage-based AI pricing</p>
+
+        <div class="grid-3" style="margin-top: 32px;">
+            <div class="card" style="text-align: center; padding: 32px;">
+                <p style="font-size: 12px; color: var(--text-ghost); text-transform: uppercase; letter-spacing: 0.1em;">Starter</p>
+                <div class="stat-value" style="font-size: 36px;">$499</div>
+                <p style="color: var(--text-tertiary); font-size: 13px;">/month</p>
+                <ul style="margin-top: 24px; text-align: left;">
+                    <li>Up to 5 users</li>
+                    <li>50 map analyses/mo</li>
+                    <li>Basic reporting</li>
+                    <li>Email support</li>
+                </ul>
+            </div>
+            <div class="card card-highlight" style="text-align: center; padding: 32px;">
+                <p style="font-size: 12px; color: var(--neural-core); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700;">Professional</p>
+                <div class="stat-value" style="font-size: 36px;">$999</div>
+                <p style="color: var(--text-tertiary); font-size: 13px;">/month</p>
+                <ul style="margin-top: 24px; text-align: left;">
+                    <li>Up to 25 users</li>
+                    <li>200 map analyses/mo</li>
+                    <li>Advanced analytics</li>
+                    <li>Priority support</li>
+                    <li>API access</li>
+                </ul>
+            </div>
+            <div class="card" style="text-align: center; padding: 32px;">
+                <p style="font-size: 12px; color: var(--text-ghost); text-transform: uppercase; letter-spacing: 0.1em;">Enterprise</p>
+                <div class="stat-value" style="font-size: 36px;">$2,499</div>
+                <p style="color: var(--text-tertiary); font-size: 13px;">/month</p>
+                <ul style="margin-top: 24px; text-align: left;">
+                    <li>Unlimited users</li>
+                    <li>Unlimited analyses</li>
+                    <li>Custom integrations</li>
+                    <li>Dedicated support</li>
+                    <li>On-premise option</li>
+                </ul>
+            </div>
+        </div>
+
+        <div style="margin-top: 40px; text-align: center;">
+            <p style="font-size: 18px; color: var(--text-secondary);">Average Contract Value: <span class="highlight">$12,000/year</span></p>
+        </div>
+    </div>
+    <span class="slide-number">06</span>
+</section>
+
+<!-- Slide 7: Traction & Roadmap -->
+<section class="slide">
+    <span class="logo">NEXTGEN FIBER AI</span>
+    <div class="content">
+        <h2>Traction & Roadmap</h2>
+
+        <div class="grid-2" style="margin-top: 32px;">
+            <div>
+                <h3>Current Status</h3>
+                <ul style="margin-top: 16px;">
+                    <li>Fully functional MVP deployed</li>
+                    <li>AI map analysis working (Claude Vision)</li>
+                    <li>User auth + RBAC implemented</li>
+                    <li>Job management complete</li>
+                    <li>Invoice workflow built</li>
+                    <li>Mobile-responsive design</li>
+                </ul>
+            </div>
+            <div>
+                <h3>Technology Stack</h3>
+                <div class="grid-2" style="gap: 12px; margin-top: 16px;">
+                    <div class="card" style="padding: 16px; text-align: center;">
+                        <div style="color: var(--neural-core);"><i data-lucide="code-2" style="width: 24px; height: 24px;"></i></div>
+                        <p style="font-size: 12px; margin-top: 8px; color: var(--text-tertiary);">React + TypeScript</p>
+                    </div>
+                    <div class="card" style="padding: 16px; text-align: center;">
+                        <div style="color: var(--neural-core);"><i data-lucide="database" style="width: 24px; height: 24px;"></i></div>
+                        <p style="font-size: 12px; margin-top: 8px; color: var(--text-tertiary);">Supabase</p>
+                    </div>
+                    <div class="card" style="padding: 16px; text-align: center;">
+                        <div style="color: var(--neural-core);"><i data-lucide="cpu" style="width: 24px; height: 24px;"></i></div>
+                        <p style="font-size: 12px; margin-top: 8px; color: var(--text-tertiary);">Claude AI</p>
+                    </div>
+                    <div class="card" style="padding: 16px; text-align: center;">
+                        <div style="color: var(--neural-core);"><i data-lucide="cloud" style="width: 24px; height: 24px;"></i></div>
+                        <p style="font-size: 12px; margin-top: 8px; color: var(--text-tertiary);">Netlify</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="timeline">
+            <div class="timeline-item active">
+                <div class="timeline-dot">✓</div>
+                <p>Q4 2025</p>
+                <p style="color: var(--text-tertiary); font-size: 12px;">MVP Complete</p>
+            </div>
+            <div class="timeline-item active">
+                <div class="timeline-dot">✓</div>
+                <p>Q1 2026</p>
+                <p style="color: var(--text-tertiary); font-size: 12px;">F&F Round</p>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-dot">2</div>
+                <p>Q2 2026</p>
+                <p style="color: var(--text-tertiary); font-size: 12px;">Beta Customers</p>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-dot">3</div>
+                <p>Q3 2026</p>
+                <p style="color: var(--text-tertiary); font-size: 12px;">Revenue Launch</p>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-dot">4</div>
+                <p>Q4 2026</p>
+                <p style="color: var(--text-tertiary); font-size: 12px;">Seed Round</p>
+            </div>
+        </div>
+    </div>
+    <span class="slide-number">07</span>
+</section>
+
+<!-- Slide 8: Financials -->
+<section class="slide">
+    <span class="logo">NEXTGEN FIBER AI</span>
+    <div class="content">
+        <h2>Financial Projections</h2>
+        <p class="subtitle">Conservative growth model based on 5% market penetration by Year 5</p>
+
+        <div style="margin-top: 32px;">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="text-align: left;">Metric</th>
+                        <th>Year 1</th>
+                        <th>Year 2</th>
+                        <th>Year 3</th>
+                        <th>Year 4</th>
+                        <th>Year 5</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Customers</td>
+                        <td>10</td>
+                        <td>35</td>
+                        <td>100</td>
+                        <td>250</td>
+                        <td>500</td>
+                    </tr>
+                    <tr>
+                        <td>ARR</td>
+                        <td>$120K</td>
+                        <td>$420K</td>
+                        <td>$1.2M</td>
+                        <td>$3M</td>
+                        <td style="color: var(--neural-core); font-weight: 700;">$6M</td>
+                    </tr>
+                    <tr>
+                        <td>MRR</td>
+                        <td>$10K</td>
+                        <td>$35K</td>
+                        <td>$100K</td>
+                        <td>$250K</td>
+                        <td>$500K</td>
+                    </tr>
+                    <tr>
+                        <td>Gross Margin</td>
+                        <td>70%</td>
+                        <td>75%</td>
+                        <td>80%</td>
+                        <td>82%</td>
+                        <td>85%</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="grid-3" style="margin-top: 40px;">
+            <div class="card stat">
+                <div class="stat-value" style="font-size: 32px;">$12K</div>
+                <div class="stat-label">Avg Contract Value</div>
+            </div>
+            <div class="card stat">
+                <div class="stat-value" style="font-size: 32px;">95%</div>
+                <div class="stat-label">Target Retention</div>
+            </div>
+            <div class="card stat">
+                <div class="stat-value" style="font-size: 32px;">18mo</div>
+                <div class="stat-label">Payback Period</div>
+            </div>
+        </div>
+    </div>
+    <span class="slide-number">08</span>
+</section>
+
+<!-- Slide 9: Team -->
+<section class="slide">
+    <span class="logo">NEXTGEN FIBER AI</span>
+    <div class="content">
+        <h2>Our Team</h2>
+
+        <div class="grid-3" style="margin-top: 32px;">
+            <div class="card team-card">
+                <div class="team-avatar">GA</div>
+                <h4>Gabriel Arevalo</h4>
+                <p class="team-role">Founder & CTO</p>
+                <p>Full-stack developer. Built the entire platform architecture and AI integrations. Deep expertise in enterprise software.</p>
+            </div>
+            <div class="card team-card">
+                <div class="team-avatar">LR</div>
+                <h4>Lucas Rocha</h4>
+                <p class="team-role">Co-Founder & CEO</p>
+                <p>Business operations and industry connections. Leading go-to-market strategy and customer acquisition.</p>
+            </div>
+            <div class="card team-card">
+                <div class="team-avatar">CK</div>
+                <h4>Chris K.</h4>
+                <p class="team-role">Advisor / QA Lead</p>
+                <p>Product testing and quality assurance. Ensuring platform meets enterprise standards.</p>
+            </div>
+        </div>
+    </div>
+    <span class="slide-number">09</span>
+</section>
+
+<!-- Slide 10: The Ask -->
+<section class="slide">
+    <span class="logo">NEXTGEN FIBER AI</span>
+    <div class="content">
+        <h2>The Ask</h2>
+
+        <div class="card ask-card card-highlight">
+            <p style="font-size: 12px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.15em;">Friends & Family Round</p>
+            <div class="ask-amount">$200K</div>
+            <p style="font-size: 18px; color: var(--text-secondary);">SAFE Note @ $500K Valuation Cap</p>
+
+            <div class="use-of-funds">
+                <h3 style="margin-bottom: 16px;">Use of Funds</h3>
+                <div class="fund-item">
+                    <span>Product Development</span>
+                    <span>40% · $80K</span>
+                </div>
+                <div class="fund-item">
+                    <span>Sales & Marketing</span>
+                    <span>30% · $60K</span>
+                </div>
+                <div class="fund-item">
+                    <span>Operations & Infrastructure</span>
+                    <span>20% · $40K</span>
+                </div>
+                <div class="fund-item">
+                    <span>Legal & Admin</span>
+                    <span>10% · $20K</span>
+                </div>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 32px;">
+            <p style="font-size: 16px; color: var(--text-secondary);">This round gets us to first paying customers and positions us for a $1M+ Seed round in 12 months</p>
+        </div>
+    </div>
+    <span class="slide-number">10</span>
+</section>
+
+<!-- Slide 11: Contact -->
+<section class="slide">
+    <span class="logo">NEXTGEN FIBER AI</span>
+    <div class="content" style="text-align: center;">
+        <h1>Let's Build the Future</h1>
+        <p class="tagline">of Fiber Construction Together</p>
+
+        <a href="https://legendary-crumble-fdecee.netlify.app" target="_blank" class="cta-button">View Live Demo</a>
+
+        <div class="contact-info">
+            <p style="font-weight: 700; color: var(--text-primary);">Gabriel Arevalo</p>
+            <p><a href="mailto:ngf@nextgenfiberllc.com">ngf@nextgenfiberllc.com</a></p>
+            <p style="margin-top: 16px; font-size: 14px; color: var(--text-ghost);">Based in Knoxville, Tennessee</p>
+        </div>
+    </div>
+    <span class="slide-number">11</span>
+</section>
+
+<div class="disclaimer">
+    <p>This presentation contains forward-looking statements and projections based on current expectations. Actual results may differ materially.</p>
+    <p style="margin-top: 8px;">© 2026 NextGen Fiber AI. All Rights Reserved. CONFIDENTIAL.</p>
+</div>
+
+<script>
+    lucide.createIcons();
+</script>
+</body>
+</html>

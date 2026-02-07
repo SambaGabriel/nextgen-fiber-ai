@@ -56,3 +56,13 @@ AI Agent para gestão operacional de empresa de construção de fibra óptica no
 - Questionar decisões ruins
 - Sugerir melhorias apenas quando tecnicamente relevantes
 - Analisar, não elogiar
+
+## Comandos - SEMPRE COMPLETOS
+- SEMPRE incluir o caminho completo nos comandos
+- SEMPRE usar `cd /Users/gabrielarevalo/teste-claude && comando`
+- NUNCA assumir que o usuário está no diretório correto
+- Exemplos obrigatórios:
+  - Build: `cd /Users/gabrielarevalo/teste-claude && npm run build`
+  - Dev: `cd /Users/gabrielarevalo/teste-claude && npm run dev`
+  - Install: `cd /Users/gabrielarevalo/teste-claude && npm install`
+  - Git: `cd /Users/gabrielarevalo/teste-claude && git status`

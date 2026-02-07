@@ -164,10 +164,13 @@ const JobDetails: React.FC<JobDetailsProps> = ({ job, user, lang, onBack, onStar
 
   // Load photos on mount
   useEffect(() => {
+    console.log('[DEBUG] JobDetails mounted with job:', currentJob.id);
+    console.log('[DEBUG] Job mapFile:', currentJob.mapFile);
+    console.log('[DEBUG] Job mapFile?.url:', currentJob.mapFile?.url ? 'exists' : 'null/undefined');
     const jobPhotos = getJobPhotos(currentJob.id);
     setPhotos(jobPhotos);
     setPhotoCount(jobPhotos.length);
-  }, [currentJob.id]);
+  }, [currentJob.id, currentJob.mapFile]);
 
   // Get status configuration
   const getStatusConfig = (status: JobStatus) => {
@@ -242,15 +245,17 @@ const JobDetails: React.FC<JobDetailsProps> = ({ job, user, lang, onBack, onStar
     onStartProduction(updated || currentJob);
   }, [currentJob, onStartProduction]);
 
-  // Handle view map (open in new tab or modal)
+  // Handle view map (open in new tab)
   const handleViewMap = useCallback(() => {
+    console.log('[DEBUG] handleViewMap called');
+    console.log('[DEBUG] currentJob.mapFile:', currentJob.mapFile);
     if (currentJob.mapFile?.url) {
-      // If it's a base64 PDF, open in new tab
-      if (currentJob.mapFile.url.startsWith('data:')) {
-        window.open(currentJob.mapFile.url, '_blank');
-      } else {
-        setIsViewingMap(true);
-      }
+      console.log('[DEBUG] mapFile.url exists, opening in new tab');
+      // Open in new tab for both base64 and regular URLs
+      window.open(currentJob.mapFile.url, '_blank');
+    } else {
+      console.log('[DEBUG] No mapFile.url found');
+      alert('No map file available for this job');
     }
   }, [currentJob.mapFile]);
 
@@ -415,32 +420,87 @@ const JobDetails: React.FC<JobDetailsProps> = ({ job, user, lang, onBack, onStar
             <FileText className="w-4 h-4" /> {t.mapDocument}
           </h3>
 
-          {currentJob.mapFile ? (
-            <div className="flex items-center justify-between p-4 rounded-xl" style={{ background: 'var(--elevated)' }}>
-              <div className="flex items-center gap-3">
-                <div
-                  className="w-12 h-12 rounded-xl flex items-center justify-center"
-                  style={{ background: 'var(--neural-dim)' }}
-                >
-                  <FileText className="w-6 h-6" style={{ color: 'var(--neural-core)' }} />
+          {currentJob.mapFile && currentJob.mapFile.url ? (
+            <div className="space-y-4">
+              {/* File info and actions */}
+              <div className="flex items-center justify-between p-4 rounded-xl" style={{ background: 'var(--elevated)' }}>
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-12 h-12 rounded-xl flex items-center justify-center"
+                    style={{ background: 'var(--neural-dim)' }}
+                  >
+                    <FileText className="w-6 h-6" style={{ color: 'var(--neural-core)' }} />
+                  </div>
+                  <div>
+                    <p className="font-bold text-sm" style={{ color: 'var(--text-primary)' }}>{currentJob.mapFile.filename}</p>
+                    <p className="text-xs" style={{ color: 'var(--text-ghost)' }}>
+                      {(currentJob.mapFile.size / 1024 / 1024).toFixed(2)} MB
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-bold text-sm" style={{ color: 'var(--text-primary)' }}>{currentJob.mapFile.filename}</p>
-                  <p className="text-xs" style={{ color: 'var(--text-ghost)' }}>
-                    {(currentJob.mapFile.size / 1024 / 1024).toFixed(2)} MB
-                  </p>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleViewMap}
+                    className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all hover:scale-105"
+                    style={{ background: 'var(--neural-dim)', color: 'var(--neural-core)', border: '1px solid var(--border-neural)' }}
+                  >
+                    <Eye className="w-4 h-4" />
+                    {t.viewMap}
+                  </button>
+                  <a
+                    href={currentJob.mapFile.url}
+                    download={currentJob.mapFile.filename}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all hover:scale-105"
+                    style={{ background: 'var(--surface)', color: 'var(--text-secondary)', border: '1px solid var(--border-default)' }}
+                  >
+                    <Download className="w-4 h-4" />
+                    {t.downloadMap}
+                  </a>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handleViewMap}
-                  className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all hover:scale-105"
-                  style={{ background: 'var(--neural-dim)', color: 'var(--neural-core)', border: '1px solid var(--border-neural)' }}
-                >
-                  <Eye className="w-4 h-4" />
-                  {t.viewMap}
-                </button>
+
+              {/* Embedded PDF Preview */}
+              <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--border-default)' }}>
+                {currentJob.mapFile.url.startsWith('data:') ? (
+                  <iframe
+                    src={currentJob.mapFile.url}
+                    className="w-full h-[400px] sm:h-[500px]"
+                    title="Map Preview"
+                  />
+                ) : (
+                  <object
+                    data={`${currentJob.mapFile.url}#toolbar=1&navpanes=0`}
+                    type="application/pdf"
+                    className="w-full h-[400px] sm:h-[500px]"
+                  >
+                    {/* Fallback for browsers that can't display PDF */}
+                    <div className="flex flex-col items-center justify-center h-[400px] p-8" style={{ background: 'var(--elevated)' }}>
+                      <FileText className="w-16 h-16 mb-4" style={{ color: 'var(--text-tertiary)' }} />
+                      <p className="text-sm mb-4 text-center" style={{ color: 'var(--text-secondary)' }}>
+                        Unable to display PDF in browser
+                      </p>
+                      <a
+                        href={currentJob.mapFile.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-6 py-3 rounded-xl text-sm font-bold flex items-center gap-2"
+                        style={{ background: 'var(--gradient-neural)', color: '#000' }}
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                        Open in New Tab
+                      </a>
+                    </div>
+                  </object>
+                )}
               </div>
+            </div>
+          ) : currentJob.mapFile ? (
+            <div className="text-center py-8" style={{ color: 'var(--text-ghost)' }}>
+              <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
+              <p className="text-sm mb-2">{currentJob.mapFile.filename}</p>
+              <p className="text-xs" style={{ color: 'var(--critical-core)' }}>Map URL not available</p>
             </div>
           ) : (
             <div className="text-center py-8" style={{ color: 'var(--text-ghost)' }}>

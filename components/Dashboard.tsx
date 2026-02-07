@@ -30,10 +30,12 @@ const CHART_DATA = [
 const Dashboard = memo<DashboardProps>(({ invoices, user, lang }) => {
     const t = translations[lang];
     const [showLiveAgent, setShowLiveAgent] = React.useState(false);
+    const [showReportMenu, setShowReportMenu] = React.useState(false);
 
     // [rerender-functional-setstate] - Stable callbacks
     const openLiveAgent = useCallback(() => setShowLiveAgent(true), []);
     const closeLiveAgent = useCallback(() => setShowLiveAgent(false), []);
+    const toggleReportMenu = useCallback(() => setShowReportMenu(prev => !prev), []);
 
     return (
         <div className="space-y-8 animate-fade-in-up pb-12">
@@ -45,7 +47,8 @@ const Dashboard = memo<DashboardProps>(({ invoices, user, lang }) => {
                 </Suspense>
             )}
 
-            {/* SUPERVISOR ONLINE - Hero Banner for Linemen */}
+            {/* SUPERVISOR ONLINE - Hero Banner for Linemen ONLY */}
+            {user.role === 'lineman' && (
             <button
                 onClick={openLiveAgent}
                 className="w-full p-6 lg:p-8 rounded-3xl relative overflow-hidden group active:scale-[0.98] transition-all duration-300"
@@ -96,6 +99,7 @@ const Dashboard = memo<DashboardProps>(({ invoices, user, lang }) => {
                     </div>
                 </div>
             </button>
+            )}
 
             {/* Header Section */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -109,11 +113,41 @@ const Dashboard = memo<DashboardProps>(({ invoices, user, lang }) => {
                 </div>
 
                 <div className="hidden lg:flex items-center gap-3">
-                     <button className="px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-3 group btn-ghost" style={{ background: 'var(--surface)' }}>
-                        <FileText className="w-4 h-4" style={{ color: 'var(--text-tertiary)' }} />
-                        {t.monthly_report}
-                        <ChevronDown className="w-3 h-3" style={{ color: 'var(--text-tertiary)' }} />
-                     </button>
+                     {/* Report Dropdown */}
+                     <div className="relative">
+                        <button
+                            onClick={toggleReportMenu}
+                            className="px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-3 group btn-ghost"
+                            style={{ background: 'var(--surface)' }}
+                        >
+                            <FileText className="w-4 h-4" style={{ color: 'var(--text-tertiary)' }} />
+                            {t.monthly_report}
+                            <ChevronDown className={`w-3 h-3 transition-transform ${showReportMenu ? 'rotate-180' : ''}`} style={{ color: 'var(--text-tertiary)' }} />
+                        </button>
+                        {showReportMenu && (
+                            <div
+                                className="absolute top-full left-0 mt-2 py-2 rounded-xl shadow-lg z-50 min-w-[180px]"
+                                style={{ background: 'var(--surface)', border: '1px solid var(--border-subtle)' }}
+                            >
+                                <button
+                                    className="w-full px-4 py-2.5 text-left text-xs font-bold uppercase tracking-wider hover:bg-white/5 flex items-center gap-3"
+                                    style={{ color: 'var(--text-primary)' }}
+                                    onClick={() => { setShowReportMenu(false); /* TODO: Generate weekly report */ }}
+                                >
+                                    <FileText className="w-4 h-4" style={{ color: 'var(--neural-core)' }} />
+                                    {t.weekly_report}
+                                </button>
+                                <button
+                                    className="w-full px-4 py-2.5 text-left text-xs font-bold uppercase tracking-wider hover:bg-white/5 flex items-center gap-3"
+                                    style={{ color: 'var(--text-primary)' }}
+                                    onClick={() => { setShowReportMenu(false); /* TODO: Generate monthly report */ }}
+                                >
+                                    <FileText className="w-4 h-4" style={{ color: 'var(--neural-core)' }} />
+                                    {t.monthly_report}
+                                </button>
+                            </div>
+                        )}
+                     </div>
                      <button className="px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-3 group btn-ghost" style={{ background: 'var(--surface)' }}>
                         <Download className="w-4 h-4" style={{ color: 'var(--text-tertiary)' }} />
                         {t.export}

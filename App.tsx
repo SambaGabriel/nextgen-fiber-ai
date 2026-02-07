@@ -28,6 +28,10 @@ const OwnerInbox = lazy(() => import('./components/OwnerInbox'));
 // Lineman job workflow
 const MyJobs = lazy(() => import('./components/MyJobs'));
 const JobDetails = lazy(() => import('./components/JobDetails'));
+// Admin jobs management
+const JobsAdmin = lazy(() => import('./components/JobsAdmin'));
+// Admin rate cards management
+const RateCards = lazy(() => import('./components/RateCards'));
 
 const INITIAL_RATES: UnitRates = { fiber: 0.35, anchor: 18.00 };
 
@@ -223,12 +227,10 @@ const App: React.FC = () => {
                 return <OwnerInbox lang={currentLang} />; // Reuse with filter for lineman's own submissions
 
             // Owner/Admin views
-            case ViewState.INBOX:
-                return <OwnerInbox lang={currentLang} />;
-            case ViewState.BY_CLIENT:
-                return <OwnerInbox lang={currentLang} />; // TODO: Add client filter mode
-            case ViewState.BY_PROJECT:
-                return <OwnerInbox lang={currentLang} />; // TODO: Add project filter mode
+            case ViewState.JOBS_ADMIN:
+                return <JobsAdmin user={user} lang={currentLang} />;
+            case ViewState.RATE_CARDS:
+                return <RateCards user={user} lang={currentLang} />;
 
             // Existing views
             case ViewState.MAPS:
@@ -239,7 +241,7 @@ const App: React.FC = () => {
             case ViewState.REPORTS:
                 return <TechnicalReports user={user} auditData={allAudits} mapReports={mapReports} lang={currentLang} />;
             case ViewState.AGENCY:
-                return <AgencyHub lang={currentLang} />;
+                return <AgencyHub />;
             case ViewState.PRODUCTION:
                 return <DailyProductionForm user={user} lang={currentLang} />;
             case ViewState.FINANCE_HUB:
@@ -250,9 +252,7 @@ const App: React.FC = () => {
                 return <AdminPortal invoices={invoices} rates={rates} onUpdateRates={handleUpdateRates} user={user} onUpdateUser={setUser} onPayInvoice={() => {}} lang={currentLang} />;
             default:
                 // Default view based on role
-                return user.role === 'ADMIN'
-                    ? <OwnerInbox lang={currentLang} />
-                    : <Dashboard onNavigate={setCurrentView} invoices={invoices} transactions={transactions} user={user} lang={currentLang} />;
+                return <Dashboard onNavigate={setCurrentView} invoices={invoices} transactions={transactions} user={user} lang={currentLang} />;
         }
     };
 

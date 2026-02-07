@@ -179,8 +179,8 @@ const LiveSupervisor: React.FC<LiveSupervisorProps> = ({ onClose, userName }) =>
 
                         if (msg.serverContent?.outputTranscription) {
                             const text = msg.serverContent.outputTranscription.text;
-                            currentOutputRef.current += text;
-                            const upperText = text.toUpperCase();
+                            currentOutputRef.current += text || '';
+                            const upperText = (text || '').toUpperCase();
                             if (upperText.includes("STOP WORK") || upperText.includes("VIOLATION") || upperText.includes("DANGER")) {
                                 setViolationDetected(true);
                                 setTimeout(() => setViolationDetected(false), 8000);

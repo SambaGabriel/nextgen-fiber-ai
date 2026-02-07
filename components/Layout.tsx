@@ -3,7 +3,7 @@ import { ViewState, Notification, User, Language } from '../types';
 import { translations } from '../services/translations';
 import {
     LayoutDashboard, LogOut, Globe, Settings, Bell, ClipboardList, Wallet, ScanLine, ChevronRight,
-    Upload, Inbox, History, Users, FolderOpen, Mic, Briefcase
+    Upload, History, FolderOpen, Mic, Briefcase, DollarSign, Loader2
 } from 'lucide-react';
 import Logo from './Logo';
 
@@ -31,11 +31,12 @@ const Layout: React.FC<LayoutProps> = ({ currentView, onChangeView, children, no
     // Navigation items based on role
     const navItems = isAdmin ? [
         // Owner/Admin Navigation - Workflow Optimized
-        { id: ViewState.INBOX, label: 'Inbox', icon: Inbox },              // Command center - all projects
-        { id: ViewState.BY_CLIENT, label: 'By Client', icon: Users },      // Group by client
-        { id: ViewState.FINANCE_HUB, label: 'Invoices', icon: Wallet },    // Billing & invoices
-        { id: ViewState.MAP_ANALYZER, label: 'Maps', icon: ScanLine },     // Map analyzer tool
-        { id: ViewState.ADMIN, label: 'Settings', icon: Settings },        // Configuration
+        { id: ViewState.DASHBOARD, label: 'Dashboard', icon: LayoutDashboard }, // Main dashboard
+        { id: ViewState.JOBS_ADMIN, label: 'Jobs', icon: Briefcase },           // Jobs management
+        { id: ViewState.FINANCE_HUB, label: 'Invoices', icon: Wallet },         // Billing & invoices
+        { id: ViewState.MAP_ANALYZER, label: 'Maps', icon: ScanLine },          // Map analyzer tool
+        { id: ViewState.RATE_CARDS, label: 'Rate Cards', icon: DollarSign },    // Rate cards management
+        { id: ViewState.ADMIN, label: 'Settings', icon: Settings },             // Configuration
     ] : [
         // Lineman Navigation - Simple & Mobile-first
         { id: ViewState.DASHBOARD, label: 'Home', icon: LayoutDashboard }, // Overview
@@ -254,7 +255,7 @@ const Layout: React.FC<LayoutProps> = ({ currentView, onChangeView, children, no
                                                 {Object.values(Language).map(l => (
                                                     <button
                                                         key={l}
-                                                        onClick={() => onChangeLang(l)}
+                                                        onClick={() => { onChangeLang(l); setIsProfileMenuOpen(false); }}
                                                         className="flex-1 py-2 text-xs font-bold rounded-lg transition-colors"
                                                         style={{
                                                             color: currentLang === l ? 'var(--neural-core)' : 'var(--text-tertiary)',
@@ -402,7 +403,7 @@ const Layout: React.FC<LayoutProps> = ({ currentView, onChangeView, children, no
                                             {Object.values(Language).map(l => (
                                                 <button
                                                     key={l}
-                                                    onClick={() => onChangeLang(l)}
+                                                    onClick={() => { onChangeLang(l); setIsLangOpen(false); }}
                                                     className="flex-1 py-2 text-xs font-bold rounded-lg transition-colors"
                                                     style={{
                                                         color: currentLang === l ? 'var(--neural-core)' : 'var(--text-tertiary)',

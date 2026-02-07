@@ -3,7 +3,7 @@ import { User as UserIcon, Mail, ArrowRight, Cpu, Zap, CheckCircle2, HardHat, Sh
 import Logo from './Logo';
 import { User, Language } from '../types';
 import { translations } from '../services/translations';
-import { authService } from '../services/supabase';
+import { authService, supabase } from '../services/supabase';
 
 interface AuthPageProps {
     onLogin: (user: User) => void;
@@ -11,8 +11,8 @@ interface AuthPageProps {
 }
 
 type UserRole = 'LINEMAN' | 'ADMIN';
-type AuthMode = 'login' | 'register';
-type AuthStatus = 'idle' | 'loading' | 'check_email' | 'error';
+type AuthMode = 'login' | 'register' | 'forgot_password';
+type AuthStatus = 'idle' | 'loading' | 'check_email' | 'reset_sent' | 'error';
 
 const AuthPage: React.FC<AuthPageProps> = ({ onLogin, lang }) => {
     const t = translations[lang];
@@ -89,6 +89,23 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin, lang }) => {
                     companyName: companyName || 'NextGen Fiber'
                 });
 
+                if (result.user) {
+                    // Try to create profile record in Supabase
+                    try {
+                        await supabase.from('profiles').upsert({
+                            id: result.user.id,
+                            email: result.user.email,
+                            name,
+                            role: selectedRole,
+                            company_name: companyName || 'NextGen Fiber',
+                            created_at: new Date().toISOString(),
+                            updated_at: new Date().toISOString()
+                        });
+                    } catch (profileError) {
+                        console.log('Profile table may not exist yet:', profileError);
+                    }
+                }
+
                 if (result.user && !result.user.email_confirmed_at) {
                     // Email confirmation required
                     setAuthStatus('check_email');
@@ -164,6 +181,50 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin, lang }) => {
         setConfirmPassword('');
     };
 
+    const handleForgotPassword = async () => {
+        console.log('[AUTH] Forgot password clicked, email:', email);
+
+        if (!email.trim()) {
+            setError('Please enter your email address first');
+            return;
+        }
+
+        setAuthStatus('loading');
+        setError('');
+        setSuccessMessage('');
+
+        try {
+            console.log('[AUTH] Sending reset email to:', email);
+            await authService.resetPassword(email);
+            console.log('[AUTH] Reset email sent successfully');
+            setAuthStatus('reset_sent');
+            setSuccessMessage(`Password reset email sent to ${email}. Check your inbox.`);
+        } catch (err: any) {
+            console.error('[AUTH] Reset password error:', err);
+            setError(err.message || 'Failed to send reset email. Make sure the email is registered.');
+            setAuthStatus('idle');
+        }
+    };
+
+    const handleOAuthLogin = async (provider: 'google' | 'apple') => {
+        setAuthStatus('loading');
+        setError('');
+
+        try {
+            const { error } = await supabase.auth.signInWithOAuth({
+                provider,
+                options: {
+                    redirectTo: window.location.origin
+                }
+            });
+
+            if (error) throw error;
+        } catch (err: any) {
+            setError(err.message || `Failed to login with ${provider}`);
+            setAuthStatus('error');
+        }
+    };
+
     // Check Email Confirmation Screen
     if (authStatus === 'check_email') {
         return (
@@ -193,12 +254,65 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin, lang }) => {
                     <div className="space-y-3 pt-4">
                         <button
                             onClick={handleResendConfirmation}
-                            disabled={authStatus === 'loading'}
+                            disabled={false}
                             className="w-full py-3 rounded-xl text-xs font-bold uppercase flex items-center justify-center gap-2 transition-all hover:scale-[1.02]"
                             style={{ background: 'var(--surface)', color: 'var(--text-secondary)', border: '1px solid var(--border-default)' }}
                         >
                             <RefreshCw className="w-4 h-4" />
                             Resend Confirmation Email
+                        </button>
+
+                        <button
+                            onClick={() => {
+                                setAuthStatus('idle');
+                                setAuthMode('login');
+                            }}
+                            className="w-full py-3 rounded-xl text-xs font-bold uppercase flex items-center justify-center gap-2 transition-all hover:scale-[1.02]"
+                            style={{ background: 'var(--neural-dim)', color: 'var(--neural-core)', border: '1px solid var(--border-neural)' }}
+                        >
+                            <LogIn className="w-4 h-4" />
+                            Back to Login
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // Password Reset Sent Screen
+    if (authStatus === 'reset_sent') {
+        return (
+            <div className="min-h-screen flex items-center justify-center p-4 lg:p-8 relative overflow-hidden font-sans" style={{ background: 'var(--abyss)' }}>
+                <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] rounded-full blur-[180px] animate-pulse" style={{ background: 'var(--neural-pulse)' }}></div>
+                <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] rounded-full blur-[180px]" style={{ background: 'var(--energy-pulse)' }}></div>
+
+                <div className="w-full max-w-md p-8 glass-strong rounded-3xl text-center space-y-6" style={{ boxShadow: 'var(--shadow-glow)' }}>
+                    <div className="w-20 h-20 mx-auto rounded-full flex items-center justify-center" style={{ background: 'var(--neural-dim)', border: '2px solid var(--neural-core)' }}>
+                        <Mail className="w-10 h-10" style={{ color: 'var(--neural-core)' }} />
+                    </div>
+
+                    <h2 className="text-2xl font-black uppercase" style={{ color: 'var(--text-primary)' }}>
+                        Check Your Email
+                    </h2>
+
+                    <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                        We sent a password reset link to your email. Click the link to reset your password.
+                    </p>
+
+                    <div className="p-4 rounded-xl" style={{ background: 'var(--surface)', border: '1px solid var(--border-default)' }}>
+                        <p className="text-xs font-bold" style={{ color: 'var(--text-tertiary)' }}>
+                            Sent to: <span style={{ color: 'var(--neural-core)' }}>{email}</span>
+                        </p>
+                    </div>
+
+                    <div className="space-y-3 pt-4">
+                        <button
+                            onClick={handleForgotPassword}
+                            className="w-full py-3 rounded-xl text-xs font-bold uppercase flex items-center justify-center gap-2 transition-all hover:scale-[1.02]"
+                            style={{ background: 'var(--surface)', color: 'var(--text-secondary)', border: '1px solid var(--border-default)' }}
+                        >
+                            <RefreshCw className="w-4 h-4" />
+                            Resend Reset Email
                         </button>
 
                         <button
@@ -491,7 +605,19 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin, lang }) => {
 
                                 {/* Password Field */}
                                 <div className="space-y-1.5">
-                                    <label className="text-[10px] font-black uppercase ml-2" style={{ color: 'var(--text-tertiary)' }}>Password *</label>
+                                    <div className="flex justify-between items-center">
+                                        <label className="text-[10px] font-black uppercase ml-2" style={{ color: 'var(--text-tertiary)' }}>Password *</label>
+                                        {authMode === 'login' && (
+                                            <button
+                                                type="button"
+                                                onClick={handleForgotPassword}
+                                                className="text-[10px] font-bold hover:underline"
+                                                style={{ color: 'var(--neural-core)' }}
+                                            >
+                                                Forgot Password?
+                                            </button>
+                                        )}
+                                    </div>
                                     <div className="input-neural p-1.5 flex items-center group" style={{
                                         borderColor: selectedRole === 'LINEMAN' ? 'var(--border-neural)' : 'rgba(168, 85, 247, 0.3)'
                                     }}>
@@ -572,6 +698,46 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin, lang }) => {
                                         </>
                                     )}
                                 </button>
+
+                                {/* OAuth Divider */}
+                                {authMode === 'login' && (
+                                    <>
+                                        <div className="flex items-center gap-4 my-4">
+                                            <div className="flex-1 h-px" style={{ background: 'var(--border-subtle)' }}></div>
+                                            <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-ghost)' }}>or continue with</span>
+                                            <div className="flex-1 h-px" style={{ background: 'var(--border-subtle)' }}></div>
+                                        </div>
+
+                                        {/* OAuth Buttons */}
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <button
+                                                type="button"
+                                                onClick={() => handleOAuthLogin('google')}
+                                                className="flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all hover:scale-[1.02]"
+                                                style={{ background: 'var(--surface)', border: '1px solid var(--border-default)', color: 'var(--text-primary)' }}
+                                            >
+                                                <svg className="w-4 h-4" viewBox="0 0 24 24">
+                                                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                                                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                                                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                                                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                                                </svg>
+                                                Google
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleOAuthLogin('apple')}
+                                                className="flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all hover:scale-[1.02]"
+                                                style={{ background: 'var(--surface)', border: '1px solid var(--border-default)', color: 'var(--text-primary)' }}
+                                            >
+                                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                                    <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+                                                </svg>
+                                                Apple
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
 
                             </form>
                         )}

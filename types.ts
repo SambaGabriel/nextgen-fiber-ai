@@ -163,7 +163,10 @@ export enum ViewState {
     // Owner workflow views
     INBOX = 'INBOX',                   // Owner's command center
     BY_CLIENT = 'BY_CLIENT',           // View by client
-    BY_PROJECT = 'BY_PROJECT'          // View by project
+    BY_PROJECT = 'BY_PROJECT',         // View by project
+    // Admin Jobs Management
+    JOBS_ADMIN = 'JOBS_ADMIN',         // Admin jobs management
+    RATE_CARDS = 'RATE_CARDS'          // Rate cards management
 }
 
 export interface Invoice {
@@ -195,95 +198,6 @@ export interface Transaction {
     status: 'COMPLETED' | 'PENDING' | 'FAILED';
     type: 'PAYOUT' | 'INCOME';
     description: string;
-}
-
-// ============================================
-// PRODUCTION REPORT TYPES (Produção Diária)
-// ============================================
-
-export type QCStatus = 'PENDING' | 'PASSED' | 'FAILED' | 'NEEDS_REVIEW';
-
-export interface PoleEntry {
-    span_feet: number;
-    anchor: boolean;
-    pole_id_raw: string;
-    pole_ids: string[];
-    is_splice_point: boolean;
-    coil: boolean;
-    snowshoe: boolean;
-    notes?: string;
-    cumulative_feet: number;
-}
-
-export interface ProductionReportHeader {
-    lineman_name: string;
-    start_date: string;
-    end_date: string;
-    city: string;
-    project_name: string;
-    fiber_count: number;
-    run_id: string;
-    declared_total_feet: number;
-    service_type: string;
-    customer?: string;
-    olt_cabinet?: string;
-    feeder_id?: string;
-}
-
-export interface ProductionReport {
-    id: string;
-    source_file: string;
-    header: ProductionReportHeader;
-    entries: PoleEntry[];
-    calculated_total_feet: number;
-    total_anchors: number;
-    total_coils: number;
-    total_snowshoes: number;
-    total_splice_points: number;
-    extraction_confidence: number;
-    extraction_timestamp: string;
-    extracted_by: string;
-}
-
-export interface ValidationError {
-    code: string;
-    message: string;
-    field?: string;
-    expected?: string;
-    actual?: string;
-    entry_index?: number;
-}
-
-export interface ValidationWarning {
-    code: string;
-    message: string;
-    field?: string;
-    suggestion?: string;
-    entry_index?: number;
-}
-
-export interface ProductionValidationResult {
-    report_id: string;
-    lineman: string;
-    project: string;
-    run_id: string;
-    date: string;
-    qc_status: QCStatus;
-    is_valid: boolean;
-    metrics: {
-        declared_total_ft: number;
-        calculated_total_ft: number;
-        discrepancy_ft: number;
-        discrepancy_pct: number;
-        entry_count: number;
-        anchor_count: number;
-        coil_count: number;
-        snowshoe_count: number;
-        splice_point_count: number;
-    };
-    errors: ValidationError[];
-    warnings: ValidationWarning[];
-    recommendations: string[];
 }
 
 // ============================================

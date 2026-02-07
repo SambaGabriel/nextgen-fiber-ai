@@ -7,7 +7,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { MapAnalysisResult, Language, AuditStatus, AuditResult } from '../types';
 
 const getClient = () => {
-  const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
+  const apiKey = (import.meta as any).env?.VITE_ANTHROPIC_API_KEY;
   console.log('[ClaudeService] API Key present:', !!apiKey, 'length:', apiKey?.length);
   if (!apiKey) {
     console.error('[ClaudeService] NO API KEY FOUND!');
@@ -150,7 +150,7 @@ export const analyzeMapWithClaude = async (
     console.log('[ClaudeService] Sending request to Claude API...');
 
     // Use direct fetch for better control over large files
-    const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
+    const apiKey = (import.meta as any).env?.VITE_ANTHROPIC_API_KEY;
 
     console.log('[ClaudeService] Sending request via fetch...');
     if (typeof document !== 'undefined') {

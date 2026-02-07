@@ -83,7 +83,7 @@ const TOKEN_STORAGE_KEY = 'fs_auth_tokens';
 const USER_STORAGE_KEY = 'fs_auth_user';
 
 // API configuration
-const API_BASE_URL = import.meta.env.VITE_API_V2_URL || 'http://localhost:8000/api/v2';
+const API_BASE_URL = (import.meta as any).env?.VITE_API_V2_URL || 'http://localhost:8000/api/v2';
 
 /**
  * API Client V2 with JWT authentication

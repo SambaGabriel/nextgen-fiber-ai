@@ -156,18 +156,46 @@ const create = async (jobData: Omit<Job, 'id' | 'jobCode' | 'createdAt' | 'updat
 const update = async (id: string, updates: Partial<Job>): Promise<Job | undefined> => {
   const updateData: any = {};
 
-  if (updates.title) updateData.title = updates.title;
-  if (updates.assignedToId) updateData.assigned_to_id = updates.assignedToId;
-  if (updates.assignedToName) updateData.assigned_to_name = updates.assignedToName;
-  if (updates.status) {
+  // Text fields - use !== undefined to allow empty strings
+  if (updates.title !== undefined) updateData.title = updates.title;
+  if (updates.clientId !== undefined) updateData.client_id = updates.clientId;
+  if (updates.clientName !== undefined) updateData.client_name = updates.clientName;
+  if (updates.workType !== undefined) updateData.work_type = updates.workType;
+  if (updates.supervisorNotes !== undefined) updateData.supervisor_notes = updates.supervisorNotes;
+
+  // Assignment fields - allow null for unassignment
+  if (updates.assignedToId !== undefined) {
+    // Convert empty string or 'lineman-default' to null for unassignment
+    const assignedId = updates.assignedToId === '' || updates.assignedToId === 'lineman-default'
+      ? null
+      : updates.assignedToId;
+    updateData.assigned_to_id = assignedId;
+  }
+  if (updates.assignedToName !== undefined) updateData.assigned_to_name = updates.assignedToName;
+  if (updates.assignedById !== undefined) updateData.assigned_by_id = updates.assignedById || null;
+  if (updates.assignedByName !== undefined) updateData.assigned_by_name = updates.assignedByName;
+  if (updates.assignedAt !== undefined) updateData.assigned_at = updates.assignedAt;
+
+  // Status - always update status_changed_at when status changes
+  if (updates.status !== undefined) {
     updateData.status = updates.status;
     updateData.status_changed_at = new Date().toISOString();
   }
-  if (updates.productionData) updateData.production_data = updates.productionData;
-  if (updates.supervisorNotes) updateData.supervisor_notes = updates.supervisorNotes;
-  if (updates.location) updateData.location = updates.location;
-  if (updates.scheduledDate) updateData.scheduled_date = updates.scheduledDate;
-  if (updates.estimatedFootage) updateData.estimated_footage = updates.estimatedFootage;
+
+  // Date fields - allow null/undefined
+  if (updates.scheduledDate !== undefined) updateData.scheduled_date = updates.scheduledDate || null;
+  if (updates.dueDate !== undefined) updateData.due_date = updates.dueDate || null;
+
+  // Numeric fields - allow 0 and null
+  if (updates.estimatedFootage !== undefined) updateData.estimated_footage = updates.estimatedFootage;
+
+  // Object fields
+  if (updates.location !== undefined) updateData.location = updates.location;
+  if (updates.productionData !== undefined) updateData.production_data = updates.productionData;
+  if (updates.mapFile !== undefined) updateData.map_file = updates.mapFile;
+
+  // Log update for debugging
+  console.log('[jobStorageSupabase] Updating job:', id, 'with:', updateData);
 
   const { data, error } = await supabase
     .from('jobs')
@@ -177,10 +205,11 @@ const update = async (id: string, updates: Partial<Job>): Promise<Job | undefine
     .single();
 
   if (error) {
-    console.error('Error updating job:', error);
+    console.error('[jobStorageSupabase] Error updating job:', error);
     return undefined;
   }
 
+  console.log('[jobStorageSupabase] Job updated successfully:', data?.id);
   return data ? rowToJob(data) : undefined;
 };
 
@@ -197,14 +226,22 @@ const submitProduction = async (
 
 // Delete a job
 const remove = async (id: string): Promise<boolean> => {
-  const { error } = await supabase
+  console.log('[jobStorageSupabase] Attempting to delete job:', id);
+
+  const { error, count } = await supabase
     .from('jobs')
-    .delete()
+    .delete({ count: 'exact' })
     .eq('id', id);
 
+  console.log('[jobStorageSupabase] Delete response - count:', count, 'error:', error);
+
   if (error) {
-    console.error('Error deleting job:', error);
+    console.error('[jobStorageSupabase] Error deleting job:', error);
     return false;
+  }
+
+  if (count === 0) {
+    console.warn('[jobStorageSupabase] No rows deleted - check RLS policies');
   }
 
   return true;

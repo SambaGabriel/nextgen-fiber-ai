@@ -256,6 +256,29 @@ Return ONLY valid JSON:
       const extracted = JSON.parse(jsonMatch[0]);
       console.log('[EXTRACT] Raw extracted data:', extracted);
 
+      // Also try to extract feeder ID from filename as backup
+      // Pattern: BSPD001.04h, MGNV002.01a, etc.
+      const fileName = file.name;
+      const feederFromFileName = fileName.match(/([A-Z]{3,4}\d{3}\.\d{2}[a-z])/i)?.[1] || '';
+      console.log('[EXTRACT] Feeder ID from filename:', feederFromFileName);
+
+      // Also extract OLT from filename (e.g., FLVLALXA from "FLVLALXA - BSPD001.04h")
+      const oltFromFileName = fileName.match(/^([A-Z]{6,10})\s*-/i)?.[1] || '';
+      console.log('[EXTRACT] OLT from filename:', oltFromFileName);
+
+      // Use filename extraction if Claude didn't get trailing letter
+      let finalFeederId = extracted.feederId || '';
+      if (feederFromFileName && (!finalFeederId || !finalFeederId.match(/[a-z]$/i))) {
+        console.log('[EXTRACT] Using feeder ID from filename instead:', feederFromFileName);
+        finalFeederId = feederFromFileName;
+      }
+
+      let finalOlt = extracted.olt || '';
+      if (oltFromFileName && !finalOlt) {
+        console.log('[EXTRACT] Using OLT from filename instead:', oltFromFileName);
+        finalOlt = oltFromFileName;
+      }
+
       // Parse estimatedFootage - handle both number and string
       let footage = '';
       if (extracted.estimatedFootage) {
@@ -271,8 +294,8 @@ Return ONLY valid JSON:
         client: extracted.client,
         city: extracted.city,
         state: extracted.state,
-        olt: extracted.olt,
-        feederId: extracted.feederId,
+        olt: finalOlt,
+        feederId: finalFeederId,
         runNumber: extracted.runNumber,
         workType: extracted.workType,
         estimatedFootage: footage
@@ -285,8 +308,8 @@ Return ONLY valid JSON:
         city: extracted.city || prev.city,
         state: extracted.state || prev.state,
         address: extracted.address || prev.address,
-        olt: extracted.olt || prev.olt,
-        feederId: extracted.feederId || prev.feederId,
+        olt: finalOlt || prev.olt,
+        feederId: finalFeederId || prev.feederId,
         runNumber: extracted.runNumber || prev.runNumber,
         workType: extracted.workType === 'underground' ? 'underground' : 'aerial',
         estimatedFootage: footage || prev.estimatedFootage,

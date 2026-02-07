@@ -36,6 +36,9 @@ const RateCards = lazy(() => import('./components/RateCardsV2'));
 const SettingsPage = lazy(() => import('./components/settings/Settings'));
 // Redline workflow
 const RedlineList = lazy(() => import('./components/redlines/RedlineList'));
+const RedlineEditor = lazy(() => import('./components/redlines/RedlineEditor'));
+// Client Portal
+const ClientPortal = lazy(() => import('./components/client-portal/ClientPortal'));
 
 const INITIAL_RATES: UnitRates = { fiber: 0.35, anchor: 18.00 };
 
@@ -240,24 +243,12 @@ const App: React.FC = () => {
             case ViewState.REDLINES:
                 return <RedlineList user={user} lang={currentLang} />;
 
-            // Client Portal (placeholder - shows message for now)
+            // Client Portal
             case ViewState.CLIENT_PORTAL:
             case ViewState.CLIENT_JOBS:
             case ViewState.CLIENT_PRODUCTION:
             case ViewState.CLIENT_REDLINES:
-                return (
-                    <div className="flex flex-col items-center justify-center h-full gap-4 p-8">
-                        <div className="p-4 rounded-2xl" style={{ background: 'var(--neural-dim)' }}>
-                            <svg className="w-12 h-12" style={{ color: 'var(--neural-core)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                            </svg>
-                        </div>
-                        <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Client Portal</h2>
-                        <p className="text-sm text-center max-w-md" style={{ color: 'var(--text-secondary)' }}>
-                            The Client Viewer Portal is coming soon. Prime contractors will be able to view their scoped jobs, production reports, and review redlines here.
-                        </p>
-                    </div>
-                );
+                return <ClientPortal user={user} lang={currentLang} onNavigate={setCurrentView} />;
 
             // Team management
             case ViewState.TEAM:

@@ -191,11 +191,13 @@ EXTRACTION LOCATIONS:
    - Look for span numbers like "22,23,24" or "SPAN 22-24"
 
 2. FEEDER ID (CRITICAL - look carefully on cable labels):
-   - Feeder ID format: letters + numbers + period + numbers + letter (e.g., BSPD001.04h, BSPD002.01a)
-   - Look for labels like "Armored 48F BSPD001.04h" → feeder ID is BSPD001.04h
-   - Look for labels like "MGNV 96F BSPD002.01a" → feeder ID is BSPD002.01a
+   - Feeder ID format: letters + numbers + period + numbers + TRAILING LETTER (e.g., BSPD001.04h, BSPD002.01a)
+   - IMPORTANT: The feeder ID ALWAYS ends with a lowercase letter (a, b, c, d, e, f, g, h, etc.)
+   - Look for labels like "Armored 48F BSPD001.04h" → feeder ID is BSPD001.04h (include the 'h')
+   - Look for labels like "MGNV 96F BSPD002.01a" → feeder ID is BSPD002.01a (include the 'a')
+   - Pattern: [LETTERS][NUMBERS].[NUMBERS][LETTER] - always include the final letter!
    - The feeder ID is NOT: MST, MasTec, company names, or abbreviations
-   - Feeder ID always has a PERIOD in it (e.g., BSPD001.04h)
+   - Feeder ID always has a PERIOD in it AND a trailing letter (e.g., BSPD001.04h NOT BSPD001.04)
    - Cable type: Armored/MGNV = aerial, Conduit/Buried = underground
 
 3. FOOTAGE MEASUREMENTS:
@@ -208,8 +210,8 @@ EXTRACTION LOCATIONS:
    - State abbreviation if visible
 
 TITLE FORMAT:
-Create title as: "[FeederID] -[FiberCount]ct – [SpanNumbers]"
-Example: "BSPD001.01g -48ct – 22,23,24"
+Create title as: "[FeederID with trailing letter] -[FiberCount]ct – [SpanNumbers]"
+Example: "BSPD001.01g -48ct – 22,23,24" (note: 'g' is the trailing letter of the feeder ID)
 
 RULES:
 - Extract ONLY what you can SEE on the document
@@ -226,7 +228,7 @@ Return ONLY valid JSON:
   "state": "state abbrev if visible or empty string",
   "address": "main road/street names",
   "olt": "project code from header",
-  "feederId": "feeder ID with period like BSPD001.04h (NOT company names)",
+  "feederId": "feeder ID with period AND trailing letter like BSPD001.04h - MUST include final letter (a,b,c,d,e,f,g,h)",
   "runNumber": "map page numbers like 117-122",
   "workType": "aerial or underground",
   "estimatedFootage": 0

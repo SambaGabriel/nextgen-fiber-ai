@@ -298,9 +298,26 @@ Return ONLY valid JSON:
         footage = isNaN(footageNum) || footageNum === 0 ? '' : String(footageNum);
       }
 
+      // Fix title to use corrected feeder ID with trailing letter
+      let finalTitle = extracted.title || '';
+      if (finalFeederId && extracted.feederId && finalFeederId !== extracted.feederId) {
+        // Replace the incomplete feeder ID in title with the complete one
+        finalTitle = finalTitle.replace(extracted.feederId, finalFeederId);
+        console.log('[EXTRACT] Fixed title feeder ID:', extracted.feederId, '->', finalFeederId);
+      }
+      // If title doesn't have feeder ID but we have one, prepend it
+      if (finalFeederId && finalTitle && !finalTitle.includes(finalFeederId)) {
+        // Check if title starts with a feeder-like pattern without trailing letter
+        const feederPattern = finalFeederId.slice(0, -1); // Remove last letter
+        if (finalTitle.startsWith(feederPattern)) {
+          finalTitle = finalTitle.replace(feederPattern, finalFeederId);
+          console.log('[EXTRACT] Replaced partial feeder in title');
+        }
+      }
+
       // Update form with extracted data
       console.log('[EXTRACT] Filling form with:', {
-        title: extracted.title,
+        title: finalTitle,
         client: extracted.client,
         city: extracted.city,
         state: extracted.state,
@@ -313,7 +330,7 @@ Return ONLY valid JSON:
 
       setFormData(prev => ({
         ...prev,
-        title: extracted.title || prev.title,
+        title: finalTitle || prev.title,
         clientName: extracted.client || prev.clientName,
         city: extracted.city || prev.city,
         state: extracted.state || prev.state,

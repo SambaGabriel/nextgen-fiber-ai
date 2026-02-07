@@ -186,13 +186,17 @@ const DailyProductionForm: React.FC<DailyProductionFormProps> = ({ user, lang, j
 
         try {
             // If linked to a job, save production data to the job
+            // IMPORTANT: Lineman only submits production data, NOT client/customer/workType
+            // Those fields come from the Job (source of truth set by Admin)
             if (job) {
                 const productionData: Job['productionData'] = {
                     submittedAt: new Date().toISOString(),
+                    completedDate: header.endDate || header.startDate, // Date lineman completed the work
                     totalFootage: totals.totalSpan,
                     anchorCount: totals.anchorCount,
                     coilCount: totals.coilCount,
                     snowshoeCount: totals.snowshoeCount,
+                    comments: header.prints || undefined, // Optional lineman comments
                     entries: entries.filter(e => e.spanFeet && e.spanFeet > 0).map(e => ({
                         spanFeet: e.spanFeet || 0,
                         anchor: e.anchor,
@@ -203,7 +207,7 @@ const DailyProductionForm: React.FC<DailyProductionFormProps> = ({ user, lang, j
                     }))
                 };
 
-                // Update job with production data
+                // Update job with production data (only production fields, job base data is immutable)
                 await jobStorageSupabase.submitProduction(job.id, productionData);
 
                 // Save to local reports
@@ -412,30 +416,55 @@ const DailyProductionForm: React.FC<DailyProductionFormProps> = ({ user, lang, j
                 </button>
             )}
 
-            {/* Job Info Banner */}
+            {/* Job Info Banner - Read-only job information */}
             {job && (
                 <div
-                    className="p-4 rounded-xl flex items-center gap-4"
-                    style={{ background: 'var(--neural-dim)', border: '1px solid var(--border-neural)' }}
+                    className="p-4 sm:p-6 rounded-xl sm:rounded-2xl"
+                    style={{ background: 'var(--surface)', border: '1px solid var(--border-neural)' }}
                 >
-                    <div
-                        className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
-                        style={{ background: 'var(--neural-glow)' }}
-                    >
-                        <Briefcase className="w-6 h-6" style={{ color: 'var(--neural-core)' }} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                        <p className="font-black text-lg truncate" style={{ color: 'var(--text-primary)' }}>{job.title}</p>
-                        <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                            {job.jobCode} • {job.clientName} • {job.location?.city}
-                        </p>
-                    </div>
-                    {job.estimatedFootage && (
-                        <div className="text-right hidden sm:block">
-                            <p className="text-lg font-black" style={{ color: 'var(--neural-core)' }}>{job.estimatedFootage.toLocaleString()} ft</p>
-                            <p className="text-[9px] font-bold uppercase" style={{ color: 'var(--text-ghost)' }}>Estimated</p>
+                    <div className="flex items-start gap-4">
+                        <div
+                            className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                            style={{ background: 'var(--neural-glow)' }}
+                        >
+                            <Briefcase className="w-6 h-6" style={{ color: 'var(--neural-core)' }} />
                         </div>
-                    )}
+                        <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-2">
+                                <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase" style={{ background: 'var(--neural-dim)', color: 'var(--neural-core)' }}>
+                                    Job Assigned
+                                </span>
+                            </div>
+                            <p className="font-black text-lg truncate" style={{ color: 'var(--text-primary)' }}>{job.title}</p>
+                            <p className="text-sm font-mono" style={{ color: 'var(--text-secondary)' }}>{job.jobCode}</p>
+                        </div>
+                        {job.estimatedFootage && (
+                            <div className="text-right hidden sm:block">
+                                <p className="text-xl font-black" style={{ color: 'var(--neural-core)' }}>{job.estimatedFootage.toLocaleString()} ft</p>
+                                <p className="text-[9px] font-bold uppercase" style={{ color: 'var(--text-ghost)' }}>Estimated</p>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Job Details Grid - Read-only */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 pt-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+                        <div>
+                            <p className="text-[9px] font-bold uppercase tracking-wider mb-1" style={{ color: 'var(--text-ghost)' }}>Client</p>
+                            <p className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{job.clientName || 'N/A'}</p>
+                        </div>
+                        <div>
+                            <p className="text-[9px] font-bold uppercase tracking-wider mb-1" style={{ color: 'var(--text-ghost)' }}>Location</p>
+                            <p className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{job.location?.city || 'N/A'}</p>
+                        </div>
+                        <div>
+                            <p className="text-[9px] font-bold uppercase tracking-wider mb-1" style={{ color: 'var(--text-ghost)' }}>Work Type</p>
+                            <p className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{job.workType || 'N/A'}</p>
+                        </div>
+                        <div>
+                            <p className="text-[9px] font-bold uppercase tracking-wider mb-1" style={{ color: 'var(--text-ghost)' }}>Fiber</p>
+                            <p className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{job.fiberCount || 'N/A'}</p>
+                        </div>
+                    </div>
                 </div>
             )}
 
@@ -512,58 +541,96 @@ const DailyProductionForm: React.FC<DailyProductionFormProps> = ({ user, lang, j
                     {/* Header Form - B&O Premium Style */}
                     <div className="surface-premium rounded-xl sm:rounded-2xl p-4 sm:p-8 relative" style={{ background: 'var(--surface)' }}>
                         <h3 className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.2em] mb-4 sm:mb-6 flex items-center gap-2" style={{ color: 'var(--text-ghost)' }}>
-                            <Building2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Project Information
+                            <Building2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> {job ? 'Production Details' : 'Project Information'}
                         </h3>
 
-                        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-                            {[
-                                { label: 'Lineman', icon: UserIcon, value: header.lineman, field: 'lineman', placeholder: 'Enter name...' },
-                                { label: 'Start Date', icon: Calendar, value: header.startDate, field: 'startDate', type: 'date' },
-                                { label: 'End Date', icon: Clock, value: header.endDate, field: 'endDate', type: 'date' },
-                                { label: 'City', icon: MapPin, value: header.city, field: 'city', placeholder: 'City name...' },
-                                { label: 'Project OLT', value: header.projectOLT, field: 'projectOLT', placeholder: 'OLT identifier...' },
-                                { label: 'Map Code', value: header.bspd, field: 'bspd', placeholder: 'MAP-001...' },
-                                { label: 'Fibra CT', value: header.fibraCT, field: 'fibraCT', placeholder: 'Fiber CT...' },
-                            ].map((input, i) => (
-                                <div key={i} className="space-y-2">
+                        {/* When job is linked: Only show date fields (lineman only fills dates + production data) */}
+                        {job ? (
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-6">
+                                <div className="space-y-2">
                                     <label className="text-[10px] font-bold uppercase tracking-wider flex items-center gap-2" style={{ color: 'var(--text-ghost)' }}>
-                                        {input.icon && <input.icon className="w-3 h-3" />} {input.label}
+                                        <UserIcon className="w-3 h-3" /> Lineman
+                                    </label>
+                                    <div className="input-neural w-full flex items-center" style={{ background: 'var(--elevated)', cursor: 'not-allowed' }}>
+                                        <span style={{ color: 'var(--text-secondary)' }}>{header.lineman}</span>
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-bold uppercase tracking-wider flex items-center gap-2" style={{ color: 'var(--text-ghost)' }}>
+                                        <Calendar className="w-3 h-3" /> Completed Date *
                                     </label>
                                     <input
-                                        type={input.type || 'text'}
-                                        value={input.value}
-                                        onChange={(e) => handleHeaderChange(input.field as keyof ProductionHeader, e.target.value)}
+                                        type="date"
+                                        value={header.endDate || header.startDate}
+                                        onChange={(e) => handleHeaderChange('endDate', e.target.value)}
                                         className="input-neural w-full"
-                                        placeholder={input.placeholder}
                                     />
                                 </div>
-                            ))}
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-ghost)' }}>Client *</label>
-                                <select
-                                    value={header.clientId}
-                                    onChange={(e) => handleHeaderChange('clientId', e.target.value)}
-                                    className="input-neural w-full cursor-pointer"
-                                >
-                                    <option value="">Select client...</option>
-                                    {clients.map(client => (
-                                        <option key={client.id} value={client.id}>{client.name}</option>
-                                    ))}
-                                </select>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-bold uppercase tracking-wider flex items-center gap-2" style={{ color: 'var(--text-ghost)' }}>
+                                        <Hash className="w-3 h-3" /> Comments
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={header.prints}
+                                        onChange={(e) => handleHeaderChange('prints', e.target.value)}
+                                        className="input-neural w-full"
+                                        placeholder="Optional notes..."
+                                    />
+                                </div>
                             </div>
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-ghost)' }}>Strand Type</label>
-                                <select
-                                    value={header.strandType}
-                                    onChange={(e) => handleHeaderChange('strandType', e.target.value)}
-                                    className="input-neural w-full cursor-pointer"
-                                >
-                                    <option value="STRAND">Strand</option>
-                                    <option value="FIBER">Fiber</option>
-                                    <option value="OVERLASH">Overlash</option>
-                                </select>
+                        ) : (
+                            /* When no job linked: Show full form for standalone production entry */
+                            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+                                {[
+                                    { label: 'Lineman', icon: UserIcon, value: header.lineman, field: 'lineman', placeholder: 'Enter name...' },
+                                    { label: 'Start Date', icon: Calendar, value: header.startDate, field: 'startDate', type: 'date' },
+                                    { label: 'End Date', icon: Clock, value: header.endDate, field: 'endDate', type: 'date' },
+                                    { label: 'City', icon: MapPin, value: header.city, field: 'city', placeholder: 'City name...' },
+                                    { label: 'Project OLT', value: header.projectOLT, field: 'projectOLT', placeholder: 'OLT identifier...' },
+                                    { label: 'Map Code', value: header.bspd, field: 'bspd', placeholder: 'MAP-001...' },
+                                    { label: 'Fibra CT', value: header.fibraCT, field: 'fibraCT', placeholder: 'Fiber CT...' },
+                                ].map((input, i) => (
+                                    <div key={i} className="space-y-2">
+                                        <label className="text-[10px] font-bold uppercase tracking-wider flex items-center gap-2" style={{ color: 'var(--text-ghost)' }}>
+                                            {input.icon && <input.icon className="w-3 h-3" />} {input.label}
+                                        </label>
+                                        <input
+                                            type={input.type || 'text'}
+                                            value={input.value}
+                                            onChange={(e) => handleHeaderChange(input.field as keyof ProductionHeader, e.target.value)}
+                                            className="input-neural w-full"
+                                            placeholder={input.placeholder}
+                                        />
+                                    </div>
+                                ))}
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-ghost)' }}>Client *</label>
+                                    <select
+                                        value={header.clientId}
+                                        onChange={(e) => handleHeaderChange('clientId', e.target.value)}
+                                        className="input-neural w-full cursor-pointer"
+                                    >
+                                        <option value="">Select client...</option>
+                                        {clients.map(client => (
+                                            <option key={client.id} value={client.id}>{client.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-ghost)' }}>Strand Type</label>
+                                    <select
+                                        value={header.strandType}
+                                        onChange={(e) => handleHeaderChange('strandType', e.target.value)}
+                                        className="input-neural w-full cursor-pointer"
+                                    >
+                                        <option value="STRAND">Strand</option>
+                                        <option value="FIBER">Fiber</option>
+                                        <option value="OVERLASH">Overlash</option>
+                                    </select>
+                                </div>
                             </div>
-                        </div>
+                        )}
                     </div>
 
                     {/* Entries Table - Tesla Data Grid Style */}

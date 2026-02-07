@@ -344,8 +344,10 @@ export interface Job {
   statusChangedAt: string;
 
   // Production Sheet submission (linked when lineman submits)
+  // IMPORTANT: Lineman only fills production data. Client/Customer/WorkType come from Job (Admin)
   productionData?: {
     submittedAt: string;
+    completedDate?: string;      // Date lineman completed the work
     totalFootage: number;
     anchorCount: number;
     coilCount: number;
@@ -359,7 +361,8 @@ export interface Job {
       notes?: string;
     }>;
     photos?: Photo[];
-    linemanNotes?: string;
+    comments?: string;           // Optional lineman comments
+    linemanNotes?: string;       // Deprecated: use comments
   };
 
   // Project link (created when submitted for invoicing)

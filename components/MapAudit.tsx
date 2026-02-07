@@ -289,11 +289,11 @@ const MapAudit: React.FC<MapAuditProps> = ({ lang, user, onSaveToReports, auditQ
 
         console.log('[MapAudit] File selected:', file.name, 'type:', file.type, 'size:', file.size);
 
-        // Check file size (max 32MB for Claude API)
-        const maxSize = 32 * 1024 * 1024;
+        // Check file size (max 500MB)
+        const maxSize = 500 * 1024 * 1024;
         if (file.size > maxSize) {
             console.error('[MapAudit] File too large:', file.size, 'max:', maxSize);
-            alert('Arquivo muito grande. Máximo: 32MB');
+            alert('Arquivo muito grande. Máximo: 500MB');
             return;
         }
 

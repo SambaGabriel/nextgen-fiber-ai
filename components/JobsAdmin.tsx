@@ -1377,7 +1377,7 @@ Return ONLY valid JSON:
                         Click to upload map or document
                       </p>
                       <p className="text-xs mt-1" style={{ color: 'var(--text-tertiary)' }}>
-                        PDF, JPG, PNG (max 32MB)
+                        PDF, JPG, PNG (max 500MB)
                       </p>
                     </>
                   )}

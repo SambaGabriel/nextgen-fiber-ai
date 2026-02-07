@@ -76,17 +76,21 @@ const UNITS = [
   { value: 'DAY', label: 'Per Day' },
 ];
 
-// Sample rate codes (commonly used)
-const SAMPLE_CODES = [
-  { code: 'BSPDLASH', description: 'Lashing' },
-  { code: 'BSPD82C', description: '82 Count' },
-  { code: 'BSPDSTRAND', description: 'Strand' },
-  { code: 'AERIAL', description: 'Aerial Installation' },
-  { code: 'UNDERGROUND', description: 'Underground Installation' },
-  { code: 'OVERLASH', description: 'Overlash' },
-  { code: 'SPLICE', description: 'Splicing' },
-  { code: 'ANCHOR', description: 'Anchor Installation' },
+// Master rate codes - Brightspeed Alabama
+const MASTER_RATE_CODES = [
+  { code: 'BSPD82C', description: 'Direct Aerial Place Fiber includes lashing to newly installed strand', rate: 0.70, unit: 'FT' },
+  { code: 'BSPDSTRAND', description: 'Place Strand 6.6M - install strand with pole attachment hardware and bonding', rate: 0.70, unit: 'FT' },
+  { code: 'BSPDLASH', description: 'Overlash Fiber to customer existing strand', rate: 0.90, unit: 'FT' },
+  { code: 'BSPD85C', description: 'Fiber Placed in Conduit - place fiber in new or existing conduit', rate: 0.78, unit: 'FT' },
+  { code: 'BSPDDBI', description: 'Directional Boring Composite - initial', rate: 7.80, unit: 'FT' },
+  { code: 'BSPDDBIA', description: 'Directional Boring - additional cable/HDPE', rate: 2.00, unit: 'FT' },
+  { code: 'BSPDDBIAR', description: 'Directional Boring - additional - Rock', rate: 15.00, unit: 'FT' },
+  { code: 'BSPDDBIC', description: 'Directional Boring composite - initial - Cobble', rate: 13.00, unit: 'FT' },
+  { code: 'BSPDDBIR', description: 'Directional Boring Composite - initial - Rock', rate: 58.00, unit: 'FT' },
 ];
+
+// Sample rate codes (commonly used) - for quick selection
+const SAMPLE_CODES = MASTER_RATE_CODES.slice(0, 4);
 
 interface CreateRateForm {
   customer_name: string;
@@ -136,103 +140,93 @@ const RateCards: React.FC<RateCardsProps> = ({ user, lang }) => {
   const [extractedRates, setExtractedRates] = useState<Partial<RateCardItem>[]>([]);
   const [extractionError, setExtractionError] = useState('');
 
-  // Load rate cards from Supabase
+  // Load rate cards from Supabase with localStorage fallback
   const loadRateCards = useCallback(async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
+      // Try Supabase first
+      const { data: cardsData, error: cardsError } = await supabase
         .from('rate_cards')
         .select('*')
         .order('customer_name', { ascending: true });
 
-      if (error) {
-        console.error('Error loading rate cards:', error);
-        // If table doesn't exist, use sample data
-        setRateCards(getSampleRateCards());
+      const { data: setsData, error: setsError } = await supabase
+        .from('rate_card_sets')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (cardsError || setsError) {
+        console.log('[RATE CARDS] Supabase not available, loading from localStorage');
+        // Load from localStorage
+        const savedCards = localStorage.getItem('rateCards');
+        const savedSets = localStorage.getItem('rateCardSets');
+
+        if (savedCards) {
+          setRateCards(JSON.parse(savedCards));
+        } else {
+          setRateCards(getSampleRateCards());
+        }
+
+        if (savedSets) {
+          setRateSets(JSON.parse(savedSets));
+        }
       } else {
-        setRateCards(data || []);
+        setRateCards(cardsData || []);
+        setRateSets(setsData || []);
       }
     } catch (error) {
       console.error('Error loading rate cards:', error);
-      // Use sample data as fallback
-      setRateCards(getSampleRateCards());
+      // Load from localStorage as fallback
+      const savedCards = localStorage.getItem('rateCards');
+      const savedSets = localStorage.getItem('rateCardSets');
+
+      if (savedCards) {
+        setRateCards(JSON.parse(savedCards));
+      } else {
+        setRateCards(getSampleRateCards());
+      }
+
+      if (savedSets) {
+        setRateSets(JSON.parse(savedSets));
+      }
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  // Sample data for demo
-  const getSampleRateCards = (): RateCardItem[] => [
-    {
-      id: '1',
-      customer_id: 'brightspeed',
-      customer_name: 'Brightspeed',
-      region: 'NC',
-      code: 'BSPDLASH',
-      description: 'Lashing',
-      unit: 'FT',
-      rate: 0.90,
-      is_archived: false,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    },
-    {
-      id: '2',
-      customer_id: 'brightspeed',
-      customer_name: 'Brightspeed',
-      region: 'NC',
-      code: 'BSPD82C',
-      description: '82 Count Fiber',
-      unit: 'FT',
-      rate: 0.70,
-      is_archived: false,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    },
-    {
-      id: '3',
-      customer_id: 'brightspeed',
-      customer_name: 'Brightspeed',
-      region: 'NC',
-      code: 'BSPDSTRAND',
-      description: 'Strand Installation',
-      unit: 'FT',
-      rate: 0.70,
-      is_archived: false,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    },
-    {
-      id: '4',
-      customer_id: 'att',
-      customer_name: 'AT&T',
-      region: 'TX',
-      code: 'AERIAL',
-      description: 'Aerial Fiber Installation',
-      unit: 'FT',
-      rate: 0.85,
-      is_archived: false,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    },
-    {
-      id: '5',
-      customer_id: 'spectrum',
-      customer_name: 'Spectrum',
-      region: 'All Regions',
-      code: 'SPLICE',
-      description: 'Fiber Splicing',
-      unit: 'EA',
-      rate: 45.00,
-      is_archived: false,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    },
-  ];
+  // Sample data for demo - Brightspeed Alabama master rates
+  const getSampleRateCards = (): RateCardItem[] => MASTER_RATE_CODES.map((r, idx) => ({
+    id: `master-${idx + 1}`,
+    customer_id: 'brightspeed',
+    customer_name: 'Brightspeed',
+    region: 'AL',
+    code: r.code,
+    description: r.description,
+    unit: r.unit as 'FT' | 'EA' | 'HR' | 'DAY',
+    rate: r.rate,
+    is_archived: false,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  }));
 
   useEffect(() => {
     loadRateCards();
   }, [loadRateCards]);
+
+  // Save to localStorage whenever data changes (backup persistence)
+  useEffect(() => {
+    if (rateCards.length > 0) {
+      localStorage.setItem('rateCards', JSON.stringify(rateCards));
+      console.log('[RATE CARDS] Saved', rateCards.length, 'cards to localStorage');
+    }
+  }, [rateCards]);
+
+  useEffect(() => {
+    if (rateSets.length > 0) {
+      localStorage.setItem('rateCardSets', JSON.stringify(rateSets));
+      console.log('[RATE CARDS] Saved', rateSets.length, 'sets to localStorage');
+    }
+  }, [rateSets]);
 
   // Filter rate cards
   const filteredRateCards = rateCards.filter(rate => {
@@ -316,31 +310,37 @@ const RateCards: React.FC<RateCardsProps> = ({ user, lang }) => {
               },
               {
                 type: 'text',
-                text: `You are a fiber optic construction rate card expert.
+                text: `You are a fiber optic construction rate card expert. Extract ONLY the following specific rate codes from this document.
 
-IMPORTANT: Read ALL PAGES of this PDF document from start to finish. Do not stop at the first page.
+IMPORTANT: Only extract these SPECIFIC codes (ignore all others):
+- BSPD82C: Direct Aerial Place Fiber (expected ~$0.70/FT)
+- BSPDSTRAND: Place Strand 6.6M (expected ~$0.70/FT)
+- BSPDLASH: Overlash Fiber to existing strand (expected ~$0.90/FT)
+- BSPD85C: Fiber Placed in Conduit (expected ~$0.78/FT)
+- BSPDDBI: Directional Boring Composite initial (expected ~$7.80/FT)
+- BSPDDBIA: Directional Boring additional (expected ~$2.00/FT)
+- BSPDDBIAR: Directional Boring additional Rock (expected ~$15.00/FT)
+- BSPDDBIC: Directional Boring Cobble initial (expected ~$13.00/FT)
+- BSPDDBIR: Directional Boring Rock initial (expected ~$58.00/FT)
 
-Extract EVERY rate item from ALL pages. This is a rate card with pricing for construction work items.
-
-For each item found, extract:
-- code: The item code/number (e.g., "BSPDLASH", "SP001", "1.1", etc.)
-- description: What the item is for (the work description)
-- unit: The unit - must be one of: "FT" (per foot/linear foot/LF), "EA" (each/unit), "HR" (per hour), "DAY" (per day)
+For each code found, extract:
+- code: The exact code (e.g., "BSPDLASH")
+- description: The work description
+- unit: "FT" (per foot)
 - rate: The dollar amount as a number (no $ sign)
 
-CRITICAL INSTRUCTIONS:
-1. Go through EVERY page of the document
-2. Extract EVERY line item with a price
-3. Include items from all sections and categories
-4. Do not skip any items
+RATE EXTRACTION IS CRITICAL:
+- Capture the EXACT numeric value from the document
+- Do NOT use the expected values above - extract the ACTUAL value from the PDF
+- If you see "$0.90" extract as 0.90
 
-Return ONLY a valid JSON array with ALL items found. Example:
+Return ONLY a valid JSON array with the codes found:
 [
-  {"code": "BSPDLASH", "description": "Lashing", "unit": "FT", "rate": 0.90},
-  {"code": "ANCHOR", "description": "Anchor Installation", "unit": "EA", "rate": 45.00}
+  {"code": "BSPD82C", "description": "Direct Aerial Place Fiber...", "unit": "FT", "rate": 0.70},
+  {"code": "BSPDLASH", "description": "Overlash Fiber...", "unit": "FT", "rate": 0.90}
 ]
 
-Be thorough - extract hundreds of items if they exist in the document.`
+Only include codes from the list above. Ignore all other items.`
               }
             ]
           }]
@@ -354,7 +354,9 @@ Be thorough - extract hundreds of items if they exist in the document.`
       const data = await response.json();
       const content = data.content?.[0]?.text || '';
 
-      console.log('[RATE EXTRACT] Raw response:', content.substring(0, 500));
+      console.log('[RATE EXTRACT] Raw response length:', content.length);
+      console.log('[RATE EXTRACT] Raw response preview:', content.substring(0, 1000));
+      console.log('[RATE EXTRACT] Raw response end:', content.substring(content.length - 500));
 
       // Parse JSON array from response - try multiple patterns
       let jsonMatch = content.match(/\[[\s\S]*?\]/);
@@ -386,17 +388,59 @@ Be thorough - extract hundreds of items if they exist in the document.`
 
       console.log('[RATE EXTRACT] Found', rates.length, 'rates');
 
+      // Log first few rates for debugging
+      console.log('[RATE EXTRACT] Sample rates:', JSON.stringify(rates.slice(0, 5), null, 2));
+
+      // Helper function to parse rate values from various formats
+      const parseRateValue = (value: any): number => {
+        if (typeof value === 'number') return value;
+        if (!value) return 0;
+
+        // Convert to string and clean up
+        let rateStr = String(value).trim();
+
+        // Remove $ sign, commas, and other non-numeric characters except decimal point
+        rateStr = rateStr.replace(/[$,]/g, '');
+
+        // Handle formats like "0.90/FT" - extract just the number
+        const numMatch = rateStr.match(/^[\d.]+/);
+        if (numMatch) {
+          rateStr = numMatch[0];
+        }
+
+        const parsed = parseFloat(rateStr);
+        return isNaN(parsed) ? 0 : parsed;
+      };
+
       // Add customer and region to each rate
-      const ratesWithCustomer = rates.map((r: any) => ({
-        customer_id: uploadCustomer.toLowerCase().replace(/\s+/g, '-'),
-        customer_name: uploadCustomer,
-        region: uploadRegion,
-        code: r.code?.toUpperCase() || 'UNKNOWN',
-        description: r.description || '',
-        unit: ['FT', 'EA', 'HR', 'DAY'].includes(r.unit) ? r.unit : 'FT',
-        rate: parseFloat(r.rate) || 0,
-        is_archived: false
-      }));
+      const ratesWithCustomer = rates.map((r: any, idx: number) => {
+        const parsedRate = parseRateValue(r.rate);
+
+        // Log rates that parsed as 0 but had a value
+        if (parsedRate === 0 && r.rate) {
+          console.log(`[RATE EXTRACT] Warning: Rate #${idx} parsed as 0. Original value:`, r.rate);
+        }
+
+        return {
+          customer_id: uploadCustomer.toLowerCase().replace(/\s+/g, '-'),
+          customer_name: uploadCustomer,
+          region: uploadRegion,
+          code: r.code?.toString().toUpperCase() || 'UNKNOWN',
+          description: r.description || '',
+          unit: ['FT', 'EA', 'HR', 'DAY'].includes(r.unit?.toUpperCase()) ? r.unit.toUpperCase() : 'FT',
+          rate: parsedRate,
+          is_archived: false
+        };
+      });
+
+      // Check if all rates are 0 (likely extraction issue)
+      const nonZeroRates = ratesWithCustomer.filter(r => r.rate > 0);
+      if (nonZeroRates.length === 0 && ratesWithCustomer.length > 0) {
+        console.error('[RATE EXTRACT] WARNING: All rates are $0.00! This indicates an extraction problem.');
+        console.error('[RATE EXTRACT] Raw rate values from first 5 items:', rates.slice(0, 5).map((r: any) => r.rate));
+      } else {
+        console.log(`[RATE EXTRACT] Successfully parsed ${nonZeroRates.length}/${ratesWithCustomer.length} rates with values > $0`);
+      }
 
       setExtractedRates(ratesWithCustomer);
 

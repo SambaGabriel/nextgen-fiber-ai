@@ -30,8 +30,8 @@ const MyJobs = lazy(() => import('./components/MyJobs'));
 const JobDetails = lazy(() => import('./components/JobDetails'));
 // Admin jobs management
 const JobsAdmin = lazy(() => import('./components/JobsAdmin'));
-// Admin rate cards management
-const RateCards = lazy(() => import('./components/RateCards'));
+// Admin rate cards management (V2 with multi-column rates)
+const RateCards = lazy(() => import('./components/RateCardsV2'));
 
 const INITIAL_RATES: UnitRates = { fiber: 0.35, anchor: 18.00 };
 

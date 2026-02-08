@@ -3,7 +3,7 @@
 ## Quick Reference
 ```
 DEV:     http://localhost:5174
-PROD:    https://legendary-crumble-fdecee.netlify.app
+PROD:    https://nextgenaifirst.netlify.app
 GITHUB:  https://github.com/SambaGabriel/nextgen-fiber-ai
 SUPA:    https://supabase.com/dashboard
 ```

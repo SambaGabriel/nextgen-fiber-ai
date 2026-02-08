@@ -16,10 +16,13 @@ export enum AuditStatus {
 export type UserRole =
     | 'ADMIN'           // Full system access
     | 'SUPERVISOR'      // Manages jobs, rate cards, approves production
-    | 'LINEMAN'         // Field technician, sees assigned jobs
+    | 'LINEMAN'         // Field technician (aerial), sees assigned jobs
+    | 'FOREMAN'         // Underground crew leader, day rate + conduit pay
     | 'REDLINE_SPECIALIST' // Creates and validates rate card redlines
     | 'CLIENT_REVIEWER' // External portal for Prime Contractors
     | 'BILLING'         // Views financials and invoices
+    | 'TRUCK_INVESTOR'  // Owns trucks, receives commission per footage
+    | 'DRILL_INVESTOR'  // Owns drills, receives commission per footage
     | 'VIEWER';         // Read-only access
 
 export interface User {
@@ -200,7 +203,19 @@ export enum ViewState {
     // Team Management
     TEAM = 'TEAM',                     // User/team management
     // Settings
-    SETTINGS = 'SETTINGS'              // Settings page (CRM enterprise)
+    SETTINGS = 'SETTINGS',             // Settings page (CRM enterprise)
+    // Equipment Management
+    TRUCKS = 'TRUCKS',                 // Truck management (admin)
+    DRILLS = 'DRILLS',                 // Drill management (admin)
+    // Payroll
+    PAYROLL = 'PAYROLL',               // Payroll admin dashboard
+    PAYROLL_WEEK = 'PAYROLL_WEEK',     // Weekly payroll details
+    MY_PAYSTUBS = 'MY_PAYSTUBS',       // Worker's pay stubs
+    // Investor Portal
+    INVESTOR_DASHBOARD = 'INVESTOR_DASHBOARD', // Investor home
+    INVESTOR_TRUCKS = 'INVESTOR_TRUCKS',       // Truck investor view
+    INVESTOR_DRILLS = 'INVESTOR_DRILLS',       // Drill investor view
+    INVESTOR_STATEMENTS = 'INVESTOR_STATEMENTS' // Investor statements
 }
 
 export interface Invoice {

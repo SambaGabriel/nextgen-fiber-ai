@@ -2,9 +2,15 @@
  * Calculation Service
  * Calculates earnings for production submissions
  * Results are IMMUTABLE once saved (audit trail)
+ *
+ * Supports:
+ * - Aerial jobs: Per-footage rate card based
+ * - Underground jobs: Foreman day rate + conduit + drill investor
  */
 
 import { supabase } from './supabase';
+import { calculateUndergroundJob } from './undergroundCalculationService';
+import type { Department } from '../types/project';
 
 // ===== TYPES =====
 
@@ -64,6 +70,7 @@ export interface FrozenContext {
 
 /**
  * Calculate earnings for a list of production line items
+ * Routes to appropriate calculation based on department
  */
 export async function calculateProduction(
   jobId: string,
@@ -79,6 +86,15 @@ export async function calculateProduction(
   if (jobError || !job) {
     throw new Error('Job not found');
   }
+
+  // Route based on department
+  const department: Department = job.department || 'aerial';
+
+  if (department === 'underground') {
+    return calculateUndergroundProduction(jobId, job);
+  }
+
+  // Aerial calculation (default)
 
   // Find rate card group by client + customer + region
   const region = job.location?.state || 'AL';
@@ -307,5 +323,91 @@ export async function getDashboardSummary(
       name,
       total: Math.round(total * 100) / 100
     }))
+  };
+}
+
+// ===== UNDERGROUND CALCULATION =====
+
+/**
+ * Calculate underground job production
+ * Uses foreman day rate + conduit pay instead of rate cards
+ */
+async function calculateUndergroundProduction(
+  jobId: string,
+  job: any
+): Promise<CalculationResult> {
+  // Find rate card group for company revenue rates
+  const region = job.location?.state || 'AL';
+
+  const { data: rateGroup } = await supabase
+    .from('rate_card_groups')
+    .select('id')
+    .eq('customer_name', job.customer_name || 'Brightspeed')
+    .eq('region', region)
+    .eq('is_active', true)
+    .single();
+
+  if (!rateGroup) {
+    throw new Error(`No rate card found for underground job. Customer: ${job.customer_name}, Region: ${region}`);
+  }
+
+  // Use underground calculation service
+  const result = await calculateUndergroundJob(jobId, rateGroup.id);
+
+  if (!result) {
+    throw new Error('Underground calculation failed - no daily entries found');
+  }
+
+  // Convert to standard CalculationResult format
+  const calculations: LineItemCalculation[] = [
+    {
+      rate_code: 'DAY_RATE',
+      description: 'Foreman Day Pay',
+      quantity: result.foremanPay.fullDays + (result.foremanPay.halfDays * 0.5),
+      unit: 'DAY',
+      nextgen_rate: 0,
+      lineman_rate: result.foremanPay.dayPay / Math.max(result.foremanPay.fullDays + (result.foremanPay.halfDays * 0.5), 1),
+      investor_rate: 0,
+      nextgen_amount: 0,
+      lineman_amount: result.foremanPay.dayPay,
+      investor_amount: 0
+    },
+    {
+      rate_code: 'CONDUIT',
+      description: 'Conduit Installation',
+      quantity: result.foremanPay.conduitFeet,
+      unit: 'FT',
+      nextgen_rate: result.nextgenTotal / Math.max(result.totalFootage, 1),
+      lineman_rate: result.foremanPay.conduitRate,
+      investor_rate: result.drillInvestorTotal / Math.max(result.totalFootage, 1),
+      nextgen_amount: result.nextgenTotal,
+      lineman_amount: result.foremanPay.conduitPay,
+      investor_amount: result.drillInvestorTotal
+    }
+  ];
+
+  // Add bonus if applicable
+  if (result.foremanPay.weeklyBonus) {
+    calculations.push({
+      rate_code: 'WEEKLY_BONUS',
+      description: 'Weekly Footage Bonus',
+      quantity: 1,
+      unit: 'EA',
+      nextgen_rate: 0,
+      lineman_rate: result.foremanPay.bonusPay,
+      investor_rate: 0,
+      nextgen_amount: 0,
+      lineman_amount: result.foremanPay.bonusPay,
+      investor_amount: 0
+    });
+  }
+
+  return {
+    nextgen_total: result.nextgenTotal,
+    lineman_total: result.foremanPay.totalPay,
+    investor_total: result.drillInvestorTotal,
+    gross_margin: result.grossMargin,
+    gross_margin_percent: result.grossMarginPercent,
+    line_items: calculations
   };
 }

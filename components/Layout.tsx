@@ -34,9 +34,13 @@ const Layout: React.FC<LayoutProps> = ({ currentView, onChangeView, children, no
     const isAdmin = userRole === 'ADMIN';
     const isSupervisor = userRole === 'SUPERVISOR';
     const isLineman = userRole === 'LINEMAN';
+    const isForeman = userRole === 'FOREMAN';
     const isRedlineSpecialist = userRole === 'REDLINE_SPECIALIST';
     const isClientReviewer = userRole === 'CLIENT_REVIEWER';
     const isBilling = userRole === 'BILLING';
+    const isTruckInvestor = userRole === 'TRUCK_INVESTOR';
+    const isDrillInvestor = userRole === 'DRILL_INVESTOR';
+    const isInvestor = isTruckInvestor || isDrillInvestor;
     const isViewer = userRole === 'VIEWER';
     const hasAdminAccess = isAdmin || isSupervisor;
 
@@ -80,6 +84,9 @@ const Layout: React.FC<LayoutProps> = ({ currentView, onChangeView, children, no
             return [
                 { id: ViewState.DASHBOARD, label: 'Dashboard', icon: LayoutDashboard },
                 { id: ViewState.JOBS_ADMIN, label: 'Jobs', icon: Briefcase },
+                { id: ViewState.TRUCKS, label: 'Trucks', icon: Briefcase },
+                { id: ViewState.DRILLS, label: 'Drills', icon: Briefcase },
+                { id: ViewState.PAYROLL, label: 'Payroll', icon: DollarSign },
                 { id: ViewState.FINANCE_HUB, label: 'Invoices', icon: Wallet },
                 { id: ViewState.MAP_ANALYZER, label: 'Maps', icon: ScanLine },
                 { id: ViewState.RATE_CARDS, label: 'Rate Cards', icon: DollarSign },
@@ -87,12 +94,43 @@ const Layout: React.FC<LayoutProps> = ({ currentView, onChangeView, children, no
             ];
         }
 
-        // Lineman - Field work focused
+        // Lineman - Field work focused (Aerial)
         if (isLineman) {
             return [
                 { id: ViewState.DASHBOARD, label: 'Home', icon: LayoutDashboard },
                 { id: ViewState.MY_JOBS, label: 'My Jobs', icon: Briefcase },
+                { id: ViewState.MY_PAYSTUBS, label: 'Pay Stubs', icon: DollarSign },
                 { id: ViewState.MY_SUBMISSIONS, label: 'History', icon: History },
+                { id: ViewState.SETTINGS, label: 'Settings', icon: Settings },
+            ];
+        }
+
+        // Foreman - Underground work (Day rate + conduit)
+        if (isForeman) {
+            return [
+                { id: ViewState.DASHBOARD, label: 'Home', icon: LayoutDashboard },
+                { id: ViewState.MY_JOBS, label: 'My Jobs', icon: Briefcase },
+                { id: ViewState.MY_PAYSTUBS, label: 'Pay Stubs', icon: DollarSign },
+                { id: ViewState.SETTINGS, label: 'Settings', icon: Settings },
+            ];
+        }
+
+        // Truck Investor - View trucks and returns
+        if (isTruckInvestor) {
+            return [
+                { id: ViewState.INVESTOR_DASHBOARD, label: 'Dashboard', icon: LayoutDashboard },
+                { id: ViewState.INVESTOR_TRUCKS, label: 'My Trucks', icon: Briefcase },
+                { id: ViewState.INVESTOR_STATEMENTS, label: 'Statements', icon: DollarSign },
+                { id: ViewState.SETTINGS, label: 'Settings', icon: Settings },
+            ];
+        }
+
+        // Drill Investor - View drills and returns
+        if (isDrillInvestor) {
+            return [
+                { id: ViewState.INVESTOR_DASHBOARD, label: 'Dashboard', icon: LayoutDashboard },
+                { id: ViewState.INVESTOR_DRILLS, label: 'My Drills', icon: Briefcase },
+                { id: ViewState.INVESTOR_STATEMENTS, label: 'Statements', icon: DollarSign },
                 { id: ViewState.SETTINGS, label: 'Settings', icon: Settings },
             ];
         }

@@ -11,12 +11,14 @@ import {
   ChevronDown, Loader2, Download, ExternalLink, Sparkles, Trash2
 } from 'lucide-react';
 import { Language, User as UserType } from '../types';
-import { Job, JobStatus, WorkType } from '../types/project';
+import { Job, JobStatus, WorkType, Department, GroundType } from '../types/project';
 import { jobStorageSupabase } from '../services/jobStorageSupabase';
 import { supabase } from '../services/supabase';
 import { getClients, PrimeClient } from '../services/clientService';
 import { getCustomers, EndCustomer } from '../services/customerService';
 import { getTrucks, Truck } from '../services/truckService';
+import { getDrills } from '../services/drillService';
+import type { Drill } from '../types/equipment';
 import { RedlinesPanel } from './jobs/RedlinesPanel';
 import { jobRedlineService } from '../services/jobRedlineService';
 import { RedlineVersion } from '../types/project';
@@ -25,6 +27,19 @@ interface JobsAdminProps {
   user: UserType;
   lang: Language;
 }
+
+// Department options (determines calculation logic)
+const DEPARTMENTS = [
+  { value: 'aerial', label: 'Aerial', description: 'Pole work, lineman rate card' },
+  { value: 'underground', label: 'Underground', description: 'Boring/trenching, foreman day rate' },
+];
+
+// Ground type options (for underground jobs)
+const GROUND_TYPES = [
+  { value: 'Normal', label: 'Normal Ground', color: 'var(--success-core)' },
+  { value: 'Cobble', label: 'Cobble/Gravel', color: 'var(--warning-core)' },
+  { value: 'Rock', label: 'Rock', color: 'var(--critical-core)' },
+];
 
 // Work type options
 const WORK_TYPES = [
@@ -72,6 +87,9 @@ interface CreateJobForm {
   customerId: string;
   customerName: string;
   truckId: string;
+  drillId: string;
+  department: Department;
+  groundType: GroundType;
   city: string;
   state: string;
   address: string;
@@ -94,6 +112,9 @@ const initialFormState: CreateJobForm = {
   customerId: '',
   customerName: '',
   truckId: '',
+  drillId: '',
+  department: 'aerial',
+  groundType: 'Normal',
   city: '',
   state: '',
   address: '',
@@ -116,6 +137,7 @@ const JobsAdmin: React.FC<JobsAdminProps> = ({ user, lang }) => {
   const [clients, setClients] = useState<PrimeClient[]>([]);
   const [customers, setCustomers] = useState<EndCustomer[]>([]);
   const [trucks, setTrucks] = useState<Truck[]>([]);
+  const [drills, setDrills] = useState<Drill[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabType>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -426,19 +448,21 @@ Return ONLY valid JSON:
     }
   }, []);
 
-  // Load clients, customers, and trucks from database
+  // Load clients, customers, trucks, and drills from database
   const loadClientsAndCustomers = useCallback(async () => {
     try {
-      const [clientsData, customersData, trucksData] = await Promise.all([
+      const [clientsData, customersData, trucksData, drillsData] = await Promise.all([
         getClients(),
         getCustomers(),
-        getTrucks()
+        getTrucks(),
+        getDrills()
       ]);
       setClients(clientsData);
       setCustomers(customersData);
       setTrucks(trucksData);
+      setDrills(drillsData);
     } catch (error) {
-      console.error('Error loading clients/customers/trucks:', error);
+      console.error('Error loading clients/customers/trucks/drills:', error);
     }
   }, []);
 
@@ -667,7 +691,10 @@ Return ONLY valid JSON:
       clientName: job.clientName || '',
       customerId: job.customerId || '',
       customerName: job.customerName || '',
-      truckId: job.truckId || '',
+      truckId: job.truckId || job.assignedTruckId || '',
+      drillId: job.assignedDrillId || '',
+      department: job.department || 'aerial',
+      groundType: job.groundType || 'Normal',
       city: job.location?.city || '',
       state: job.location?.state || '',
       address: job.location?.address || '',

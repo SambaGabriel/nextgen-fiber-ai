@@ -27,6 +27,12 @@ export enum WorkType {
   MIXED = 'mixed'
 }
 
+// Department: determines calculation logic and worker type
+export type Department = 'aerial' | 'underground';
+
+// Ground type for underground jobs (affects rates)
+export type GroundType = 'Normal' | 'Cobble' | 'Rock';
+
 export enum ViolationSeverity {
   INFO = 'info',
   WARNING = 'warning',
@@ -337,8 +343,20 @@ export interface Job {
   customerId?: string;
   customerName?: string;
 
-  // Truck assignment
+  // Truck assignment (legacy field, use assignedTruckId)
   truckId?: string;
+
+  // Department (aerial vs underground)
+  department?: Department;
+
+  // Equipment assignment
+  assignedTruckId?: string;
+  truckInvestorName?: string;
+  assignedDrillId?: string;
+  drillInvestorName?: string;
+
+  // Underground-specific fields
+  groundType?: GroundType;
 
   // Job details
   workType: WorkType;
@@ -488,6 +506,28 @@ export interface JobUnreadCount {
   jobId: string;
   unreadCount: number;
   lastReadAt: string;
+}
+
+// ============================================
+// UNDERGROUND DAILY ENTRIES
+// ============================================
+
+/**
+ * Daily entry for underground foreman work
+ * Used to calculate foreman pay (day rate + conduit)
+ */
+export interface UndergroundDailyEntry {
+  id: string;
+  jobId: string;
+  entryDate: string;            // ISO date
+  isFullDay: boolean;           // $300 day rate
+  isHalfDay: boolean;           // $150 day rate
+  conduitFeet: number;          // Feet of conduit installed
+  groundType: GroundType;       // Affects company revenue rate
+  notes?: string;
+  createdBy?: string;
+  createdAt: string;
+  updatedAt?: string;
 }
 
 // ============================================

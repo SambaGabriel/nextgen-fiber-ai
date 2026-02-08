@@ -196,10 +196,6 @@ const Dashboard = memo<DashboardProps>(({ invoices, user, lang }) => {
                         <Download className="w-4 h-4" style={{ color: 'var(--text-tertiary)' }} />
                         {t.export}
                      </button>
-                     <button className="px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 active:scale-95 btn-neural" style={{ background: 'var(--gradient-neural)', color: 'var(--void)', boxShadow: 'var(--shadow-neural)' }}>
-                        <Zap className="w-4 h-4" />
-                        {t.new_project}
-                     </button>
                 </div>
             </div>
 

@@ -31,6 +31,7 @@ const Layout: React.FC<LayoutProps> = ({ currentView, onChangeView, children, no
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [newJobCount, setNewJobCount] = useState(0);
     const [assignedJobIds, setAssignedJobIds] = useState<string[]>([]);
+    const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
 
     // Mobile detection using custom hook
     const isMobile = useIsMobile();
@@ -89,13 +90,14 @@ const Layout: React.FC<LayoutProps> = ({ currentView, onChangeView, children, no
         if (isAdmin || isSupervisor) {
             return [
                 { id: ViewState.DASHBOARD, label: 'Dashboard', icon: LayoutDashboard },
-                { id: ViewState.JOBS_ADMIN, label: 'Jobs', icon: Briefcase },
-                { id: ViewState.TRUCKS, label: 'Trucks', icon: Briefcase },
-                { id: ViewState.DRILLS, label: 'Drills', icon: Briefcase },
+                { id: ViewState.JOBS_ADMIN, label: 'Jobs', icon: Briefcase, subItems: [
+                    { id: ViewState.TRUCKS, label: 'Trucks' },
+                    { id: ViewState.DRILLS, label: 'Drills' },
+                ]},
                 { id: ViewState.PAYROLL, label: 'Payroll', icon: DollarSign },
-                { id: ViewState.FINANCE_HUB, label: 'Invoices', icon: Wallet },
                 { id: ViewState.MAP_ANALYZER, label: 'Maps', icon: ScanLine },
                 { id: ViewState.RATE_CARDS, label: 'Rate Cards', icon: DollarSign },
+                { id: ViewState.ANALYTICS, label: 'Analytics', icon: ClipboardList },
                 { id: ViewState.SETTINGS, label: 'Settings', icon: Settings },
             ];
         }
@@ -163,7 +165,8 @@ const Layout: React.FC<LayoutProps> = ({ currentView, onChangeView, children, no
         if (isBilling) {
             return [
                 { id: ViewState.DASHBOARD, label: 'Dashboard', icon: LayoutDashboard },
-                { id: ViewState.FINANCE_HUB, label: 'Invoices', icon: Wallet },
+                { id: ViewState.PAYROLL, label: 'Payroll', icon: DollarSign },
+                { id: ViewState.ANALYTICS, label: 'Analytics', icon: ClipboardList },
                 { id: ViewState.SETTINGS, label: 'Settings', icon: Settings },
             ];
         }
@@ -229,53 +232,105 @@ const Layout: React.FC<LayoutProps> = ({ currentView, onChangeView, children, no
 
                 {/* Navigation - Clean, no divisions */}
                 <div className="flex-1 py-6 px-3 space-y-2 overflow-y-auto scrollbar-hide">
-                    {navItems.map(item => {
+                    {navItems.map((item: any) => {
                         const showBadge = item.id === ViewState.MY_JOBS && isLineman && newJobCount > 0;
+                        const hasSubItems = item.subItems && item.subItems.length > 0;
+                        const isExpanded = expandedMenus.includes(item.id);
+                        const isActiveOrHasActiveChild = currentView === item.id || (hasSubItems && item.subItems.some((sub: any) => sub.id === currentView));
+
                         return (
-                            <button
-                                key={item.id}
-                                onClick={() => handleNavClick(item.id)}
-                                className="w-full flex items-center gap-3 px-3 py-3 rounded-2xl transition-all duration-200 group relative"
-                                style={{
-                                    background: currentView === item.id ? 'var(--neural-dim)' : 'transparent',
-                                }}
-                            >
-                                <div className="relative">
-                                    <div
-                                        className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-200"
-                                        style={{
-                                            background: currentView === item.id ? 'var(--neural-core)' : 'var(--elevated)',
-                                            boxShadow: currentView === item.id ? 'var(--shadow-neural)' : 'none'
-                                        }}
-                                    >
-                                        <item.icon
-                                            className="w-5 h-5 transition-colors"
-                                            style={{ color: currentView === item.id ? '#ffffff' : 'var(--text-tertiary)' }}
-                                        />
-                                    </div>
-                                    {/* New job badge */}
-                                    {showBadge && (
-                                        <span
-                                            className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white animate-pulse"
-                                            style={{ background: 'var(--neural-core)', boxShadow: 'var(--shadow-neural)' }}
-                                        >
-                                            {newJobCount > 9 ? '9+' : newJobCount}
-                                        </span>
-                                    )}
-                                </div>
-                                <span
-                                    className="text-sm font-semibold whitespace-nowrap transition-all duration-200"
+                            <div key={item.id}>
+                                <button
+                                    onClick={() => {
+                                        if (hasSubItems) {
+                                            setExpandedMenus(prev =>
+                                                prev.includes(item.id)
+                                                    ? prev.filter(id => id !== item.id)
+                                                    : [...prev, item.id]
+                                            );
+                                        }
+                                        handleNavClick(item.id);
+                                    }}
+                                    className="w-full flex items-center gap-3 px-3 py-3 rounded-2xl transition-all duration-200 group relative"
                                     style={{
-                                        opacity: isSidebarExpanded ? 1 : 0,
-                                        color: currentView === item.id ? 'var(--neural-core)' : 'var(--text-secondary)'
+                                        background: isActiveOrHasActiveChild ? 'var(--neural-dim)' : 'transparent',
                                     }}
                                 >
-                                    {item.label}
-                                </span>
-                                {currentView === item.id && isSidebarExpanded && (
-                                    <ChevronRight className="w-4 h-4 ml-auto" style={{ color: 'var(--neural-core)' }} />
+                                    <div className="relative">
+                                        <div
+                                            className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-200"
+                                            style={{
+                                                background: isActiveOrHasActiveChild ? 'var(--neural-core)' : 'var(--elevated)',
+                                                boxShadow: isActiveOrHasActiveChild ? 'var(--shadow-neural)' : 'none'
+                                            }}
+                                        >
+                                            <item.icon
+                                                className="w-5 h-5 transition-colors"
+                                                style={{ color: isActiveOrHasActiveChild ? '#ffffff' : 'var(--text-tertiary)' }}
+                                            />
+                                        </div>
+                                        {showBadge && (
+                                            <span
+                                                className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white animate-pulse"
+                                                style={{ background: 'var(--neural-core)', boxShadow: 'var(--shadow-neural)' }}
+                                            >
+                                                {newJobCount > 9 ? '9+' : newJobCount}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <span
+                                        className="text-sm font-semibold whitespace-nowrap transition-all duration-200"
+                                        style={{
+                                            opacity: isSidebarExpanded ? 1 : 0,
+                                            color: isActiveOrHasActiveChild ? 'var(--neural-core)' : 'var(--text-secondary)'
+                                        }}
+                                    >
+                                        {item.label}
+                                    </span>
+                                    {hasSubItems && isSidebarExpanded && (
+                                        <ChevronRight
+                                            className="w-4 h-4 ml-auto transition-transform"
+                                            style={{
+                                                color: 'var(--text-tertiary)',
+                                                transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)'
+                                            }}
+                                        />
+                                    )}
+                                    {!hasSubItems && isActiveOrHasActiveChild && isSidebarExpanded && (
+                                        <ChevronRight className="w-4 h-4 ml-auto" style={{ color: 'var(--neural-core)' }} />
+                                    )}
+                                </button>
+                                {/* Sub-items */}
+                                {hasSubItems && isExpanded && isSidebarExpanded && (
+                                    <div className="ml-6 mt-1 space-y-1">
+                                        {item.subItems.map((subItem: any) => (
+                                            <button
+                                                key={subItem.id}
+                                                onClick={() => handleNavClick(subItem.id)}
+                                                className="w-full flex items-center gap-2 px-3 py-2 rounded-xl transition-all duration-200"
+                                                style={{
+                                                    background: currentView === subItem.id ? 'var(--elevated)' : 'transparent',
+                                                }}
+                                            >
+                                                <div
+                                                    className="w-2 h-2 rounded-full"
+                                                    style={{
+                                                        background: currentView === subItem.id ? 'var(--neural-core)' : 'var(--text-ghost)'
+                                                    }}
+                                                />
+                                                <span
+                                                    className="text-xs font-medium"
+                                                    style={{
+                                                        color: currentView === subItem.id ? 'var(--neural-core)' : 'var(--text-tertiary)'
+                                                    }}
+                                                >
+                                                    {subItem.label}
+                                                </span>
+                                            </button>
+                                        ))}
+                                    </div>
                                 )}
-                            </button>
+                            </div>
                         );
                     })}
                 </div>
@@ -543,48 +598,103 @@ const Layout: React.FC<LayoutProps> = ({ currentView, onChangeView, children, no
 
                             {/* Navigation Items */}
                             <div className="space-y-2">
-                                {navItems.map(item => {
+                                {navItems.map((item: any) => {
                                     const showBadge = item.id === ViewState.MY_JOBS && isLineman && newJobCount > 0;
+                                    const hasSubItems = item.subItems && item.subItems.length > 0;
+                                    const isExpanded = expandedMenus.includes(item.id);
+                                    const isActiveOrHasActiveChild = currentView === item.id || (hasSubItems && item.subItems.some((sub: any) => sub.id === currentView));
+
                                     return (
-                                        <button
-                                            key={item.id}
-                                            onClick={() => {
-                                                handleNavClick(item.id);
-                                                setIsMobileMenuOpen(false);
-                                            }}
-                                            className="w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all"
-                                            style={{
-                                                background: currentView === item.id ? 'var(--neural-dim)' : 'transparent',
-                                            }}
-                                        >
-                                            <div className="relative">
-                                                <div
-                                                    className="w-10 h-10 rounded-xl flex items-center justify-center"
-                                                    style={{
-                                                        background: currentView === item.id ? 'var(--neural-core)' : 'var(--elevated)',
-                                                    }}
-                                                >
-                                                    <item.icon
-                                                        className="w-5 h-5"
-                                                        style={{ color: currentView === item.id ? '#ffffff' : 'var(--text-tertiary)' }}
-                                                    />
-                                                </div>
-                                                {showBadge && (
-                                                    <span
-                                                        className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold text-white"
-                                                        style={{ background: 'var(--neural-core)' }}
-                                                    >
-                                                        {newJobCount > 9 ? '9+' : newJobCount}
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <span
-                                                className="text-sm font-semibold"
-                                                style={{ color: currentView === item.id ? 'var(--neural-core)' : 'var(--text-secondary)' }}
+                                        <div key={item.id}>
+                                            <button
+                                                onClick={() => {
+                                                    if (hasSubItems) {
+                                                        setExpandedMenus(prev =>
+                                                            prev.includes(item.id)
+                                                                ? prev.filter(id => id !== item.id)
+                                                                : [...prev, item.id]
+                                                        );
+                                                    } else {
+                                                        handleNavClick(item.id);
+                                                        setIsMobileMenuOpen(false);
+                                                    }
+                                                }}
+                                                className="w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all"
+                                                style={{
+                                                    background: isActiveOrHasActiveChild ? 'var(--neural-dim)' : 'transparent',
+                                                }}
                                             >
-                                                {item.label}
-                                            </span>
-                                        </button>
+                                                <div className="relative">
+                                                    <div
+                                                        className="w-10 h-10 rounded-xl flex items-center justify-center"
+                                                        style={{
+                                                            background: isActiveOrHasActiveChild ? 'var(--neural-core)' : 'var(--elevated)',
+                                                        }}
+                                                    >
+                                                        <item.icon
+                                                            className="w-5 h-5"
+                                                            style={{ color: isActiveOrHasActiveChild ? '#ffffff' : 'var(--text-tertiary)' }}
+                                                        />
+                                                    </div>
+                                                    {showBadge && (
+                                                        <span
+                                                            className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold text-white"
+                                                            style={{ background: 'var(--neural-core)' }}
+                                                        >
+                                                            {newJobCount > 9 ? '9+' : newJobCount}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <span
+                                                    className="text-sm font-semibold flex-1 text-left"
+                                                    style={{ color: isActiveOrHasActiveChild ? 'var(--neural-core)' : 'var(--text-secondary)' }}
+                                                >
+                                                    {item.label}
+                                                </span>
+                                                {hasSubItems && (
+                                                    <ChevronRight
+                                                        className="w-4 h-4 transition-transform"
+                                                        style={{
+                                                            color: 'var(--text-tertiary)',
+                                                            transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)'
+                                                        }}
+                                                    />
+                                                )}
+                                            </button>
+                                            {/* Sub-items for mobile */}
+                                            {hasSubItems && isExpanded && (
+                                                <div className="ml-6 mt-1 space-y-1">
+                                                    {item.subItems.map((subItem: any) => (
+                                                        <button
+                                                            key={subItem.id}
+                                                            onClick={() => {
+                                                                handleNavClick(subItem.id);
+                                                                setIsMobileMenuOpen(false);
+                                                            }}
+                                                            className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg transition-all"
+                                                            style={{
+                                                                background: currentView === subItem.id ? 'var(--elevated)' : 'transparent',
+                                                            }}
+                                                        >
+                                                            <div
+                                                                className="w-2 h-2 rounded-full"
+                                                                style={{
+                                                                    background: currentView === subItem.id ? 'var(--neural-core)' : 'var(--text-ghost)'
+                                                                }}
+                                                            />
+                                                            <span
+                                                                className="text-sm font-medium"
+                                                                style={{
+                                                                    color: currentView === subItem.id ? 'var(--neural-core)' : 'var(--text-tertiary)'
+                                                                }}
+                                                            >
+                                                                {subItem.label}
+                                                            </span>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
                                     );
                                 })}
                             </div>

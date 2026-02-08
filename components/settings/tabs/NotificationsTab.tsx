@@ -328,8 +328,8 @@ const NotificationsTab: React.FC<NotificationsTabProps> = ({ user, lang }) => {
                     onClick={() => {
                         // Enable all
                         const allEnabled: NotificationPreferences = {
-                            email: { jobAssigned: true, jobUpdated: true, newMessage: true, rateCardImport: true, productionSubmitted: true },
-                            inApp: { jobAssigned: true, jobUpdated: true, newMessage: true, rateCardImport: true, productionSubmitted: true }
+                            email: { jobAssigned: true, jobUpdated: true, newMessage: true, rateCardImport: true, productionSubmitted: true, redlineCreated: true, redlineReviewed: true },
+                            inApp: { jobAssigned: true, jobUpdated: true, newMessage: true, rateCardImport: true, productionSubmitted: true, redlineCreated: true, redlineReviewed: true }
                         };
                         setNotifications(allEnabled);
                         preferencesService.updatePreferences({ notifications: allEnabled });
@@ -345,8 +345,8 @@ const NotificationsTab: React.FC<NotificationsTabProps> = ({ user, lang }) => {
                     onClick={() => {
                         // Disable all
                         const allDisabled: NotificationPreferences = {
-                            email: { jobAssigned: false, jobUpdated: false, newMessage: false, rateCardImport: false, productionSubmitted: false },
-                            inApp: { jobAssigned: false, jobUpdated: false, newMessage: false, rateCardImport: false, productionSubmitted: false }
+                            email: { jobAssigned: false, jobUpdated: false, newMessage: false, rateCardImport: false, productionSubmitted: false, redlineCreated: false, redlineReviewed: false },
+                            inApp: { jobAssigned: false, jobUpdated: false, newMessage: false, rateCardImport: false, productionSubmitted: false, redlineCreated: false, redlineReviewed: false }
                         };
                         setNotifications(allDisabled);
                         preferencesService.updatePreferences({ notifications: allDisabled });

@@ -17,7 +17,9 @@
       "Bash(/usr/local/bin/npm install xlsx --save)",
       "Bash(/opt/homebrew/bin/npm install xlsx --save)",
       "Bash(npx npm install:*)",
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "Bash(ls:*)",
+      "Bash(python3:*)"
     ]
   }
 }

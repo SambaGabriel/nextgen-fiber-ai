@@ -91,7 +91,7 @@ const RedlineEditor: React.FC<RedlineEditorProps> = ({
           id: g.id,
           customerName: g.customer_name,
           region: g.region,
-          clientName: g.client?.name
+          clientName: (g.client as any)?.name
         })));
       } catch (err) {
         console.error('[RedlineEditor] Error loading groups:', err);

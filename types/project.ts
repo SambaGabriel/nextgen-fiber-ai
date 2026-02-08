@@ -326,6 +326,8 @@ export interface Job {
   scheduledDate?: string;          // When work should be done
   dueDate?: string;                // Deadline
   estimatedFootage?: number;       // Expected footage
+  strandType?: string;             // Type of strand (e.g., "12-Strand", "24-Strand")
+  fiberCount?: number;             // Number of fibers
 
   // Map/Documents from supervisor
   mapFile?: {

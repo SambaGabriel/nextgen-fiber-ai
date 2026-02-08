@@ -66,7 +66,7 @@ const ClientPortal: React.FC<ClientPortalProps> = ({ user, lang, onNavigate }) =
 
         const clientScopes: ClientScope[] = (data || []).map(s => ({
           clientId: s.client_id,
-          clientName: s.client?.name || 'Unknown',
+          clientName: (s.client as any)?.name || 'Unknown',
           canViewJobs: s.can_view_jobs,
           canViewProduction: s.can_view_production,
           canViewRateCards: s.can_view_rate_cards,

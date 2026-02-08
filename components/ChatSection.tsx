@@ -8,14 +8,14 @@ import { Send, Wifi, WifiOff, AlertCircle, RefreshCw, Bot, User, Sparkles } from
 import { Job, JobChatMessage } from '../types/project';
 import { chatStorage } from '../services/chatStorage';
 import { createSupervisorSession } from '../services/aiSupervisorService';
-import { Language } from '../types';
+import { Language, UserRole } from '../types';
 
 interface ChatSectionProps {
   jobId: string;
   job: Job | null;
   userId: string;
   userName: string;
-  userRole: 'LINEMAN' | 'ADMIN';
+  userRole: UserRole;
   lang: Language;
 }
 

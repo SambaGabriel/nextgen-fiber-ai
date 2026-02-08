@@ -156,7 +156,7 @@ export const RedlinesPanel: React.FC<Props> = ({ job, redlines, user, lang = 'EN
           <button
             onClick={() => setShowUploadModal(true)}
             className="px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all hover:scale-105"
-            style={{ background: 'var(--gradient-neural)', color: '#000' }}
+            style={{ background: '#6366f1', color: '#fff' }}
           >
             <Upload className="w-4 h-4" />
             Upload

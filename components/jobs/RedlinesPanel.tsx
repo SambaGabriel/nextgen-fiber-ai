@@ -633,10 +633,9 @@ const ReviewRedlineModal: React.FC<ReviewModalProps> = ({ version, user, onClose
         <div className="flex gap-3 mb-4">
           <button
             onClick={() => setAction('approve')}
-            className={`flex-1 p-4 rounded-xl text-center transition-all ${action === 'approve' ? 'ring-2' : ''}`}
+            className={`flex-1 p-4 rounded-xl text-center transition-all ${action === 'approve' ? 'ring-2 ring-green-500' : ''}`}
             style={{
-              background: action === 'approve' ? 'var(--online-glow)' : 'var(--elevated)',
-              ringColor: 'var(--online-core)'
+              background: action === 'approve' ? 'var(--online-glow)' : 'var(--elevated)'
             }}
           >
             <CheckCircle
@@ -649,10 +648,9 @@ const ReviewRedlineModal: React.FC<ReviewModalProps> = ({ version, user, onClose
           </button>
           <button
             onClick={() => setAction('reject')}
-            className={`flex-1 p-4 rounded-xl text-center transition-all ${action === 'reject' ? 'ring-2' : ''}`}
+            className={`flex-1 p-4 rounded-xl text-center transition-all ${action === 'reject' ? 'ring-2 ring-red-500' : ''}`}
             style={{
-              background: action === 'reject' ? 'var(--critical-glow)' : 'var(--elevated)',
-              ringColor: 'var(--critical-core)'
+              background: action === 'reject' ? 'var(--critical-glow)' : 'var(--elevated)'
             }}
           >
             <XCircle

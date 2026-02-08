@@ -5,7 +5,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Briefcase, MapPin, Calendar, Clock, ChevronRight,
-  CheckCircle2, AlertTriangle, Play, Send, FileText, MessageCircle
+  CheckCircle2, AlertTriangle, Play, Send, FileText, MessageCircle,
+  Upload, Eye, XCircle, FileCheck
 } from 'lucide-react';
 import { Job, JobStatus, JobUnreadCount } from '../types/project';
 import { jobStorageSupabase } from '../services/jobStorageSupabase';
@@ -37,11 +38,18 @@ const translations = {
     estimated: 'Est. Footage',
     viewDetails: 'View Details',
     status: {
+      unassigned: 'Unassigned',
       assigned: 'New',
       in_progress: 'In Progress',
       submitted: 'Submitted',
+      production_submitted: 'Production Submitted',
+      pending_redlines: 'Pending Redlines',
+      redline_uploaded: 'Redline Uploaded',
+      under_client_review: 'Under Review',
       approved: 'Approved',
+      rejected: 'Rejected',
       needs_revision: 'Needs Revision',
+      ready_to_invoice: 'Ready to Invoice',
       completed: 'Completed'
     }
   },
@@ -62,11 +70,18 @@ const translations = {
     estimated: 'Metragem Est.',
     viewDetails: 'Ver Detalhes',
     status: {
+      unassigned: 'Não Atribuído',
       assigned: 'Novo',
       in_progress: 'Em Progresso',
       submitted: 'Enviado',
+      production_submitted: 'Produção Enviada',
+      pending_redlines: 'Aguardando Redlines',
+      redline_uploaded: 'Redline Enviado',
+      under_client_review: 'Em Revisão',
       approved: 'Aprovado',
+      rejected: 'Rejeitado',
       needs_revision: 'Revisão Necessária',
+      ready_to_invoice: 'Pronto para Faturar',
       completed: 'Concluído'
     }
   },
@@ -87,11 +102,18 @@ const translations = {
     estimated: 'Metraje Est.',
     viewDetails: 'Ver Detalles',
     status: {
+      unassigned: 'Sin Asignar',
       assigned: 'Nuevo',
       in_progress: 'En Progreso',
       submitted: 'Enviado',
+      production_submitted: 'Producción Enviada',
+      pending_redlines: 'Redlines Pendientes',
+      redline_uploaded: 'Redline Subido',
+      under_client_review: 'En Revisión',
       approved: 'Aprobado',
+      rejected: 'Rechazado',
       needs_revision: 'Necesita Revisión',
+      ready_to_invoice: 'Listo para Facturar',
       completed: 'Completado'
     }
   }
@@ -169,7 +191,12 @@ const MyJobs: React.FC<MyJobsProps> = ({ user, lang, onSelectJob }) => {
 
   // Get status badge config
   const getStatusConfig = (status: JobStatus) => {
-    const configs: Record<JobStatus, { bg: string; color: string; icon: React.ReactNode }> = {
+    const configs: Record<string, { bg: string; color: string; icon: React.ReactNode }> = {
+      [JobStatus.UNASSIGNED]: {
+        bg: 'var(--elevated)',
+        color: 'var(--text-tertiary)',
+        icon: <Clock className="w-4 h-4" />
+      },
       [JobStatus.ASSIGNED]: {
         bg: 'var(--neural-dim)',
         color: 'var(--neural-core)',
@@ -185,15 +212,45 @@ const MyJobs: React.FC<MyJobsProps> = ({ user, lang, onSelectJob }) => {
         color: 'var(--online-core)',
         icon: <Send className="w-4 h-4" />
       },
+      [JobStatus.PRODUCTION_SUBMITTED]: {
+        bg: 'var(--online-glow)',
+        color: 'var(--online-core)',
+        icon: <Send className="w-4 h-4" />
+      },
+      [JobStatus.PENDING_REDLINES]: {
+        bg: 'rgba(251, 146, 60, 0.15)',
+        color: '#fb923c',
+        icon: <AlertTriangle className="w-4 h-4" />
+      },
+      [JobStatus.REDLINE_UPLOADED]: {
+        bg: 'var(--neural-dim)',
+        color: 'var(--neural-core)',
+        icon: <Upload className="w-4 h-4" />
+      },
+      [JobStatus.UNDER_CLIENT_REVIEW]: {
+        bg: 'var(--energy-pulse)',
+        color: 'var(--energy-core)',
+        icon: <Eye className="w-4 h-4" />
+      },
       [JobStatus.APPROVED]: {
         bg: 'var(--online-glow)',
         color: 'var(--online-core)',
         icon: <CheckCircle2 className="w-4 h-4" />
       },
+      [JobStatus.REJECTED]: {
+        bg: 'var(--critical-glow)',
+        color: 'var(--critical-core)',
+        icon: <XCircle className="w-4 h-4" />
+      },
       [JobStatus.NEEDS_REVISION]: {
         bg: 'rgba(251, 146, 60, 0.1)',
         color: '#fb923c',
         icon: <AlertTriangle className="w-4 h-4" />
+      },
+      [JobStatus.READY_TO_INVOICE]: {
+        bg: 'var(--online-glow)',
+        color: 'var(--online-core)',
+        icon: <FileCheck className="w-4 h-4" />
       },
       [JobStatus.COMPLETED]: {
         bg: 'var(--online-glow)',
@@ -201,7 +258,7 @@ const MyJobs: React.FC<MyJobsProps> = ({ user, lang, onSelectJob }) => {
         icon: <CheckCircle2 className="w-4 h-4" />
       }
     };
-    return configs[status];
+    return configs[status] || configs[JobStatus.ASSIGNED];
   };
 
   // Tab counts
@@ -330,7 +387,7 @@ const MyJobs: React.FC<MyJobsProps> = ({ user, lang, onSelectJob }) => {
                             className="px-2 py-0.5 rounded-lg text-[8px] sm:text-[9px] font-black uppercase tracking-widest flex-shrink-0"
                             style={{ background: statusConfig.bg, color: statusConfig.color }}
                           >
-                            {t.status[job.status]}
+                            {(t.status as Record<string, string>)[job.status] || job.status}
                           </span>
                           {/* Message indicator on mobile */}
                           {jobUnreadCount > 0 && (

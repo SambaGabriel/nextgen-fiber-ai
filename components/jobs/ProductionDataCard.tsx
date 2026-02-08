@@ -116,7 +116,7 @@ export const ProductionDataCard: React.FC<Props> = ({ productionData, linemanNam
     }
   };
 
-  const labels = t[lang] || t.EN;
+  const labels = t[lang as keyof typeof t] || t.EN;
 
   return (
     <div

@@ -683,7 +683,7 @@ const JobDetails: React.FC<JobDetailsProps> = ({ job, user, lang, onBack, onStar
         {currentJob.productionData && (
           <ProductionDataCard
             productionData={currentJob.productionData}
-            linemanName={currentJob.linemanName}
+            linemanName={currentJob.assignedToName}
             lang={lang}
           />
         )}

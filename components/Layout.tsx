@@ -307,17 +307,11 @@ const Layout: React.FC<LayoutProps> = ({ currentView, onChangeView, children, no
                                             <button
                                                 key={subItem.id}
                                                 onClick={() => handleNavClick(subItem.id)}
-                                                className="w-full flex items-center gap-2 px-3 py-2 rounded-xl transition-all duration-200"
+                                                className="w-full flex items-center px-3 py-2 rounded-xl transition-all duration-200"
                                                 style={{
                                                     background: currentView === subItem.id ? 'var(--elevated)' : 'transparent',
                                                 }}
                                             >
-                                                <div
-                                                    className="w-2 h-2 rounded-full"
-                                                    style={{
-                                                        background: currentView === subItem.id ? 'var(--neural-core)' : 'var(--text-ghost)'
-                                                    }}
-                                                />
                                                 <span
                                                     className="text-xs font-medium"
                                                     style={{
@@ -671,17 +665,11 @@ const Layout: React.FC<LayoutProps> = ({ currentView, onChangeView, children, no
                                                                 handleNavClick(subItem.id);
                                                                 setIsMobileMenuOpen(false);
                                                             }}
-                                                            className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg transition-all"
+                                                            className="w-full flex items-center px-3 py-2.5 rounded-lg transition-all"
                                                             style={{
                                                                 background: currentView === subItem.id ? 'var(--elevated)' : 'transparent',
                                                             }}
                                                         >
-                                                            <div
-                                                                className="w-2 h-2 rounded-full"
-                                                                style={{
-                                                                    background: currentView === subItem.id ? 'var(--neural-core)' : 'var(--text-ghost)'
-                                                                }}
-                                                            />
                                                             <span
                                                                 className="text-sm font-medium"
                                                                 style={{

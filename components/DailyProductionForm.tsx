@@ -91,7 +91,7 @@ const DailyProductionForm: React.FC<DailyProductionFormProps> = ({ user, lang, j
                 bspd: job.jobCode || prev.bspd,
                 strandType: job.workType === WorkType.OVERLASH ? 'OVERLASH' :
                            job.workType === WorkType.AERIAL ? 'STRAND' :
-                           job.strandType || 'FIBER',
+                           (job.strandType as 'STRAND' | 'FIBER' | 'OVERLASH') || 'FIBER',
                 clientId: job.clientId || prev.clientId
             }));
         }

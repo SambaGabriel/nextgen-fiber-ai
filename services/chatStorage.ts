@@ -188,7 +188,7 @@ interface QueuedMessage {
   jobId: string;
   senderUserId: string;
   senderName: string;
-  senderRole: 'LINEMAN' | 'ADMIN';
+  senderRole: string;  // UserRole
   body: string;
   clientMessageId: string;
   queuedAt: string;

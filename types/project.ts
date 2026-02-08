@@ -386,7 +386,7 @@ export interface JobChatMessage {
   jobId: string;
   senderUserId: string;
   senderName: string;
-  senderRole: 'LINEMAN' | 'ADMIN';
+  senderRole: string;  // UserRole - ADMIN, SUPERVISOR, LINEMAN, etc.
   body: string;
   createdAt: string;
   clientMessageId?: string;      // For offline idempotency

@@ -29,8 +29,8 @@ const Layout: React.FC<LayoutProps> = ({ currentView, onChangeView, children, no
     const [newJobCount, setNewJobCount] = useState(0);
     const [assignedJobIds, setAssignedJobIds] = useState<string[]>([]);
 
-    // Role-based access helpers
-    const userRole = user?.role || 'LINEMAN';
+    // Role-based access helpers (case-insensitive)
+    const userRole = (user?.role || 'LINEMAN').toUpperCase();
     const isAdmin = userRole === 'ADMIN';
     const isSupervisor = userRole === 'SUPERVISOR';
     const isLineman = userRole === 'LINEMAN';

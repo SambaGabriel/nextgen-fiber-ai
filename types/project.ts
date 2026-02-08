@@ -284,12 +284,37 @@ export interface Project {
 // ============================================
 
 export enum JobStatus {
-  ASSIGNED = 'assigned',           // Job assigned, waiting lineman to start
-  IN_PROGRESS = 'in_progress',     // Lineman started working
-  SUBMITTED = 'submitted',         // Lineman submitted production sheet
-  APPROVED = 'approved',           // Supervisor approved
-  NEEDS_REVISION = 'needs_revision', // Supervisor requested changes
-  COMPLETED = 'completed'          // Fully complete and paid
+  // Assignment Phase
+  UNASSIGNED = 'unassigned',              // Created but not assigned to anyone
+  ASSIGNED = 'assigned',                  // Job assigned, waiting lineman to start
+
+  // Production Phase
+  IN_PROGRESS = 'in_progress',            // Lineman started working
+  SUBMITTED = 'submitted',                // Lineman submitted production sheet (legacy)
+  PRODUCTION_SUBMITTED = 'production_submitted', // Lineman submitted production sheet
+
+  // Redline Phase
+  PENDING_REDLINES = 'pending_redlines',  // Production submitted, waiting for redline upload
+  REDLINE_UPLOADED = 'redline_uploaded',  // Redline documents uploaded
+  UNDER_CLIENT_REVIEW = 'under_client_review', // Sent to client for approval
+
+  // Approval Phase
+  APPROVED = 'approved',                  // Client approved + SR assigned
+  REJECTED = 'rejected',                  // Client rejected, needs fix
+  NEEDS_REVISION = 'needs_revision',      // Supervisor requested changes (legacy)
+
+  // Completion Phase
+  READY_TO_INVOICE = 'ready_to_invoice',  // Ready for billing
+  COMPLETED = 'completed'                 // Invoiced and done
+}
+
+// Redline Status - tracks the review state of job redlines
+export enum RedlineStatus {
+  NOT_UPLOADED = 'not_uploaded',
+  UPLOADED = 'uploaded',
+  UNDER_REVIEW = 'under_review',
+  APPROVED = 'approved',
+  REJECTED = 'rejected'
 }
 
 export interface Job {
@@ -370,9 +395,75 @@ export interface Job {
   // Project link (created when submitted for invoicing)
   projectId?: string;
 
+  // Redline Workflow (Job Document Redlines)
+  redlineStatus?: RedlineStatus;
+  srNumber?: string;                    // SR number assigned when approved
+  srReference?: string;                 // External SR system link
+  lastRedlineVersionNumber?: number;    // Latest version number
+  redlineVersions?: RedlineVersion[];   // Loaded when viewing job details
+
   // Timestamps
   createdAt: string;
   updatedAt: string;
+}
+
+// ============================================
+// JOB REDLINES - Document redlines attached to jobs
+// ============================================
+
+/**
+ * RedlineVersion - A version of redline documents for a job
+ * Each upload creates a new version (v1, v2, v3...)
+ */
+export interface RedlineVersion {
+  id: string;
+  jobId: string;
+  versionNumber: number;              // Auto-increment: v1, v2, v3...
+  files: RedlineFile[];               // One or more files per version
+
+  // Uploader info
+  uploadedByUserId: string;
+  uploadedByName: string;
+  uploadedAt: string;
+
+  // Notes
+  internalNotes?: string;             // Visible to admin/specialist only
+  clientNotes?: string;               // Visible to client reviewer
+
+  // Review status
+  reviewStatus: RedlineStatus;
+  reviewedAt?: string;
+  reviewedByUserId?: string;
+  reviewedByName?: string;
+  reviewerNotes?: string;             // Required if rejected
+}
+
+/**
+ * RedlineFile - Individual file in a redline version
+ */
+export interface RedlineFile {
+  id: string;
+  redlineVersionId: string;
+  fileUrl: string;
+  fileName: string;
+  mimeType: string;
+  fileSize: number;
+  uploadedAt: string;
+}
+
+/**
+ * RedlineReviewRecord - Audit trail for redline reviews
+ */
+export interface RedlineReviewRecord {
+  id: string;
+  redlineVersionId: string;
+  reviewerUserId: string;
+  reviewerName: string;
+  reviewerRole: string;
+  action: 'approve' | 'reject' | 'submit_for_review';
+  srNumber?: string;                  // Required if action = 'approve'
+  notes?: string;                     // Required if action = 'reject'
+  reviewedAt: string;
 }
 
 // ============================================

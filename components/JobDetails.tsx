@@ -1,20 +1,30 @@
 /**
  * JobDetails - Detailed view of a specific job
- * Shows job info, map PDF, supervisor notes, and Submit button
+ * Shows job info, map PDF, production data, redlines workflow, and actions
+ *
+ * THREE-BLOCK LAYOUT:
+ * 1. Map/Document preview
+ * 2. Full Production Data (entries table, not just summary)
+ * 3. Redlines Panel (upload, versions, review)
  */
 
 import React, { useState, useCallback, useEffect } from 'react';
 import {
   ArrowLeft, MapPin, Calendar, Clock, User, FileText,
   Download, Eye, Send, Play, CheckCircle2, AlertTriangle,
-  Ruler, Building2, MessageSquare, ExternalLink, Camera, Image
+  Ruler, Building2, MessageSquare, ExternalLink, Camera, Image,
+  Upload, XCircle, FileCheck
 } from 'lucide-react';
-import { Job, JobStatus, WorkType } from '../types/project';
+import { Job, JobStatus, WorkType, RedlineVersion } from '../types/project';
 import { jobStorageSupabase } from '../services/jobStorageSupabase';
+import { jobRedlineService } from '../services/jobRedlineService';
 import { Language, User as UserType } from '../types';
 import ChatSection from './ChatSection';
 import SafetyChecklist, { isChecklistValid } from './SafetyChecklist';
 import QuickCamera, { getJobPhotos, getJobPhotoCount, JobPhoto } from './QuickCamera';
+import { ProductionDataCard } from './jobs/ProductionDataCard';
+import { RedlinesPanel } from './jobs/RedlinesPanel';
+import { RedlineStatusBadge } from './jobs/RedlineStatusBadge';
 
 interface JobDetailsProps {
   job: Job;
@@ -54,13 +64,22 @@ const translations = {
       mixed: 'Mixed'
     },
     statusLabels: {
+      unassigned: 'Unassigned',
       assigned: 'New - Ready to Start',
       in_progress: 'In Progress',
-      submitted: 'Submitted - Awaiting Review',
+      submitted: 'Submitted',
+      production_submitted: 'Production Submitted',
+      pending_redlines: 'Pending Redlines',
+      redline_uploaded: 'Redline Uploaded',
+      under_client_review: 'Under Client Review',
       approved: 'Approved',
+      rejected: 'Rejected',
       needs_revision: 'Needs Revision',
+      ready_to_invoice: 'Ready to Invoice',
       completed: 'Completed'
     },
+    redlines: 'Redlines',
+    srNumber: 'SR Number',
     submittedData: 'Submitted Production Data',
     totalFootage: 'Total Footage',
     anchors: 'Anchors',
@@ -96,13 +115,22 @@ const translations = {
       mixed: 'Misto'
     },
     statusLabels: {
+      unassigned: 'Não Atribuído',
       assigned: 'Novo - Pronto para Iniciar',
       in_progress: 'Em Progresso',
-      submitted: 'Enviado - Aguardando Revisão',
+      submitted: 'Enviado',
+      production_submitted: 'Produção Enviada',
+      pending_redlines: 'Aguardando Redlines',
+      redline_uploaded: 'Redline Enviado',
+      under_client_review: 'Em Revisão do Cliente',
       approved: 'Aprovado',
+      rejected: 'Rejeitado',
       needs_revision: 'Precisa Revisão',
+      ready_to_invoice: 'Pronto para Faturar',
       completed: 'Concluído'
     },
+    redlines: 'Redlines',
+    srNumber: 'Número SR',
     submittedData: 'Dados de Produção Enviados',
     totalFootage: 'Metragem Total',
     anchors: 'Âncoras',
@@ -138,13 +166,22 @@ const translations = {
       mixed: 'Mixto'
     },
     statusLabels: {
+      unassigned: 'Sin Asignar',
       assigned: 'Nuevo - Listo para Iniciar',
       in_progress: 'En Progreso',
-      submitted: 'Enviado - Esperando Revisión',
+      submitted: 'Enviado',
+      production_submitted: 'Producción Enviada',
+      pending_redlines: 'Redlines Pendientes',
+      redline_uploaded: 'Redline Subido',
+      under_client_review: 'En Revisión del Cliente',
       approved: 'Aprobado',
+      rejected: 'Rechazado',
       needs_revision: 'Necesita Revisión',
+      ready_to_invoice: 'Listo para Facturar',
       completed: 'Completado'
     },
+    redlines: 'Redlines',
+    srNumber: 'Número SR',
     submittedData: 'Datos de Producción Enviados',
     totalFootage: 'Metraje Total',
     anchors: 'Anclas',
@@ -161,6 +198,8 @@ const JobDetails: React.FC<JobDetailsProps> = ({ job, user, lang, onBack, onStar
   const [showChecklist, setShowChecklist] = useState(false);
   const [photoCount, setPhotoCount] = useState(0);
   const [photos, setPhotos] = useState<JobPhoto[]>([]);
+  const [redlines, setRedlines] = useState<RedlineVersion[]>([]);
+  const [isLoadingRedlines, setIsLoadingRedlines] = useState(true);
 
   // Load photos on mount
   useEffect(() => {
@@ -172,9 +211,41 @@ const JobDetails: React.FC<JobDetailsProps> = ({ job, user, lang, onBack, onStar
     setPhotoCount(jobPhotos.length);
   }, [currentJob.id, currentJob.mapFile]);
 
-  // Get status configuration
+  // Load redlines on mount
+  useEffect(() => {
+    const loadRedlines = async () => {
+      setIsLoadingRedlines(true);
+      try {
+        const versions = await jobRedlineService.getJobRedlines(currentJob.id);
+        setRedlines(versions);
+      } catch (error) {
+        console.error('[JobDetails] Error loading redlines:', error);
+      } finally {
+        setIsLoadingRedlines(false);
+      }
+    };
+    loadRedlines();
+  }, [currentJob.id]);
+
+  // Refresh redlines after upload/review
+  const refreshRedlines = useCallback(async () => {
+    const versions = await jobRedlineService.getJobRedlines(currentJob.id);
+    setRedlines(versions);
+    // Also refresh job to get updated status
+    const updatedJob = await jobStorageSupabase.getById(currentJob.id);
+    if (updatedJob) {
+      setCurrentJob(updatedJob);
+    }
+  }, [currentJob.id]);
+
+  // Get status configuration - includes all workflow states
   const getStatusConfig = (status: JobStatus) => {
-    const configs: Record<JobStatus, { bg: string; color: string; icon: React.ReactNode }> = {
+    const configs: Record<string, { bg: string; color: string; icon: React.ReactNode }> = {
+      [JobStatus.UNASSIGNED]: {
+        bg: 'var(--elevated)',
+        color: 'var(--text-tertiary)',
+        icon: <Clock className="w-5 h-5" />
+      },
       [JobStatus.ASSIGNED]: {
         bg: 'var(--neural-dim)',
         color: 'var(--neural-core)',
@@ -190,15 +261,45 @@ const JobDetails: React.FC<JobDetailsProps> = ({ job, user, lang, onBack, onStar
         color: 'var(--online-core)',
         icon: <Send className="w-5 h-5" />
       },
+      [JobStatus.PRODUCTION_SUBMITTED]: {
+        bg: 'var(--online-glow)',
+        color: 'var(--online-core)',
+        icon: <Send className="w-5 h-5" />
+      },
+      [JobStatus.PENDING_REDLINES]: {
+        bg: 'rgba(251, 146, 60, 0.15)',
+        color: '#fb923c',
+        icon: <AlertTriangle className="w-5 h-5" />
+      },
+      [JobStatus.REDLINE_UPLOADED]: {
+        bg: 'var(--neural-dim)',
+        color: 'var(--neural-core)',
+        icon: <Upload className="w-5 h-5" />
+      },
+      [JobStatus.UNDER_CLIENT_REVIEW]: {
+        bg: 'var(--energy-pulse)',
+        color: 'var(--energy-core)',
+        icon: <Eye className="w-5 h-5" />
+      },
       [JobStatus.APPROVED]: {
         bg: 'var(--online-glow)',
         color: 'var(--online-core)',
         icon: <CheckCircle2 className="w-5 h-5" />
       },
+      [JobStatus.REJECTED]: {
+        bg: 'var(--critical-glow)',
+        color: 'var(--critical-core)',
+        icon: <XCircle className="w-5 h-5" />
+      },
       [JobStatus.NEEDS_REVISION]: {
         bg: 'rgba(251, 146, 60, 0.1)',
         color: '#fb923c',
         icon: <AlertTriangle className="w-5 h-5" />
+      },
+      [JobStatus.READY_TO_INVOICE]: {
+        bg: 'var(--online-glow)',
+        color: 'var(--online-core)',
+        icon: <FileCheck className="w-5 h-5" />
       },
       [JobStatus.COMPLETED]: {
         bg: 'var(--online-glow)',
@@ -206,7 +307,7 @@ const JobDetails: React.FC<JobDetailsProps> = ({ job, user, lang, onBack, onStar
         icon: <CheckCircle2 className="w-5 h-5" />
       }
     };
-    return configs[status];
+    return configs[status] || configs[JobStatus.ASSIGNED];
   };
 
   const statusConfig = getStatusConfig(currentJob.status);
@@ -317,8 +418,12 @@ const JobDetails: React.FC<JobDetailsProps> = ({ job, user, lang, onBack, onStar
                 style={{ background: statusConfig.bg, color: statusConfig.color }}
               >
                 {statusConfig.icon}
-                {t.statusLabels[currentJob.status]}
+                {(t.statusLabels as Record<string, string>)[currentJob.status] || currentJob.status}
               </span>
+              {/* Redline Status Badge - shows when job has redline workflow */}
+              {currentJob.redlineStatus && currentJob.redlineStatus !== 'not_uploaded' && (
+                <RedlineStatusBadge status={currentJob.redlineStatus} size="sm" />
+              )}
             </div>
             <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
               {currentJob.jobCode} • {currentJob.clientName}
@@ -556,47 +661,43 @@ const JobDetails: React.FC<JobDetailsProps> = ({ job, user, lang, onBack, onStar
           lang={lang}
         />
 
-        {/* Submitted Production Data (if exists) */}
-        {currentJob.productionData && (
+        {/* SR Number Badge (if approved) */}
+        {currentJob.srNumber && (
           <div
-            className="rounded-xl sm:rounded-2xl p-4 sm:p-6"
-            style={{ background: 'var(--online-glow)', border: '1px solid var(--border-online)' }}
+            className="rounded-xl p-4 flex items-center gap-4"
+            style={{ background: 'var(--online-glow)', border: '1px solid var(--online-core)' }}
           >
-            <h3 className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.2em] mb-4 sm:mb-6 flex items-center gap-2" style={{ color: 'var(--online-core)' }}>
-              <CheckCircle2 className="w-4 h-4" /> {t.submittedData}
-            </h3>
-
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <div className="p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.5)' }}>
-                <p className="text-2xl font-black" style={{ color: 'var(--online-core)' }}>
-                  {currentJob.productionData.totalFootage.toLocaleString()}
-                </p>
-                <p className="text-[9px] font-bold uppercase" style={{ color: 'var(--text-ghost)' }}>{t.totalFootage}</p>
-              </div>
-              <div className="p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.5)' }}>
-                <p className="text-2xl font-black" style={{ color: 'var(--text-primary)' }}>
-                  {currentJob.productionData.anchorCount}
-                </p>
-                <p className="text-[9px] font-bold uppercase" style={{ color: 'var(--text-ghost)' }}>{t.anchors}</p>
-              </div>
-              <div className="p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.5)' }}>
-                <p className="text-2xl font-black" style={{ color: 'var(--text-primary)' }}>
-                  {currentJob.productionData.coilCount}
-                </p>
-                <p className="text-[9px] font-bold uppercase" style={{ color: 'var(--text-ghost)' }}>{t.coils}</p>
-              </div>
-              <div className="p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.5)' }}>
-                <p className="text-2xl font-black" style={{ color: 'var(--text-primary)' }}>
-                  {currentJob.productionData.snowshoeCount}
-                </p>
-                <p className="text-[9px] font-bold uppercase" style={{ color: 'var(--text-ghost)' }}>{t.snowshoes}</p>
-              </div>
+            <FileCheck className="w-8 h-8" style={{ color: 'var(--online-core)' }} />
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-ghost)' }}>
+                {t.srNumber}
+              </p>
+              <p className="text-xl font-black" style={{ color: 'var(--online-core)' }}>
+                {currentJob.srNumber}
+              </p>
             </div>
-
-            <p className="text-xs mt-4" style={{ color: 'var(--text-ghost)' }}>
-              Submitted: {new Date(currentJob.productionData.submittedAt).toLocaleString()}
-            </p>
           </div>
+        )}
+
+        {/* FULL Production Data Card (if exists) */}
+        {currentJob.productionData && (
+          <ProductionDataCard
+            productionData={currentJob.productionData}
+            linemanName={currentJob.linemanName}
+            lang={lang}
+          />
+        )}
+
+        {/* Redlines Panel - THE CORE WORKFLOW */}
+        {(currentJob.productionData || redlines.length > 0) && (
+          <RedlinesPanel
+            job={currentJob}
+            redlines={redlines}
+            user={user}
+            lang={lang}
+            onUpload={refreshRedlines}
+            onReview={refreshRedlines}
+          />
         )}
 
       </div>

@@ -75,7 +75,7 @@ const Layout: React.FC<LayoutProps> = ({ currentView, onChangeView, children, no
 
     // Navigation items based on role
     const getNavItems = () => {
-        // Admin/Supervisor - Full access
+        // Admin/Supervisor - Full access (Redlines are now handled inside Jobs)
         if (isAdmin || isSupervisor) {
             return [
                 { id: ViewState.DASHBOARD, label: 'Dashboard', icon: LayoutDashboard },
@@ -83,7 +83,6 @@ const Layout: React.FC<LayoutProps> = ({ currentView, onChangeView, children, no
                 { id: ViewState.FINANCE_HUB, label: 'Invoices', icon: Wallet },
                 { id: ViewState.MAP_ANALYZER, label: 'Maps', icon: ScanLine },
                 { id: ViewState.RATE_CARDS, label: 'Rate Cards', icon: DollarSign },
-                { id: ViewState.REDLINES, label: 'Redlines', icon: ClipboardList },
                 { id: ViewState.SETTINGS, label: 'Settings', icon: Settings },
             ];
         }
@@ -98,22 +97,20 @@ const Layout: React.FC<LayoutProps> = ({ currentView, onChangeView, children, no
             ];
         }
 
-        // Redline Specialist - Rate card versioning
+        // Redline Specialist - Jobs access for uploading job redlines (NO rates visibility)
         if (isRedlineSpecialist) {
             return [
                 { id: ViewState.DASHBOARD, label: 'Dashboard', icon: LayoutDashboard },
-                { id: ViewState.RATE_CARDS, label: 'Rate Cards', icon: DollarSign },
-                { id: ViewState.REDLINES, label: 'Redlines', icon: ClipboardList },
+                { id: ViewState.JOBS_ADMIN, label: 'Jobs', icon: Briefcase },
                 { id: ViewState.SETTINGS, label: 'Settings', icon: Settings },
             ];
         }
 
-        // Client Reviewer - Portal access
+        // Client Reviewer - Portal access (redline review is inside Job Details)
         if (isClientReviewer) {
             return [
                 { id: ViewState.CLIENT_PORTAL, label: 'Portal', icon: LayoutDashboard },
                 { id: ViewState.CLIENT_JOBS, label: 'Jobs', icon: Briefcase },
-                { id: ViewState.CLIENT_REDLINES, label: 'Redlines', icon: ClipboardList },
                 { id: ViewState.SETTINGS, label: 'Settings', icon: Settings },
             ];
         }

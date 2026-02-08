@@ -193,12 +193,15 @@ const DailyProductionForm: React.FC<DailyProductionFormProps> = ({ user, lang, j
     const [submitSuccess, setSubmitSuccess] = useState(false);
     const clients = clientStorage.getAll();
 
+    const [submitError, setSubmitError] = useState<string | null>(null);
+
     const handleSubmitForApproval = useCallback(async () => {
         // For job-linked submissions, we don't need clientId
         if (!job && (!header.clientId || totals.filledEntries === 0)) return;
         if (job && totals.filledEntries === 0) return;
 
         setIsSubmitting(true);
+        setSubmitError(null);
 
         try {
             // If linked to a job, save production data to the job
@@ -223,10 +226,23 @@ const DailyProductionForm: React.FC<DailyProductionFormProps> = ({ user, lang, j
                     }))
                 };
 
-                // Update job with production data (only production fields, job base data is immutable)
-                await jobStorageSupabase.submitProduction(job.id, productionData);
+                console.log('[DailyProductionForm] Submitting production data for job:', job.id);
+                console.log('[DailyProductionForm] Production data:', productionData);
 
-                // Save to local reports
+                // Update job with production data (only production fields, job base data is immutable)
+                const result = await jobStorageSupabase.submitProduction(job.id, productionData);
+
+                // CHECK IF SAVE SUCCEEDED - this is critical!
+                if (!result) {
+                    console.error('[DailyProductionForm] Failed to save production data - Supabase returned undefined');
+                    setSubmitError('Failed to save production data. Please check your connection and try again.');
+                    setIsSubmitting(false);
+                    return; // DON'T navigate away, keep the data!
+                }
+
+                console.log('[DailyProductionForm] Production data saved successfully:', result.id);
+
+                // Save to local reports as backup
                 const report = {
                     id: generateId(),
                     jobId: job.id,
@@ -370,7 +386,8 @@ const DailyProductionForm: React.FC<DailyProductionFormProps> = ({ user, lang, j
             }, 2000);
 
         } catch (error) {
-            console.error('Submit failed:', error);
+            console.error('[DailyProductionForm] Submit failed:', error);
+            setSubmitError(`Failed to submit: ${error instanceof Error ? error.message : 'Unknown error'}`);
         } finally {
             setIsSubmitting(false);
         }
@@ -869,6 +886,27 @@ const DailyProductionForm: React.FC<DailyProductionFormProps> = ({ user, lang, j
                             <Plus className="w-4 h-4" /> Add Row
                         </button>
                     </div>
+
+                    {/* Error Message */}
+                    {submitError && (
+                        <div
+                            className="p-4 rounded-xl flex items-center gap-3 animate-in fade-in"
+                            style={{ background: 'var(--critical-glow)', border: '1px solid var(--critical-core)' }}
+                        >
+                            <Trash2 className="w-6 h-6" style={{ color: 'var(--critical-core)' }} />
+                            <div className="flex-1">
+                                <p className="font-bold" style={{ color: 'var(--critical-core)' }}>Failed to Save!</p>
+                                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{submitError}</p>
+                            </div>
+                            <button
+                                onClick={() => setSubmitError(null)}
+                                className="px-3 py-1 rounded-lg text-sm font-bold"
+                                style={{ background: 'var(--critical-dim)', color: 'var(--critical-core)' }}
+                            >
+                                Dismiss
+                            </button>
+                        </div>
+                    )}
 
                     {/* Success Message */}
                     {submitSuccess && (

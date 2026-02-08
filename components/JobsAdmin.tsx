@@ -839,7 +839,7 @@ Return ONLY valid JSON:
           <button
             onClick={() => setShowCreateModal(true)}
             className="flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm uppercase tracking-wider transition-all hover:scale-105"
-            style={{ background: 'var(--gradient-neural)', color: '#000' }}
+            style={{ background: 'var(--gradient-neural)', color: '#fff' }}
           >
             <Plus className="w-5 h-5" />
             New Job

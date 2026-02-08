@@ -72,6 +72,8 @@ const App: React.FC = () => {
     const [isGlobalAnalyzing, setIsGlobalAnalyzing] = useState(false);
     // Selected job for lineman workflow
     const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+    // Selected redline for editing
+    const [selectedRedlineId, setSelectedRedlineId] = useState<string | null>(null);
 
     // Refs to track latest values without causing re-renders
     const auditQueueRef = useRef<AuditFile[]>([]);
@@ -140,6 +142,22 @@ const App: React.FC = () => {
     const handleStartProduction = useCallback((job: Job) => {
         setSelectedJob(job);
         setCurrentView(ViewState.SUBMIT_WORK);
+    }, []);
+
+    // Redline navigation handlers
+    const handleCreateRedline = useCallback(() => {
+        setSelectedRedlineId(null);
+        setCurrentView(ViewState.REDLINE_EDITOR);
+    }, []);
+
+    const handleSelectRedline = useCallback((redline: { id: string }) => {
+        setSelectedRedlineId(redline.id);
+        setCurrentView(ViewState.REDLINE_EDITOR);
+    }, []);
+
+    const handleBackToRedlines = useCallback(() => {
+        setSelectedRedlineId(null);
+        setCurrentView(ViewState.REDLINES);
     }, []);
 
     const handleUpdateRates = useCallback((newRates: UnitRates) => {
@@ -241,7 +259,9 @@ const App: React.FC = () => {
 
             // Redline workflow
             case ViewState.REDLINES:
-                return <RedlineList user={user} lang={currentLang} />;
+                return <RedlineList user={user} lang={currentLang} onCreateNew={handleCreateRedline} onSelectRedline={handleSelectRedline} />;
+            case ViewState.REDLINE_EDITOR:
+                return <RedlineEditor user={user} lang={currentLang} onCancel={handleBackToRedlines} onSave={handleBackToRedlines} />;
 
             // Client Portal
             case ViewState.CLIENT_PORTAL:

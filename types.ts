@@ -190,6 +190,7 @@ export enum ViewState {
     RATE_CARDS = 'RATE_CARDS',         // Rate cards management
     // Redline Workflow
     REDLINES = 'REDLINES',             // Redline management (versioning/approval)
+    REDLINE_EDITOR = 'REDLINE_EDITOR', // Create/edit redline
     REDLINE_REVIEW = 'REDLINE_REVIEW', // Review specific redline
     // Client Portal
     CLIENT_PORTAL = 'CLIENT_PORTAL',   // Client viewer portal main

@@ -3,11 +3,13 @@ import { ViewState, Notification, User, Language } from '../types';
 import { translations } from '../services/translations';
 import {
     LayoutDashboard, LogOut, Globe, Settings, Bell, ClipboardList, Wallet, ScanLine, ChevronRight,
-    Upload, History, FolderOpen, Mic, Briefcase, DollarSign, Loader2
+    Upload, History, FolderOpen, Mic, Briefcase, DollarSign, Loader2, Menu
 } from 'lucide-react';
 import Logo from './Logo';
 import { jobStorageSupabase } from '../services/jobStorageSupabase';
 import { jobNotificationService } from '../services/jobNotificationService';
+import MobileBottomNav from './mobile/MobileBottomNav';
+import { useIsMobile } from '../hooks/useMobile';
 
 interface LayoutProps {
     currentView: ViewState;
@@ -26,8 +28,12 @@ const Layout: React.FC<LayoutProps> = ({ currentView, onChangeView, children, no
     const [isLangOpen, setIsLangOpen] = useState(false);
     const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
     const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [newJobCount, setNewJobCount] = useState(0);
     const [assignedJobIds, setAssignedJobIds] = useState<string[]>([]);
+
+    // Mobile detection using custom hook
+    const isMobile = useIsMobile();
 
     // Role-based access helpers (case-insensitive)
     const userRole = (user?.role || 'LINEMAN').toUpperCase();
@@ -344,10 +350,20 @@ const Layout: React.FC<LayoutProps> = ({ currentView, onChangeView, children, no
                     className="h-16 lg:h-20 backdrop-blur-md flex items-center justify-between px-4 lg:px-8 sticky top-0 z-30 relative"
                     style={{ borderBottom: '1px solid var(--border-subtle)', background: 'rgba(255, 255, 255, 0.95)', backdropFilter: 'blur(20px)' }}
                 >
-                    {/* Left - Logo on mobile */}
+                    {/* Left - Hamburger menu + Logo on mobile */}
                     <div className="flex items-center gap-3">
+                        {/* Hamburger Menu Button - Mobile only */}
+                        <button
+                            className="lg:hidden p-2 rounded-xl transition-all"
+                            style={{ background: 'var(--elevated)', border: '1px solid var(--border-subtle)' }}
+                            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                            aria-label="Toggle menu"
+                        >
+                            <Menu className="w-5 h-5" style={{ color: 'var(--text-tertiary)' }} />
+                        </button>
+                        {/* Logo - Smaller on mobile */}
                         <div className="lg:hidden">
-                            <Logo className="w-8 h-8" showText={false} />
+                            <Logo className="w-6 h-6 sm:w-8 sm:h-8" showText={false} />
                         </div>
                         {/* Date Pill - Hidden on mobile */}
                         <div className="hidden lg:flex items-center gap-2 px-4 py-2 rounded-full" style={{ background: 'var(--elevated)', border: '1px solid var(--border-subtle)' }}>
@@ -366,7 +382,7 @@ const Layout: React.FC<LayoutProps> = ({ currentView, onChangeView, children, no
                                 style={{ background: 'var(--elevated)', border: '1px solid var(--border-subtle)' }}
                             >
                                 <div
-                                    className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black"
+                                    className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center text-[10px] sm:text-xs font-black"
                                     style={{ background: 'var(--neural-dim)', color: 'var(--neural-core)' }}
                                 >
                                     {user?.name?.charAt(0)?.toUpperCase() || 'U'}
@@ -474,138 +490,139 @@ const Layout: React.FC<LayoutProps> = ({ currentView, onChangeView, children, no
                 </header>
 
                 {/* Main Content Area */}
-                <main className="flex-1 overflow-y-auto p-4 lg:p-8 pb-24 lg:pb-8 scrollbar-hide relative">
+                <main
+                    className={`flex-1 overflow-y-auto p-4 lg:p-8 scrollbar-hide relative ${isMobile ? 'mobile-content' : ''}`}
+                    style={{
+                        paddingBottom: isMobile ? '80px' : '32px',
+                        WebkitOverflowScrolling: 'touch', // Momentum scroll for iOS
+                    }}
+                >
                     <div className="max-w-[1600px] mx-auto">
                         {children}
                     </div>
                 </main>
 
-                {/* Mobile Bottom Navigation */}
-                <nav
-                    className="lg:hidden fixed bottom-0 left-0 right-0 z-50 px-4 pb-6 pt-2"
-                    style={{ background: 'linear-gradient(to top, var(--surface) 70%, transparent)' }}
-                >
-                    <div
-                        className="flex items-center justify-around py-2 px-2 rounded-2xl mx-auto max-w-md"
-                        style={{
-                            background: 'var(--surface)',
-                            border: '1px solid var(--border-default)',
-                            boxShadow: '0 -4px 30px rgba(0, 0, 0, 0.08)'
-                        }}
-                    >
-                        {navItems.slice(0, 4).map(item => {
-                            const showBadge = item.id === ViewState.MY_JOBS && isLineman && newJobCount > 0;
-                            return (
+                {/* Mobile Bottom Navigation - Using MobileBottomNav component */}
+                {isMobile && (
+                    <MobileBottomNav
+                        currentView={currentView}
+                        onChangeView={handleNavClick}
+                        user={user}
+                        unreadCount={newJobCount}
+                    />
+                )}
+
+                {/* Mobile Side Menu Overlay */}
+                {isMobile && isMobileMenuOpen && (
+                    <>
+                        {/* Backdrop */}
+                        <div
+                            className="fixed inset-0 bg-black/50 z-40"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                        />
+                        {/* Side Menu Panel */}
+                        <div
+                            className="fixed top-0 left-0 h-full w-72 z-50 p-4 overflow-y-auto"
+                            style={{
+                                background: 'var(--surface)',
+                                boxShadow: 'var(--shadow-float)',
+                                WebkitOverflowScrolling: 'touch'
+                            }}
+                        >
+                            {/* Menu Header */}
+                            <div className="flex items-center justify-between mb-6 pb-4" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                                <Logo className="w-8 h-8" showText={true} />
                                 <button
-                                    key={item.id}
-                                    onClick={() => handleNavClick(item.id)}
-                                    className="flex flex-col items-center gap-1 p-2 rounded-xl transition-all min-w-[60px]"
-                                    style={{
-                                        background: currentView === item.id ? 'var(--neural-dim)' : 'transparent',
-                                    }}
+                                    onClick={() => setIsMobileMenuOpen(false)}
+                                    className="p-2 rounded-xl"
+                                    style={{ background: 'var(--elevated)' }}
                                 >
-                                    <div className="relative">
-                                        <div
-                                            className="w-10 h-10 rounded-xl flex items-center justify-center transition-all"
+                                    <ChevronRight className="w-5 h-5" style={{ color: 'var(--text-tertiary)', transform: 'rotate(180deg)' }} />
+                                </button>
+                            </div>
+
+                            {/* Navigation Items */}
+                            <div className="space-y-2">
+                                {navItems.map(item => {
+                                    const showBadge = item.id === ViewState.MY_JOBS && isLineman && newJobCount > 0;
+                                    return (
+                                        <button
+                                            key={item.id}
+                                            onClick={() => {
+                                                handleNavClick(item.id);
+                                                setIsMobileMenuOpen(false);
+                                            }}
+                                            className="w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all"
                                             style={{
-                                                background: currentView === item.id ? 'var(--neural-core)' : 'transparent',
-                                                boxShadow: currentView === item.id ? 'var(--shadow-neural)' : 'none'
+                                                background: currentView === item.id ? 'var(--neural-dim)' : 'transparent',
                                             }}
                                         >
-                                            <item.icon
-                                                className="w-5 h-5"
-                                                style={{ color: currentView === item.id ? '#ffffff' : 'var(--text-tertiary)' }}
-                                            />
-                                        </div>
-                                        {/* New job badge mobile */}
-                                        {showBadge && (
-                                            <span
-                                                className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold text-white animate-pulse"
-                                                style={{ background: 'var(--neural-core)', boxShadow: 'var(--shadow-neural)' }}
-                                            >
-                                                {newJobCount > 9 ? '9+' : newJobCount}
-                                            </span>
-                                        )}
-                                    </div>
-                                    <span
-                                        className="text-[9px] font-bold uppercase tracking-wider"
-                                        style={{ color: currentView === item.id ? 'var(--neural-core)' : 'var(--text-ghost)' }}
-                                    >
-                                        {item.label}
-                                    </span>
-                                </button>
-                            );
-                        })}
-
-                        {/* More menu for additional items on mobile */}
-                        {navItems.length > 4 && (
-                            <div className="relative">
-                                <button
-                                    onClick={() => setIsLangOpen(!isLangOpen)}
-                                    className="flex flex-col items-center gap-1 p-2 rounded-xl transition-all min-w-[60px]"
-                                >
-                                    <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'transparent' }}>
-                                        <Settings className="w-5 h-5" style={{ color: 'var(--text-tertiary)' }} />
-                                    </div>
-                                    <span className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-ghost)' }}>
-                                        More
-                                    </span>
-                                </button>
-
-                                {isLangOpen && (
-                                    <div
-                                        className="absolute bottom-full right-0 mb-2 rounded-2xl p-3 z-50 min-w-[160px]"
-                                        style={{ background: 'var(--surface)', border: '1px solid var(--border-default)', boxShadow: 'var(--shadow-float)' }}
-                                    >
-                                        {/* Additional nav items */}
-                                        {navItems.slice(4).map(item => (
-                                            <button
-                                                key={item.id}
-                                                onClick={() => { handleNavClick(item.id); setIsLangOpen(false); }}
-                                                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors"
-                                                style={{ background: currentView === item.id ? 'var(--neural-dim)' : 'transparent' }}
-                                            >
-                                                <item.icon className="w-5 h-5" style={{ color: currentView === item.id ? 'var(--neural-core)' : 'var(--text-tertiary)' }} />
-                                                <span className="text-sm font-semibold" style={{ color: currentView === item.id ? 'var(--neural-core)' : 'var(--text-secondary)' }}>
-                                                    {item.label}
-                                                </span>
-                                            </button>
-                                        ))}
-
-                                        <div className="my-2 border-t" style={{ borderColor: 'var(--border-subtle)' }}></div>
-
-                                        {/* Language Options */}
-                                        <div className="flex gap-2 px-3 py-2">
-                                            {Object.values(Language).map(l => (
-                                                <button
-                                                    key={l}
-                                                    onClick={() => { onChangeLang(l); setIsLangOpen(false); }}
-                                                    className="flex-1 py-2 text-xs font-bold rounded-lg transition-colors"
+                                            <div className="relative">
+                                                <div
+                                                    className="w-10 h-10 rounded-xl flex items-center justify-center"
                                                     style={{
-                                                        color: currentLang === l ? 'var(--neural-core)' : 'var(--text-tertiary)',
-                                                        background: currentLang === l ? 'var(--neural-dim)' : 'var(--elevated)'
+                                                        background: currentView === item.id ? 'var(--neural-core)' : 'var(--elevated)',
                                                     }}
                                                 >
-                                                    {l}
-                                                </button>
-                                            ))}
-                                        </div>
-
-                                        {/* Logout */}
-                                        <button
-                                            onClick={onLogout}
-                                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl mt-1"
-                                            style={{ background: 'rgba(220, 38, 38, 0.1)' }}
-                                        >
-                                            <LogOut className="w-5 h-5" style={{ color: 'var(--critical-core)' }} />
-                                            <span className="text-sm font-semibold" style={{ color: 'var(--critical-core)' }}>Logout</span>
+                                                    <item.icon
+                                                        className="w-5 h-5"
+                                                        style={{ color: currentView === item.id ? '#ffffff' : 'var(--text-tertiary)' }}
+                                                    />
+                                                </div>
+                                                {showBadge && (
+                                                    <span
+                                                        className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold text-white"
+                                                        style={{ background: 'var(--neural-core)' }}
+                                                    >
+                                                        {newJobCount > 9 ? '9+' : newJobCount}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <span
+                                                className="text-sm font-semibold"
+                                                style={{ color: currentView === item.id ? 'var(--neural-core)' : 'var(--text-secondary)' }}
+                                            >
+                                                {item.label}
+                                            </span>
                                         </button>
-                                    </div>
-                                )}
+                                    );
+                                })}
                             </div>
-                        )}
-                    </div>
-                </nav>
+
+                            {/* Language Options */}
+                            <div className="mt-6 pt-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+                                <p className="text-[9px] font-bold uppercase tracking-wider mb-3 px-3" style={{ color: 'var(--text-ghost)' }}>Language</p>
+                                <div className="flex gap-2 px-3">
+                                    {Object.values(Language).map(l => (
+                                        <button
+                                            key={l}
+                                            onClick={() => { onChangeLang(l); setIsMobileMenuOpen(false); }}
+                                            className="flex-1 py-2 text-xs font-bold rounded-lg transition-colors"
+                                            style={{
+                                                color: currentLang === l ? 'var(--neural-core)' : 'var(--text-tertiary)',
+                                                background: currentLang === l ? 'var(--neural-dim)' : 'var(--elevated)'
+                                            }}
+                                        >
+                                            {l}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Logout Button */}
+                            <div className="mt-4 px-3">
+                                <button
+                                    onClick={() => { onLogout(); setIsMobileMenuOpen(false); }}
+                                    className="w-full flex items-center gap-3 px-3 py-3 rounded-xl"
+                                    style={{ background: 'rgba(220, 38, 38, 0.1)' }}
+                                >
+                                    <LogOut className="w-5 h-5" style={{ color: 'var(--critical-core)' }} />
+                                    <span className="text-sm font-semibold" style={{ color: 'var(--critical-core)' }}>Logout</span>
+                                </button>
+                            </div>
+                        </div>
+                    </>
+                )}
             </div>
         </div>
     );

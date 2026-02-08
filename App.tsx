@@ -39,6 +39,19 @@ const RedlineList = lazy(() => import('./components/redlines/RedlineList'));
 const RedlineEditor = lazy(() => import('./components/redlines/RedlineEditor'));
 // Client Portal
 const ClientPortal = lazy(() => import('./components/client-portal/ClientPortal'));
+// Equipment Management
+const TrucksManagement = lazy(() => import('./components/trucks/TrucksManagement'));
+const DrillsManagement = lazy(() => import('./components/drills/DrillsManagement'));
+// Payroll
+const PayrollAdmin = lazy(() => import('./components/payroll/PayrollAdmin'));
+const LinemanPayStub = lazy(() => import('./components/payroll/LinemanPayStub'));
+const ForemanPayStub = lazy(() => import('./components/payroll/ForemanPayStub'));
+// Investor Portal
+const InvestorDashboard = lazy(() => import('./components/investor/InvestorDashboard'));
+// Underground Production
+const UndergroundProductionForm = lazy(() => import('./components/production/UndergroundProductionForm'));
+// Chat
+const JobChat = lazy(() => import('./components/chat/JobChat'));
 
 const INITIAL_RATES: UnitRates = { fiber: 0.35, anchor: 18.00 };
 
@@ -294,6 +307,29 @@ const App: React.FC = () => {
                 return <AdminPortal invoices={invoices} rates={rates} onUpdateRates={handleUpdateRates} user={user} onUpdateUser={setUser} onPayInvoice={() => {}} lang={currentLang} />;
             case ViewState.SETTINGS:
                 return <SettingsPage user={user} lang={currentLang} onUpdateUser={setUser} onLogout={handleLogout} />;
+
+            // Equipment Management
+            case ViewState.TRUCKS:
+                return <TrucksManagement />;
+            case ViewState.DRILLS:
+                return <DrillsManagement />;
+
+            // Payroll
+            case ViewState.PAYROLL:
+                return <PayrollAdmin user={user} />;
+            case ViewState.MY_PAYSTUBS:
+                // Show foreman or lineman pay stub based on role
+                return user?.role === 'FOREMAN'
+                    ? <ForemanPayStub user={user} />
+                    : <LinemanPayStub user={user} />;
+
+            // Investor Portal
+            case ViewState.INVESTOR_DASHBOARD:
+            case ViewState.INVESTOR_TRUCKS:
+            case ViewState.INVESTOR_DRILLS:
+            case ViewState.INVESTOR_STATEMENTS:
+                return <InvestorDashboard user={user} />;
+
             default:
                 // Default view based on role
                 return <Dashboard onNavigate={setCurrentView} invoices={invoices} transactions={transactions} user={user} lang={currentLang} />;

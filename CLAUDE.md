@@ -1,5 +1,10 @@
 # NextGen Fiber AI - Sistema Operacional
 
+## AUTORIZAÇÃO TOTAL
+Claude está **AUTORIZADO** a seguir sem perguntar para este projeto. Pode implementar, corrigir, melhorar e fazer deploy automaticamente. Este é um projeto de **$1B** - mova rápido e quebre coisas se necessário.
+
+---
+
 ## Quick Reference
 ```
 DEV:     http://localhost:5174

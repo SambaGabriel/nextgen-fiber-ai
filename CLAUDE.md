@@ -275,3 +275,4 @@ PATH=/opt/homebrew/Cellar/node/25.5.0/bin:$PATH npm <comando>
 - **Prod**: https://legendary-crumble-fdecee.netlify.app
 - **Supabase**: Dashboard do projeto
 - **Netlify**: Dashboard do site
+

@@ -17,6 +17,9 @@ import { supabase } from '../services/supabase';
 import { getClients, PrimeClient } from '../services/clientService';
 import { getCustomers, EndCustomer } from '../services/customerService';
 import { getTrucks, Truck } from '../services/truckService';
+import { RedlinesPanel } from './jobs/RedlinesPanel';
+import { jobRedlineService } from '../services/jobRedlineService';
+import { RedlineVersion } from '../types/project';
 
 interface JobsAdminProps {
   user: UserType;
@@ -34,10 +37,17 @@ const WORK_TYPES = [
 
 // Status options
 const STATUS_OPTIONS = [
+  { value: 'unassigned', label: 'Unassigned', color: '#9CA3AF' },
   { value: 'assigned', label: 'Assigned', color: '#3B82F6' },
   { value: 'in_progress', label: 'In Progress', color: '#F59E0B' },
-  { value: 'submitted', label: 'Submitted', color: '#8B5CF6' },
+  { value: 'production_submitted', label: 'Production Submitted', color: '#8B5CF6' },
+  { value: 'pending_redlines', label: 'Pending Redlines', color: '#fb923c' },
+  { value: 'redline_uploaded', label: 'Redline Uploaded', color: '#06b6d4' },
+  { value: 'under_client_review', label: 'Under Review', color: '#a855f7' },
   { value: 'approved', label: 'Approved', color: '#10B981' },
+  { value: 'rejected', label: 'Rejected', color: '#EF4444' },
+  { value: 'ready_to_invoice', label: 'Ready to Invoice', color: '#22c55e' },
+  { value: 'submitted', label: 'Submitted', color: '#8B5CF6' },
   { value: 'needs_revision', label: 'Needs Revision', color: '#EF4444' },
   { value: 'completed', label: 'Completed', color: '#6B7280' },
 ];
@@ -125,6 +135,23 @@ const JobsAdmin: React.FC<JobsAdminProps> = ({ user, lang }) => {
   const [formErrors, setFormErrors] = useState<string[]>([]);
   const [mapFile, setMapFile] = useState<File | null>(null);
   const [isExtractingMap, setIsExtractingMap] = useState(false);
+
+  // Redlines state
+  const [redlines, setRedlines] = useState<RedlineVersion[]>([]);
+  const [isLoadingRedlines, setIsLoadingRedlines] = useState(false);
+
+  // Load redlines when job detail modal opens
+  const loadRedlines = useCallback(async (jobId: string) => {
+    setIsLoadingRedlines(true);
+    try {
+      const versions = await jobRedlineService.getJobRedlines(jobId);
+      setRedlines(versions);
+    } catch (error) {
+      console.error('[JobsAdmin] Error loading redlines:', error);
+    } finally {
+      setIsLoadingRedlines(false);
+    }
+  }, []);
 
   // Extract job info from map using Claude Vision API
   const extractMapInfo = async (fileToExtract?: File) => {
@@ -965,6 +992,7 @@ Return ONLY valid JSON:
                           onClick={() => {
                             setSelectedJob(job);
                             setShowDetailModal(true);
+                            loadRedlines(job.id);
                           }}
                           className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold transition-colors hover:opacity-80"
                           style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#EF4444' }}
@@ -1008,6 +1036,7 @@ Return ONLY valid JSON:
                           onClick={() => {
                             setSelectedJob(job);
                             setShowDetailModal(true);
+                            loadRedlines(job.id);
                           }}
                           className="p-2 rounded-lg transition-colors hover:bg-white/10"
                           title="View Details"
@@ -1568,6 +1597,7 @@ Return ONLY valid JSON:
                 onClick={() => {
                   setShowDetailModal(false);
                   setSelectedJob(null);
+                  setRedlines([]);
                 }}
                 className="p-2 rounded-xl transition-colors hover:bg-white/10"
               >
@@ -1672,6 +1702,7 @@ Return ONLY valid JSON:
                           handleAssignJob(selectedJob.id, lineman.id, lineman.name);
                           setShowDetailModal(false);
                           setSelectedJob(null);
+                          setRedlines([]);
                         }
                       }}
                       className="px-4 py-2 rounded-xl text-sm font-bold transition-all hover:scale-105"
@@ -1759,6 +1790,23 @@ Return ONLY valid JSON:
                 </div>
               )}
 
+              {/* Redlines Section */}
+              <RedlinesPanel
+                job={selectedJob}
+                redlines={redlines}
+                user={user}
+                lang={lang}
+                onUpload={() => {
+                  loadRedlines(selectedJob.id);
+                  // Also reload jobs to update status
+                  loadJobs();
+                }}
+                onReview={() => {
+                  loadRedlines(selectedJob.id);
+                  loadJobs();
+                }}
+              />
+
               {/* Audit Log */}
               <div>
                 <p className="text-xs font-bold uppercase mb-2" style={{ color: 'var(--text-tertiary)' }}>
@@ -1785,6 +1833,7 @@ Return ONLY valid JSON:
                 onClick={() => {
                   setShowDetailModal(false);
                   setSelectedJob(null);
+                  setRedlines([]);
                 }}
                 className="px-6 py-3 rounded-xl text-sm font-bold uppercase tracking-wider transition-all hover:bg-white/10"
                 style={{ color: 'var(--text-secondary)' }}

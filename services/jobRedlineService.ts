@@ -199,7 +199,21 @@ export async function uploadRedlineVersion(
 
     console.log(`[jobRedlineService] Created redline v${versionNumber} for job ${jobId} with ${uploadedFiles.length} files`);
 
-    // Note: Job status update is handled by database trigger
+    // Update job status to redline_uploaded
+    const { error: jobUpdateError } = await supabase
+      .from('jobs')
+      .update({
+        status: 'redline_uploaded',
+        redline_status: 'uploaded',
+        last_redline_version_number: versionNumber
+      })
+      .eq('id', jobId);
+
+    if (jobUpdateError) {
+      console.error('[jobRedlineService] Error updating job status:', jobUpdateError);
+    } else {
+      console.log(`[jobRedlineService] Updated job ${jobId} status to redline_uploaded`);
+    }
 
     return {
       success: true,

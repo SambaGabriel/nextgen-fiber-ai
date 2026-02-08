@@ -215,7 +215,9 @@ export enum ViewState {
     INVESTOR_DASHBOARD = 'INVESTOR_DASHBOARD', // Investor home
     INVESTOR_TRUCKS = 'INVESTOR_TRUCKS',       // Truck investor view
     INVESTOR_DRILLS = 'INVESTOR_DRILLS',       // Drill investor view
-    INVESTOR_STATEMENTS = 'INVESTOR_STATEMENTS' // Investor statements
+    INVESTOR_STATEMENTS = 'INVESTOR_STATEMENTS', // Investor statements
+    // Analytics
+    ANALYTICS = 'ANALYTICS'                   // Analytics dashboard
 }
 
 export interface Invoice {

@@ -52,6 +52,10 @@ const InvestorDashboard = lazy(() => import('./components/investor/InvestorDashb
 const UndergroundProductionForm = lazy(() => import('./components/production/UndergroundProductionForm'));
 // Chat
 const JobChat = lazy(() => import('./components/chat/JobChat'));
+// Analytics
+const AnalyticsDashboard = lazy(() => import('./components/analytics/AnalyticsDashboard'));
+// AI Insights
+const AIInsights = lazy(() => import('./components/ai/AIInsights'));
 
 const INITIAL_RATES: UnitRates = { fiber: 0.35, anchor: 18.00 };
 
@@ -329,6 +333,10 @@ const App: React.FC = () => {
             case ViewState.INVESTOR_DRILLS:
             case ViewState.INVESTOR_STATEMENTS:
                 return <InvestorDashboard user={user} />;
+
+            // Analytics
+            case ViewState.ANALYTICS:
+                return <AnalyticsDashboard user={user} />;
 
             default:
                 // Default view based on role
